@@ -25,7 +25,8 @@
     font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height:1.4;
+    font-size:16px;
+    line-height:1.5;
   }
   header{
     padding: 14px 20px;
@@ -42,8 +43,17 @@
     border-radius: 10px;
     padding: 16px;
   }
-  .card h2{ margin:0 0 12px; font-size:1rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:8px; }
-  .card h3{ margin: 14px 0 8px; font-size:0.9rem; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
+  .card h2{ margin:0 0 12px; font-size:1.12rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .card h3{ margin: 14px 0 8px; font-size:0.92rem; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
+  .outils-avances{ margin-top:6px; }
+  .outils-avances summary{
+    cursor:pointer; font-size:0.85rem; color:var(--text-dim); font-weight:600;
+    padding:6px 0; list-style:none; user-select:none;
+  }
+  .outils-avances summary::-webkit-details-marker{ display:none; }
+  .outils-avances summary::before{ content:'▸ '; color:var(--accent); }
+  .outils-avances[open] summary::before{ content:'▾ '; }
+  .outils-avances summary:hover{ color:var(--text); }
   .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   label{ font-size:0.85rem; color:var(--text-dim); }
   input[type=text], input[type=number], select, textarea{
@@ -59,8 +69,8 @@
     color:#fff;
     border:none;
     border-radius:6px;
-    padding:8px 14px;
-    font-size:0.85rem;
+    padding:9px 16px;
+    font-size:0.9rem;
     cursor:pointer;
     font-weight:600;
   }
@@ -114,30 +124,55 @@
   .service-box h4{ margin:0 0 8px; font-size:0.85rem; }
   .qcm-choix{ display:flex; gap:6px; flex-wrap:wrap; }
 
-  /* ================= SCÈNE (vue projetée) ================= */
+  /* ================= SCÈNE (vue projetée) — identité STRATÉJEUX ================= */
+  /* Fond bleu nuit / accents sarcelle / blanc cassé (§7 du CDC). Cette identité
+     visuelle est volontairement scopée à #vue-scene : la Console reste un outil
+     technique neutre, non habillé, pour rester lisible par un animateur pressé. */
   #vue-scene{
-    position:fixed; inset:0; background:#070a0f; color:#eef2f7;
+    --sj-bg: #0E2A47;
+    --sj-bg-2: #0a1f38;
+    --sj-accent: #1B8C82;
+    --sj-text: #F5F3EE;
+    --sj-text-dim: #b9c9d6;
+    position:fixed; inset:0; background:var(--sj-bg); color:var(--sj-text);
+    font-family: Georgia, "Times New Roman", serif;
     display:flex; align-items:center; justify-content:center; overflow:hidden;
   }
   .ecran{ display:none; width:100%; height:100%; flex-direction:column; align-items:center; justify-content:center; padding:5vh 6vw; text-align:center; }
   .ecran.actif{ display:flex; }
-  .ecran h1{ font-size:clamp(2rem,5vw,3.4rem); margin:0 0 0.6em; font-weight:700; }
-  .ecran h2{ font-size:clamp(1.3rem,3vw,2rem); margin:0 0 0.6em; font-weight:600; color:#b9c4d4; }
-  .ecran p{ font-size:clamp(1.1rem,2.2vw,1.6rem); max-width:60ch; line-height:1.5; }
+  /* Typographie lisible à 8 mètres : corps minimal ≈ 28pt projeté (~1.9rem à 96dpi). */
+  .ecran h1{ font-size:clamp(2.2rem,5vw,3.6rem); margin:0 0 0.6em; font-weight:700; letter-spacing:0.01em; }
+  .ecran h2{ font-size:clamp(1.5rem,3vw,2.1rem); margin:0 0 0.6em; font-weight:600; color:var(--sj-accent); }
+  .ecran p{ font-size:clamp(1.25rem,2.2vw,1.7rem); max-width:62ch; line-height:1.55; }
   .scene-camembert-wrap{ display:flex; gap:6vw; align-items:center; flex-wrap:wrap; justify-content:center; }
-  .scene-liste-joueurs{ text-align:left; font-size:clamp(0.95rem,1.6vw,1.3rem); max-height:70vh; overflow-y:auto; min-width:320px; }
-  .scene-liste-joueurs .j{ display:flex; justify-content:space-between; gap:16px; padding:6px 10px; border-bottom:1px solid #1c2430; }
-  .scene-bandeau{ position:absolute; bottom:0; left:0; right:0; background:#0e1420; border-top:1px solid #1c2430; padding:10px 20px; font-size:clamp(0.85rem,1.4vw,1.1rem); color:#9aa7b8; }
-  .scene-topbar{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:14px 24px; font-size:clamp(0.85rem,1.4vw,1.2rem); color:#9aa7b8; }
-  .scene-chrono{ font-variant-numeric:tabular-nums; font-size:clamp(2rem,6vw,4.5rem); font-weight:700; }
-  .scene-votebar{ width:min(70vw,700px); height:34px; border:2px solid #2e3746; border-radius:17px; overflow:hidden; background:#151b24; margin:1em 0; }
-  .scene-votebar-fill{ height:100%; background:var(--accent); transition: width 0.4s ease; }
-  .badge-president{ color:#ffd76b; }
-  #ecran-s5{ background:#05070a; }
-  .indice-box{ background:#111826; border:2px solid var(--accent); border-radius:12px; padding:2em 3em; margin-top:1em; }
-  .carte-revelee{ display:inline-block; padding:0.6em 1.2em; border-radius:10px; font-weight:700; margin-top:0.6em; }
-  .carte-revelee.honnete{ background:#12283f; color:#7fb3ff; }
-  .carte-revelee.infiltre{ background:#3a1330; color:#f0a0dd; }
+  .scene-liste-joueurs{ text-align:left; font-size:clamp(1.05rem,1.6vw,1.35rem); max-height:70vh; overflow-y:auto; min-width:320px; }
+  .scene-liste-joueurs .j{ display:flex; justify-content:space-between; gap:16px; padding:7px 10px; border-bottom:1px solid rgba(245,243,238,0.12); }
+  .scene-bandeau{ position:absolute; bottom:0; left:0; right:0; background:var(--sj-bg-2); border-top:1px solid var(--sj-accent); padding:12px 24px; font-size:clamp(1rem,1.4vw,1.2rem); color:var(--sj-text-dim); }
+  .scene-topbar{ position:absolute; top:0; left:0; right:0; display:flex; justify-content:space-between; padding:16px 26px; font-size:clamp(1rem,1.4vw,1.25rem); color:var(--sj-text-dim); }
+  .scene-chrono{ font-variant-numeric:tabular-nums; font-size:clamp(2.2rem,6vw,4.6rem); font-weight:700; color:var(--sj-accent); }
+  .scene-votebar{ width:min(70vw,700px); height:36px; border:2px solid var(--sj-accent); border-radius:18px; overflow:hidden; background:var(--sj-bg-2); margin:1em 0; }
+  .scene-votebar-fill{ height:100%; background:var(--sj-accent); transition: width 0.4s ease; }
+  .badge-president{ color:#e8c46a; }
+  #ecran-s5{ background:#050d18; }
+  .indice-box{ background:var(--sj-bg-2); border:2px solid var(--sj-accent); border-radius:12px; padding:2em 3em; margin-top:1em; animation: infiltres-apparition 500ms ease-out; }
+  .carte-revelee{ display:inline-block; padding:0.6em 1.4em; border-radius:10px; font-weight:700; margin-top:0.6em; letter-spacing:0.03em; }
+  .carte-revelee.honnete{ background:#123a52; color:#8fd4ff; }
+  .carte-revelee.infiltre{ background:#4a1638; color:#f5a8e0; }
+  .scene-chronique{ margin-top:2em; max-width:640px; max-height:34vh; overflow-y:auto; text-align:left; }
+  .scene-chronique h3{ color:var(--sj-accent); font-size:clamp(1rem,1.6vw,1.25rem); margin-bottom:0.4em; }
+  .scene-chronique .j{ font-size:clamp(0.85rem,1.2vw,1.05rem); }
+
+  /* ---- Animations sobres (§7 CDC) ---- */
+  @keyframes infiltres-apparition{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes infiltres-flip{ from{ opacity:0; transform:perspective(800px) rotateY(90deg); } to{ opacity:1; transform:perspective(800px) rotateY(0deg); } }
+  @keyframes infiltres-slide-communique{ from{ opacity:0; transform:translateY(-24px) scale(0.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  .carte-flip{ animation: infiltres-flip 650ms cubic-bezier(0.2,0.7,0.3,1); transform-style: preserve-3d; }
+  .communique-presse{
+    background: var(--sj-bg-2); border-left:6px solid var(--sj-accent); border-radius:8px;
+    padding:1.2em 1.6em; margin-top:1.2em; text-align:left; max-width:64ch;
+    animation: infiltres-slide-communique 550ms ease-out;
+  }
+  .communique-presse h2{ margin-bottom:0.3em; }
 </style>
 </head>
 <body>
@@ -215,6 +250,8 @@
   <!-- ===================== JEU ===================== -->
   <div id="game-card" style="display:none;">
 
+    <div class="banner info" id="prochaine-action" style="font-size:1rem; font-weight:600;"></div>
+
     <div class="card">
       <h2>2. Tableau de bord</h2>
       <div class="row" style="justify-content:space-between;">
@@ -223,18 +260,23 @@
           <span>Phase : <b id="lbl-phase">mise en place</b></span>
           <span>Président : <b id="lbl-president">—</b></span>
         </div>
-        <div class="row">
-          <button class="secondary" id="btn-annuler">Annuler la dernière action</button>
-          <button class="secondary" id="btn-export">Exporter JSON</button>
-          <button class="secondary" id="btn-export-journal">Exporter journal (.txt)</button>
-          <label class="secondary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--border);cursor:pointer;">
-            Importer JSON <input type="file" id="input-import" accept="application/json" style="display:none;">
-          </label>
-        </div>
+        <button class="secondary" id="btn-annuler">↩ Annuler la dernière action</button>
       </div>
 
-      <h3>Navigation de la Scène</h3>
-      <div class="nav-scene" id="nav-scene"></div>
+      <details class="outils-avances">
+        <summary>Outils avancés (sauvegarde, navigation manuelle de la Scène)</summary>
+        <div style="padding-top:10px;">
+          <div class="row">
+            <button class="secondary" id="btn-export">Exporter JSON</button>
+            <button class="secondary" id="btn-export-journal">Exporter journal (.txt)</button>
+            <label class="secondary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--border);cursor:pointer;">
+              Importer JSON <input type="file" id="input-import" accept="application/json" style="display:none;">
+            </label>
+          </div>
+          <p class="small" style="margin-top:8px;">Navigation manuelle de la Scène — normalement inutile, l'écran avance automatiquement avec vos actions. À utiliser seulement pour corriger un affichage.</p>
+          <div class="nav-scene" id="nav-scene"></div>
+        </div>
+      </details>
 
       <div class="flex-cols" style="margin-top:14px;">
         <div>
@@ -353,20 +395,26 @@
     </div>
 
     <div class="card">
-      <h2>Journal des événements</h2>
-      <div class="journal" id="journal"></div>
+      <details class="outils-avances">
+        <summary>Journal des événements (détail technique, pour le débriefing)</summary>
+        <div class="journal" id="journal" style="margin-top:10px;"></div>
+      </details>
     </div>
   </div>
 
   <!-- ===================== SIMULATION ===================== -->
   <div class="card">
-    <h2>7. Mode simulation &amp; recette (§8 du cahier des charges)</h2>
-    <div class="row">
-      <button id="btn-run-tests">Lancer la recette T1 – T5</button>
-      <button class="secondary" id="btn-run-partie-fictive">Simuler une partie fictive complète (5 manches)</button>
-    </div>
-    <div id="resultats-tests" style="margin-top:12px;"></div>
-    <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
+    <details class="outils-avances">
+      <summary>Outils de recette et de simulation (debug — pas nécessaire pour animer une partie)</summary>
+      <div style="padding-top:10px;">
+        <div class="row">
+          <button id="btn-run-tests">Lancer la recette T1 – T5</button>
+          <button class="secondary" id="btn-run-partie-fictive">Simuler une partie fictive complète (5 manches)</button>
+        </div>
+        <div id="resultats-tests" style="margin-top:12px;"></div>
+        <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
+      </div>
+    </details>
   </div>
 
 </main>
@@ -545,6 +593,46 @@ function clonerBanqueDefis(){
   return JSON.parse(JSON.stringify(BANQUE_DEFIS_DEFAUT));
 }
 
+/* ============================================================
+   TEXTES DU RÈGLEMENT V2 — intégrés tels quels (Lot 3, §7 du CDC)
+   ============================================================ */
+
+const TEXTE_LETTRE_INTENTION = "Mesdames, Messieurs les membres du conseil, le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle. Vos statuts ne contiennent pas de clause d'agrément. Votre pacte ne protège que les sorties forcées. Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition. Nous avons cinq jours. À bientôt.";
+
+const SCENARIOS_SABOTAGE = {
+  1: { titre: "Audition par les enquêteurs", texte: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition se prolonge. Suspension immédiate, en attendant la fin de la procédure : {prenom} ne siège plus, ne vote plus, et ses titres sont placés sous séquestre." },
+  2: { titre: "Contrôle de conformité", texte: "Ce matin, les autorités lancent un contrôle de conformité sur le travail de {prenom}. Par précaution, ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin du contrôle." },
+  3: { titre: "Fuite de documents confidentiels", texte: "Cette nuit, des documents confidentiels ont fuité. Ils mettent directement en cause {prenom}. Le conseil prononce sa mise en retrait immédiate. Ses titres sont placés sous séquestre le temps de la procédure." },
+  4: { titre: "Cyberattaque ciblée", texte: "Une cyberattaque a paralysé une partie des outils de l'entreprise cette nuit. Elle a été tracée jusqu'aux accès de {prenom}. Ses accès sont coupés, ses fonctions suspendues, ses titres placés sous séquestre." },
+  5: { titre: "Perquisition au siège", texte: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves. Ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin de l'instruction." }
+};
+
+function texteScenarioSabotage(manche, prenom){
+  const s = SCENARIOS_SABOTAGE[manche];
+  if (!s) return { titre: 'Sabotage', texte: '' };
+  return { titre: s.titre, texte: s.texte.replace(/\{prenom\}/g, prenom) };
+}
+
+const TEXTE_NUIT_CALME = "Nuit calme. Aucune procédure n'a abouti cette nuit — l'entreprise tourne normalement.";
+
+const COMMUNIQUES_MERIDIAN = {
+  alerte: "La journée d'hier a inquiété les associés. Ce matin, plusieurs d'entre eux ont vendu une partie de leurs parts. L'acheteur : le Fonds Meridian. Il a tout payé comptant. Son cabinet confirme simplement : nous continuons nos achats.",
+  panique: "Hier, c'était la panique. Ce matin, les ventes se multiplient — et Meridian achète tout, sans discuter. Sa part du capital vient de faire un bond. Son message tient en une ligne : nous serons majoritaires avant la fin de la semaine."
+};
+
+const ANNONCES_PALIER = {
+  15: "Meridian dépasse 15 % du capital. Son avocat demande au conseil la communication des comptes. C'est son droit d'associé : le conseil s'exécute. Rien d'autre ne change.",
+  25: "Meridian dépasse 25 %. Il exige un siège au conseil d'administration. Le conseil refuse. Meridian n'insiste pas — pour l'instant.",
+  35: "Meridian dépasse 35 %. Il promet un bon prix à tout associé qui voudrait vendre. Le conseil appelle chacun à tenir bon.",
+  45: "Meridian dépasse 45 %. Ses avocats l'annoncent : dès qu'il sera majoritaire, il convoquera une assemblée générale et prendra les commandes. Chaque part compte désormais."
+};
+
+const TEXTES_FIN = {
+  meridian: { titre: "Victoire Meridian", texte: "Le Fonds Meridian et ses agents détiennent la majorité du capital. Les infiltrés se révèlent. Meridian prend le contrôle de NOVENTIS — exactement comme sa lettre l'annonçait. La partie est terminée." },
+  honnete_anticipee: { titre: "Victoire honnête anticipée", texte: "Tous les infiltrés ont été démasqués et révoqués. Privé de ses agents, Meridian ne trouve plus de vendeurs. NOVENTIS est sauvée." },
+  honnete_finale: { titre: "Victoire honnête finale", texte: "Cinq jours ont passé. Meridian n'a pas atteint la majorité. Ce matin, le chevalier blanc entre au capital et recapitalise NOVENTIS. L'entreprise est sauvée. Meridian jette l'éponge." }
+};
+
 let state = null; // état courant de la partie (voir nouvellePartie)
 
 function genId(prefix){
@@ -554,7 +642,7 @@ function genId(prefix){
 function etatInitial(){
   return {
     version: 2,
-    config: { alerteMontant: 4000, paniqueMontant: 8000 },
+    config: { alerteMontant: 4000, paniqueMontant: 8000, sonsActives: true },
     partie: {
       enCours: false,
       manche: 0,
@@ -576,6 +664,11 @@ function etatInitial(){
       idsEnAttenteAnnonce: [], // ids des joueurs révélés cette nuit mais pas encore annoncés au bilan du matin (S6 étape 1)
       etapeBilanMatin: 0, // 0..4, avancement de la séquence S6
       motion: null, // {suspectId, suspectPrenom, secondId, secondPrenom}
+      resultatVoteAffichage: null, // {acquise, prenom, camp, role} — révélation immédiate en S4, jamais différée
+      derniereAnnonceMatin: null, // {type:'alerte'|'panique'} posé à l'étape 1→2 du bilan du matin, pour le communiqué S6
+      palierVenantDetreFranchis: [], // seuils (15/25/35/45) qui viennent d'être franchis à l'étape 2→3 du bilan en cours
+      chroniquePublique: [], // [{manche, texte}] — récapitulatif de fin (S7), alimenté uniquement au moment où chaque info devient publique
+      propositionsIndices: null,
       chrono: null, // {type:'defi'|'debat', finAt, dureeTotale, actif}
       voteEnCours: null // {cibleId, pourPct, totalPct}
     },
@@ -598,6 +691,15 @@ function ajouterJournal(type, message){
     phase: state.partie.phase,
     type, message
   });
+}
+
+// Chronique publique (récapitulatif de fin, écran S7) : distincte du journal
+// Console. À n'appeler QUE depuis un point de code où l'information est déjà
+// officiellement publique (jamais avant le moment de révélation prévu par les
+// règles), sous peine de réintroduire une fuite déjà corrigée une fois côté
+// dernierEvenementNuitPublic.
+function ajouterChroniquePublique(texte){
+  state.partie.chroniquePublique.push({ manche: state.partie.manche, texte });
 }
 
 function empilerSnapshot(label){
@@ -674,14 +776,19 @@ function verifierVictoireBilanMatin(dernierBilan){
   return null;
 }
 
+// Retourne la liste des seuils venant d'être franchis par cet appel (utile pour
+// savoir lesquels annoncer, sans re-décrire ceux déjà annoncés une manche plus tôt).
 function verifierPaliersMeridian(){
   const pct = state.meridian.part / 1000;
+  const nouveaux = [];
   [15, 25, 35, 45].forEach(seuil => {
     if (pct >= seuil && !state.partie.paliersMeridianAnnonces[seuil]){
       state.partie.paliersMeridianAnnonces[seuil] = true;
       ajouterJournal('palier', `Meridian franchit le seuil de ${seuil} % du capital.`);
+      nouveaux.push(seuil);
     }
   });
+  return nouveaux;
 }
 
 /* ============================================================
@@ -767,6 +874,10 @@ function actionRevocation(cibleId, votesParJoueurId){
     cible.statutCapital = 'revoque';
     cible.part = 0;
     ajouterJournal('revocation', `${cible.prenom} est révoqué(e) par l'AG (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes). Ses parts sont redistribuées au prorata.`);
+    // Contrairement au sabotage, la révélation d'une révocation est immédiate et
+    // publique en direct (S4, cf. CDC §5) : pas de fenêtre d'attente à gérer ici.
+    state.partie.resultatVoteAffichage = { acquise: true, prenom: cible.prenom, camp: cible.camp, role: cible.role };
+    ajouterChroniquePublique(`${cible.prenom} est révoqué(e) par l'Assemblée générale (${cible.camp === 'infiltre' ? 'INFILTRÉ' : 'honnête'}).`);
     if (state.partie.presidentActuelId === cible.id){
       state.partie.presidentVacant = true;
       ajouterJournal('president_vacant', `${cible.prenom} était Président du conseil : un successeur doit être désigné.`);
@@ -774,6 +885,8 @@ function actionRevocation(cibleId, votesParJoueurId){
     verifierVictoireHonneteAnticipee();
   } else {
     ajouterJournal('revocation_echouee', `La motion de révocation contre ${cible.prenom} échoue (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes).`);
+    state.partie.resultatVoteAffichage = { acquise: false, prenom: cible.prenom };
+    ajouterChroniquePublique(`La motion de révocation contre ${cible.prenom} échoue.`);
   }
   verifierInvariant();
   sauvegarder();
@@ -827,6 +940,7 @@ function bilanDefis(resultat){
     sauvegarder();
   } else if (resultat === '2reussis'){
     ajouterJournal('statuquo', "Statu quo : l'entreprise tient bon.");
+    ajouterChroniquePublique("Statu quo : l'entreprise tient bon.");
     state.partie.consequenceDefisEnAttente = null;
     sauvegarder();
   } else if (resultat === '1reussi'){
@@ -848,6 +962,10 @@ function traiterConsequenceMatin(){
   const type = state.partie.consequenceDefisEnAttente;
   if (type === 'alerte' || type === 'panique'){
     actionPrelevement(type);
+    state.partie.derniereAnnonceMatin = { type };
+    ajouterChroniquePublique(COMMUNIQUES_MERIDIAN[type]);
+  } else {
+    state.partie.derniereAnnonceMatin = null;
   }
   state.partie.consequenceDefisEnAttente = null;
   sauvegarder();
@@ -881,6 +999,7 @@ function choisirIndice(texte){
   state.partie.propositionsIndices = null;
   state.partie.consequenceDefisEnAttente = null;
   ajouterJournal('indice', `Indice révélé : ${texte}`);
+  ajouterChroniquePublique(`Indice : ${texte}`);
   sauvegarder();
 }
 
@@ -979,17 +1098,30 @@ function avancerBilanMatin(){
   if (etape === 0){
     state.partie.etapeBilanMatin = 1; // annonce officielle : la Scène peut désormais recevoir la révélation
     state.partie.idsEnAttenteAnnonce = [];
+    const evt = state.partie.dernierEvenementNuitPublic;
+    if (!evt || evt.type === 'nuit_calme'){
+      ajouterChroniquePublique(TEXTE_NUIT_CALME);
+    } else {
+      const scenario = texteScenarioSabotage(state.partie.manche, evt.prenom);
+      ajouterChroniquePublique(`${scenario.titre} — ${evt.prenom} (${evt.camp === 'infiltre' ? 'INFILTRÉ' : 'honnête'}).`);
+    }
   } else if (etape === 1){
     traiterConsequenceMatin();
     state.partie.etapeBilanMatin = 2;
   } else if (etape === 2){
-    verifierPaliersMeridian();
+    const nouveaux = verifierPaliersMeridian();
+    state.partie.palierVenantDetreFranchis = nouveaux;
+    nouveaux.forEach(seuil => ajouterChroniquePublique(ANNONCES_PALIER[seuil]));
     state.partie.etapeBilanMatin = 3;
   } else if (etape === 3){
     const dernierBilan = state.partie.manche >= 5;
     verifierVictoireBilanMatin(dernierBilan);
     state.partie.etapeBilanMatin = 4;
-    if (state.partie.victoire){ state.partie.ecranActuel = 's7'; }
+    if (state.partie.victoire){
+      state.partie.ecranActuel = 's7';
+      const fin = TEXTES_FIN[state.partie.victoire.type];
+      if (fin) ajouterChroniquePublique(fin.texte);
+    }
   }
   sauvegarder();
   return state.partie.etapeBilanMatin;
@@ -1127,6 +1259,14 @@ function etatPublicPourScene(){
     etapeBilanMatin: state.partie.etapeBilanMatin,
     chrono: state.partie.chrono,
     motion: state.partie.motion,
+    resultatVoteAffichage: state.partie.resultatVoteAffichage || null,
+    palierVenantDetreFranchis: state.partie.palierVenantDetreFranchis || [],
+    // Chaque entrée n'est ajoutée à chroniquePublique qu'au moment où l'information
+    // devient déjà publique par ailleurs (indice, statu quo, révocation, révélation
+    // de sabotage à l'étape 1, communiqué à l'étape 2, palier à l'étape 3, victoire) :
+    // transmettre l'historique complet en continu ne peut donc rien révéler en avance.
+    chroniquePublique: state.partie.chroniquePublique || [],
+    sonsActives: !!(state.config && state.config.sonsActives !== false),
     voteEnCours: state.partie.voteEnCours,
     meridian: { part: state.meridian.part },
     defisManche: defisManche.map(d => ({ service: d.service, repondu: d.reponseEquipe !== null })),
@@ -1194,6 +1334,21 @@ function afficherBanniere(){
   }
 }
 
+// Message d'erreur inline, non bloquant (remplace les afficherErreur() techniques pour
+// rester utilisable par un animateur non initié). Disparaît tout seul, ou au
+// prochain rafraîchissement d'écran.
+let erreurTimeout = null;
+function afficherErreur(message){
+  const zone = el('banner-zone');
+  if (!zone){ window.alert(message); return; }
+  const div = document.createElement('div');
+  div.className = 'banner bad';
+  div.textContent = '⚠ ' + message;
+  zone.prepend(div);
+  if (erreurTimeout) clearTimeout(erreurTimeout);
+  erreurTimeout = setTimeout(() => { div.remove(); }, 6000);
+}
+
 function couleurJoueur(index){
   const hue = (index * 47) % 360;
   return `hsl(${hue}, 55%, 50%)`;
@@ -1207,7 +1362,7 @@ function construireSegmentsCamembert(joueurs, meridianPart){
   return segments;
 }
 
-function dessinerCamembertSVG(svg, segments, cx, cy, r, montrerMeridianCentre){
+function dessinerCamembertImmediat(svg, segments, cx, cy, r, montrerMeridianCentre){
   const total = segments.reduce((a, s) => a + s.part, 0) || 1;
   let angle = -90;
   let paths = '';
@@ -1225,10 +1380,59 @@ function dessinerCamembertSVG(svg, segments, cx, cy, r, montrerMeridianCentre){
     const opacity = s.gele ? 0.45 : 1;
     paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" fill-opacity="${opacity}" stroke="#12161c" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
   });
-  const centre = montrerMeridianCentre
-    ? `<circle cx="${cx}" cy="${cy}" r="${r*0.36}" fill="#12161c" /><text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="13">Meridian</text><text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="15" font-weight="700">${formatPct(segments.find(s=>s.id==='meridian').part)}</text>`
+  const meridianSeg = segments.find(s => s.id === 'meridian');
+  const centre = (montrerMeridianCentre && meridianSeg)
+    ? `<circle cx="${cx}" cy="${cy}" r="${r*0.36}" fill="#12161c" /><text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="13">Meridian</text><text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="15" font-weight="700">${formatPct(meridianSeg.part)}</text>`
     : '';
   svg.innerHTML = paths + centre;
+}
+
+const raf = (typeof requestAnimationFrame === 'function')
+  ? requestAnimationFrame
+  : (fn) => setTimeout(() => fn(Date.now()), 16);
+const cancelRaf = (typeof cancelAnimationFrame === 'function') ? cancelAnimationFrame : clearTimeout;
+const maintenant = (typeof performance !== 'undefined' && performance.now) ? () => performance.now() : () => Date.now();
+
+// Transition sobre du camembert par interpolation linéaire des parts sur 800 ms
+// (§7 du CDC), réservée à la Scène — la Console garde un rendu instantané.
+// L'état d'animation est mémorisé directement sur le nœud SVG (fonctionne aussi
+// bien pour la fenêtre Scène que pour le voile inline, deux contextes distincts).
+function dessinerCamembertSVG(svg, segments, cx, cy, r, montrerMeridianCentre, animer){
+  if (!animer){
+    dessinerCamembertImmediat(svg, segments, cx, cy, r, montrerMeridianCentre);
+    svg._infiltresCible = segments;
+    svg._infiltresActuel = segments;
+    return;
+  }
+  const ciblePrecedente = svg._infiltresCible;
+  const inchange = ciblePrecedente && ciblePrecedente.length === segments.length &&
+    ciblePrecedente.every((s, i) => s.id === segments[i].id && s.part === segments[i].part);
+  if (inchange) return;
+
+  const depart = svg._infiltresActuel || segments;
+  const memeStructure = depart.length === segments.length && depart.every((s, i) => s.id === segments[i].id);
+  svg._infiltresCible = segments;
+  if (svg._infiltresAnimFrame) cancelRaf(svg._infiltresAnimFrame);
+  if (!memeStructure){
+    dessinerCamembertImmediat(svg, segments, cx, cy, r, montrerMeridianCentre);
+    svg._infiltresActuel = segments;
+    return;
+  }
+  const t0 = maintenant();
+  const duree = 800;
+  const step = (now) => {
+    const t = Math.min(1, (now - t0) / duree);
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const interp = segments.map((s, i) => ({ ...s, part: Math.round(depart[i].part + (s.part - depart[i].part) * eased) }));
+    dessinerCamembertImmediat(svg, interp, cx, cy, r, montrerMeridianCentre);
+    if (t < 1){
+      svg._infiltresAnimFrame = raf(step);
+    } else {
+      svg._infiltresActuel = segments;
+      svg._infiltresAnimFrame = null;
+    }
+  };
+  svg._infiltresAnimFrame = raf(step);
 }
 
 function dessinerCamembert(){
@@ -1292,7 +1496,7 @@ function afficherGrilleDefis(){
       try {
         saisirReponseDefi(b.dataset.defi, b.dataset.lettre);
         rafraichirJeu();
-      } catch(e){ alert(e.message); }
+      } catch(e){ afficherErreur(e.message); }
     });
   });
 
@@ -1339,6 +1543,50 @@ function afficherEtapeBilan(){
   el('lbl-etape-bilan').textContent = `Étape du bilan du matin : ${labels[state.partie.etapeBilanMatin || 0]}`;
 }
 
+// Bandeau « prochaine action » en langage clair : pensé pour un animateur qui
+// découvre l'outil, afin qu'il n'ait jamais à deviner quel bouton cliquer.
+function calculerProchaineAction(){
+  const p = state.partie;
+  if (p.victoire) return "Partie terminée — consultez l'écran de fin sur la Scène (Étape 4).";
+  if (p.presidentVacant) return "Le Président a été révoqué : désignez son successeur ci-dessous (Étape 2).";
+  if (p.manche === 0){
+    return "Lisez la lettre d'intention à voix haute (affichée sur la Scène), puis cliquez sur « Lettre lue → lancer la manche 1 ».";
+  }
+  if (p.phase === 'travail'){
+    const defis = defisDeLaManche(p.manche);
+    const nonRepondus = defis.filter(d => d.reponseEquipe === null).length;
+    if (nonRepondus > 0){
+      return `Distribuez les 3 défis aux services, puis cliquez la réponse donnée par chaque équipe (Étape 1 — ${nonRepondus} défi(s) restant(s)).`;
+    }
+    if (p.propositionsIndices){
+      return "3 défis réussis : choisissez l'indice à révéler sur la Scène (Étape 1).";
+    }
+    if (!p.tentativeRevocationParManche[p.manche]){
+      return "Défis terminés. Si le conseil propose une motion, ouvrez le vote (Étape 2) — sinon, passez directement à la phase nocturne (Étape 3).";
+    }
+    return "Vote terminé. Passez à la phase nocturne (Étape 3).";
+  }
+  if (p.phase === 'nuit'){
+    const protege = state.joueurs.some(j => j.protegeCetteNuit);
+    if (!protege){
+      return "Définissez la protection de l'Avocat (facultatif), puis appliquez le sabotage (Étape 3).";
+    }
+    return "Appliquez le sabotage et les pouvoirs de nuit souhaités, puis avancez le bilan du matin (Étape 4).";
+  }
+  if (p.phase === 'matin'){
+    if ((p.etapeBilanMatin || 0) < 4){
+      return "Cliquez sur « Avancer le bilan » pour dérouler les révélations du matin, étape par étape (Étape 4).";
+    }
+    return "Bilan du matin terminé. Cliquez sur « Passer à la manche suivante ».";
+  }
+  return "Suivez les cartes ci-dessous dans l'ordre.";
+}
+
+function afficherProchaineAction(){
+  const zone = el('prochaine-action');
+  if (zone) zone.textContent = '➜ ' + calculerProchaineAction();
+}
+
 function rafraichirJeu(){
   if (!state || !state.partie.enCours){ return; }
   el('setup-card').style.display = 'none';
@@ -1349,6 +1597,7 @@ function rafraichirJeu(){
   el('lbl-president').textContent = president ? president.prenom : '—';
 
   afficherBanniere();
+  afficherProchaineAction();
   afficherNavScene();
   dessinerCamembert();
   afficherTableauJoueurs();
@@ -1493,11 +1742,11 @@ function verifierCoherenceSetup(){
 
 function demarrerPartie(){
   if (joueursSetup.length < 8 || joueursSetup.length > 18){
-    alert('Le nombre de joueurs doit être compris entre 8 et 18.'); return;
+    afficherErreur('Le nombre de joueurs doit être compris entre 8 et 18.'); return;
   }
   const sommeParts = joueursSetup.reduce((a, j) => a + j.part, 0);
   if (sommeParts !== 99000){
-    alert(`La somme des parts joueurs doit être exactement 99,000 % (actuel : ${(sommeParts/1000).toFixed(3)} %). Tirez ou ajustez les parts.`);
+    afficherErreur(`La somme des parts joueurs doit être exactement 99,000 % (actuel : ${(sommeParts/1000).toFixed(3)} %). Tirez ou ajustez les parts.`);
     return;
   }
   const problemes = verifierCoherenceSetup();
@@ -1544,11 +1793,12 @@ function ouvrirVote(){
   const cibleId = el('select-cible-revocation').value;
   const secondId = el('select-second-revocation').value;
   if (!cibleId) return;
-  if (secondId && secondId === cibleId){ alert('Le second ne peut pas être le suspect lui-même.'); return; }
+  if (secondId && secondId === cibleId){ afficherErreur('Le second ne peut pas être le suspect lui-même.'); return; }
   state.partie.motion = {
     suspectId: cibleId, suspectPrenom: getJoueur(cibleId).prenom,
     secondId: secondId || null, secondPrenom: secondId ? getJoueur(secondId).prenom : null
   };
+  state.partie.resultatVoteAffichage = null;
   state.partie.ecranActuel = 's4';
   sauvegarder();
 
@@ -1597,7 +1847,7 @@ function validerVote(){
     state.partie.voteEnCours = null;
     sauvegarder();
     rafraichirJeu();
-  } catch(e){ alert(e.message); }
+  } catch(e){ afficherErreur(e.message); }
 }
 
 function appliquerSabotage(){
@@ -1612,7 +1862,7 @@ function appliquerSabotage(){
       el('zone-mandataire').dataset.juriste = cibleId;
     }
     rafraichirJeu();
-  } catch(e){ alert(e.message); }
+  } catch(e){ afficherErreur(e.message); }
 }
 
 function passerMancheSuivante(){
@@ -1672,6 +1922,67 @@ function jouerBip(){
   } catch(e){ /* audio indisponible, non bloquant */ }
 }
 
+/* ---- Sons optionnels de la Scène (synthèse Web Audio, aucun fichier externe) ---- */
+
+function jouerGongNuit(){
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    [110, 165].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 2.2 - i * 0.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 2.3);
+    });
+  } catch(e){ /* audio indisponible, non bloquant */ }
+}
+
+function jouerNotificationCommunique(){
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    [660, 880].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      const debut = ctx.currentTime + i * 0.14;
+      gain.gain.setValueAtTime(0.0001, debut);
+      gain.gain.exponentialRampToValueAtTime(0.18, debut + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, debut + 0.3);
+      osc.start(debut);
+      osc.stop(debut + 0.32);
+    });
+  } catch(e){ /* audio indisponible, non bloquant */ }
+}
+
+// Détecte, en comparant l'état public précédent au nouveau, les transitions qui
+// doivent déclencher un son côté Scène (jamais côté Console). Mémorise l'état
+// précédent directement sur le nœud racine (fonctionne pour la popup Scène
+// comme pour le voile inline, deux contextes de rendu distincts).
+function detecterEtJouerSons(root, pub){
+  const prev = root._infiltresPrevPub;
+  root._infiltresPrevPub = pub;
+  if (!pub || !pub.sonsActives || !prev) return;
+  if (pub.ecranActuel === 's5' && prev.ecranActuel !== 's5'){
+    jouerGongNuit();
+  }
+  const etapePrev = prev.etapeBilanMatin || 0;
+  const etapeNouv = pub.etapeBilanMatin || 0;
+  if (etapeNouv >= 2 && etapePrev < 2 && pub.consequenceAnnoncee){
+    jouerNotificationCommunique();
+  }
+}
+
 /* ============================================================
    15. RENDU — SCÈNE (fonction pure, réutilisée popup + voile inline)
    ============================================================ */
@@ -1683,9 +1994,30 @@ function formatChrono(chrono){
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+// Mise en scène « courrier » de la lettre d'intention (§5, S2) : affichage
+// progressif. Ne redémarre pas l'animation si le texte cible n'a pas changé
+// (mémorisé sur l'élément lui-même) — évite de re-taper à chaque rafraîchissement.
+function revelerProgressivement(elem, texte){
+  if (!elem) return;
+  if (elem._infiltresTexteCible === texte) return;
+  elem._infiltresTexteCible = texte;
+  if (elem._infiltresTypingFrame) clearInterval(elem._infiltresTypingFrame);
+  let i = 0;
+  elem.textContent = '';
+  elem._infiltresTypingFrame = setInterval(() => {
+    i += 3;
+    elem.textContent = texte.slice(0, i);
+    if (i >= texte.length){
+      clearInterval(elem._infiltresTypingFrame);
+      elem._infiltresTypingFrame = null;
+    }
+  }, 18);
+}
+
 function renderScene(root, pub){
   if (!root) return;
   const qs = sel => root.querySelector(sel);
+  detecterEtJouerSons(root, pub);
   const ecrans = root.querySelectorAll('.ecran');
   ecrans.forEach(e => e.classList.remove('actif'));
   if (!pub || !pub.enCours){
@@ -1705,7 +2037,7 @@ function renderScene(root, pub){
   const svgS1 = qs('#s1-camembert');
   if (svgS1){
     const segments = construireSegmentsCamembert(pub.joueurs, pub.meridian.part);
-    dessinerCamembertSVG(svgS1, segments, 160, 160, 145, true);
+    dessinerCamembertSVG(svgS1, segments, 160, 160, 145, true, true);
   }
   const listeS1 = qs('#s1-liste');
   if (listeS1){
@@ -1718,10 +2050,8 @@ function renderScene(root, pub){
   const bandeau = qs('#s1-bandeau');
   if (bandeau) bandeau.textContent = pub.indiceTexte ? ('Indice : ' + pub.indiceTexte) : `Manche ${pub.manche} en cours.`;
 
-  // S2 — lettre d'intention
-  if (qs('#s2-texte')){
-    qs('#s2-texte').textContent = "Mesdames, Messieurs les membres du conseil, le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle. Vos statuts ne contiennent pas de clause d'agrément. Votre pacte ne protège que les sorties forcées. Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition. Nous avons cinq jours. À bientôt.";
-  }
+  // S2 — lettre d'intention (mise en scène « courrier », affichage progressif)
+  revelerProgressivement(qs('#s2-texte'), TEXTE_LETTRE_INTENTION);
 
   // S3 — phase de travail
   if (qs('#s3-manche')) qs('#s3-manche').textContent = pub.manche;
@@ -1752,9 +2082,24 @@ function renderScene(root, pub){
     if (qs('#s4-votebar')) qs('#s4-votebar').style.width = pct + '%';
     if (qs('#s4-vote-pct')) qs('#s4-vote-pct').textContent = `Pour : ${pct}% (seuil 50%)`;
   }
-  if (s4res) s4res.classList.add('hidden');
+  if (s4res){
+    if (pub.voteEnCours || !pub.resultatVoteAffichage){
+      s4res.classList.add('hidden');
+      s4res.innerHTML = '';
+    } else {
+      s4res.classList.remove('hidden');
+      const r = pub.resultatVoteAffichage;
+      if (r.acquise){
+        s4res.innerHTML = `<div class="carte-flip"><h2>${r.prenom}</h2>
+          <div class="carte-revelee ${r.camp}">${r.camp === 'infiltre' ? 'INFILTRÉ' : 'HONNÊTE'} — ${ROLE_LABELS[r.role] || ''}</div>
+          <p>Révoqué(e) par l'Assemblée générale. Ses titres sont redistribués au prorata entre les associés restants.</p></div>`;
+      } else {
+        s4res.innerHTML = `<p>La motion de révocation contre ${r.prenom} échoue. Le conseil poursuit ses travaux.</p>`;
+      }
+    }
+  }
 
-  // S5 — voile de nuit : rien de plus (texte statique)
+  // S5 — voile de nuit : rien de plus (texte statique, le gong est déclenché par detecterEtJouerSons)
 
   // S6 — bilan du matin
   const s6 = qs('#s6-contenu');
@@ -1764,14 +2109,21 @@ function renderScene(root, pub){
     if (etape >= 1){
       const evt = pub.dernierEvenementNuitPublic;
       if (!evt || evt.type === 'nuit_calme'){
-        html += '<h2>Nuit calme</h2><p>Aucun sabotage n\'a abouti cette nuit.</p>';
+        html += `<div class="carte-flip"><h2>Nuit calme</h2><p>${TEXTE_NUIT_CALME}</p></div>`;
       } else {
-        html += `<h2>${evt.prenom}</h2><p>Titres placés sous séquestre, fonctions suspendues.</p>
-          <div class="carte-revelee ${evt.camp}">${evt.camp === 'infiltre' ? 'INFILTRÉ' : 'HONNÊTE'} — ${ROLE_LABELS[evt.role] || ''}</div>`;
+        const scenario = texteScenarioSabotage(pub.manche, evt.prenom);
+        html += `<div class="carte-flip"><h2>${scenario.titre}</h2><p>${scenario.texte}</p>
+          <div class="carte-revelee ${evt.camp}">${evt.camp === 'infiltre' ? 'INFILTRÉ' : 'HONNÊTE'} — ${ROLE_LABELS[evt.role] || ''}</div></div>`;
       }
     }
     if (etape >= 2 && pub.consequenceAnnoncee){
-      html += `<h2>Communiqué Meridian</h2><p>${pub.consequenceAnnoncee.type === 'panique' ? 'Panique' : 'Alerte'} : le Fonds Meridian a poursuivi ses achats.</p>`;
+      const texteCommunique = COMMUNIQUES_MERIDIAN[pub.consequenceAnnoncee.type] || '';
+      html += `<div class="communique-presse"><h2>Communiqué — Fonds Meridian</h2><p>${texteCommunique}</p></div>`;
+    }
+    if (etape >= 3 && pub.palierVenantDetreFranchis && pub.palierVenantDetreFranchis.length){
+      html += pub.palierVenantDetreFranchis.map(seuil =>
+        `<div class="communique-presse"><h2>Franchissement de seuil</h2><p>${ANNONCES_PALIER[seuil] || ''}</p></div>`
+      ).join('');
     }
     if (etape >= 4 && pub.victoire){
       html += '<p><i>Transition vers l\'écran de fin…</i></p>';
@@ -1782,23 +2134,20 @@ function renderScene(root, pub){
   // S7 — écrans de fin
   const s7 = qs('#s7-contenu');
   if (s7 && pub.victoire){
-    const textes = {
-      meridian: ['Victoire Meridian', "Le Fonds Meridian et ses agents détiennent la majorité du capital. Les infiltrés se révèlent. Meridian prend le contrôle de NOVENTIS."],
-      honnete_anticipee: ['Victoire honnête — anticipée', "Tous les infiltrés ont été démasqués et révoqués. Privé de ses agents, Meridian ne trouve plus de vendeurs. NOVENTIS est sauvée."],
-      honnete_finale: ['Victoire honnête — finale', "Cinq jours ont passé. Meridian n'a pas atteint la majorité. Le chevalier blanc entre au capital et recapitalise NOVENTIS."]
-    };
-    const [titre, texte] = textes[pub.victoire.type] || ['Fin de partie', ''];
+    const fin = TEXTES_FIN[pub.victoire.type] || { titre: 'Fin de partie', texte: '' };
     const svgId = 's7-camembert-' + Math.random().toString(36).slice(2,7);
     const listeId = 's7-liste-' + Math.random().toString(36).slice(2,7);
-    s7.innerHTML = `<h1>${titre}</h1><p>${texte}</p>
+    const chroniqueId = 's7-chronique-' + Math.random().toString(36).slice(2,7);
+    s7.innerHTML = `<h1>${fin.titre}</h1><p>${fin.texte}</p>
       <div class="scene-camembert-wrap">
         <svg id="${svgId}" viewBox="0 0 320 320" width="300" height="300"></svg>
         <div class="scene-liste-joueurs" id="${listeId}"></div>
-      </div>`;
+      </div>
+      <div class="scene-chronique" id="${chroniqueId}"></div>`;
     const svgS7 = document.getElementById(svgId);
     if (svgS7){
       const segments = construireSegmentsCamembert(pub.joueurs, pub.meridian.part);
-      dessinerCamembertSVG(svgS7, segments, 160, 160, 145, true);
+      dessinerCamembertSVG(svgS7, segments, 160, 160, 145, true, true);
     }
     const listeS7 = document.getElementById(listeId);
     if (listeS7){
@@ -1809,6 +2158,11 @@ function renderScene(root, pub){
         const roleTxt = j.revele ? ` — ${j.camp === 'infiltre' ? 'INFILTRÉ' : 'honnête'}` : ' — carte non révélée';
         return `<div class="j"><span>${j.prenom}${roleTxt}</span><span>${formatPct(j.part)}</span></div>`;
       }).join('');
+    }
+    const chroniqueEl = document.getElementById(chroniqueId);
+    if (chroniqueEl){
+      chroniqueEl.innerHTML = '<h3>Chronologie de la partie</h3>' +
+        (pub.chroniquePublique || []).map(e => `<div class="j"><span>Manche ${e.manche}</span><span>${e.texte}</span></div>`).join('');
     }
   }
 }
@@ -1904,7 +2258,9 @@ function construireEtatTest(defsJoueurs, meridianPart, config){
       presidentActuelId: null, presidentVacant: false, victoire: null, alerteInvariant: null,
       journal: [], consequenceDefisEnAttente: null, indiceTexte: null, lettreAffichee: false,
       miseAPiedDrhUtilisee: false, enqueteDafParManche: {}, dernierEvenementNuitPublic: null,
-      idsEnAttenteAnnonce: [], etapeBilanMatin: 0, motion: null, chrono: null, voteEnCours: null
+      idsEnAttenteAnnonce: [], etapeBilanMatin: 0, motion: null, resultatVoteAffichage: null,
+      derniereAnnonceMatin: null, palierVenantDetreFranchis: [], chroniquePublique: [],
+      propositionsIndices: null, chrono: null, voteEnCours: null
     },
     joueurs: defsJoueurs.map((d, i) => ({
       id: 't' + i, prenom: d.prenom || ('T' + i), service: d.service || 'RH',
@@ -2194,7 +2550,7 @@ function initEvenements(){
   el('input-import').addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    importerJSON(file).then(() => rafraichirJeu()).catch(err => alert('Import invalide : ' + err.message));
+    importerJSON(file).then(() => rafraichirJeu()).catch(err => afficherErreur('Import invalide : ' + err.message));
   });
 
   el('btn-maj-config').addEventListener('click', () => {
@@ -2221,7 +2577,7 @@ function initEvenements(){
   el('btn-demarrer-nuit').addEventListener('click', () => { demarrerPhaseNocturne(); rafraichirJeu(); });
   el('btn-proteger').addEventListener('click', () => {
     try { definirProtectionAvocat(el('select-cible-protection').value); rafraichirJeu(); }
-    catch(e){ alert(e.message); }
+    catch(e){ afficherErreur(e.message); }
   });
   el('btn-sabotage').addEventListener('click', appliquerSabotage);
   el('btn-assigner-mandataire').addEventListener('click', () => {
@@ -2231,18 +2587,18 @@ function initEvenements(){
       assignerMandataireJuriste(juristeId, mandataireId);
       el('zone-mandataire').classList.add('hidden');
       rafraichirJeu();
-    } catch(e){ alert(e.message); }
+    } catch(e){ afficherErreur(e.message); }
   });
   el('btn-mise-a-pied').addEventListener('click', () => {
     try { appliquerMiseAPied(el('select-cible-mise-a-pied').value); rafraichirJeu(); }
-    catch(e){ alert(e.message); }
+    catch(e){ afficherErreur(e.message); }
   });
   el('btn-enquete-daf').addEventListener('click', () => {
     try {
       const res = enqueteDaf(el('select-cible-enquete').value);
       el('lbl-enquete-resultat').textContent = `Rôle : ${ROLE_LABELS[res.role]} — Camp : ${res.camp}`;
       rafraichirJeu();
-    } catch(e){ alert(e.message); }
+    } catch(e){ afficherErreur(e.message); }
   });
 
   el('btn-avancer-bilan').addEventListener('click', () => { avancerBilanMatin(); rafraichirJeu(); });
