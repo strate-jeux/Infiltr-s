@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>INFILTRÉS — Lot 1 : Moteur de capital</title>
+<style>
+  :root{
+    --bg: #12161c;
+    --panel: #1b212b;
+    --panel-2: #222a36;
+    --border: #2e3746;
+    --text: #e8ecf1;
+    --text-dim: #9aa7b8;
+    --accent: #4f8cff;
+    --ok: #3ecf8e;
+    --warn: #e0a53c;
+    --bad: #e0563c;
+    --meridian: #3a3f44;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height:1.4;
+  }
+  header{
+    padding: 14px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  header h1{ font-size:1.1rem; margin:0; font-weight:600; }
+  header .sub{ color:var(--text-dim); font-size:0.85rem; }
+  main{ max-width:1200px; margin:0 auto; padding:16px; display:flex; flex-direction:column; gap:16px; }
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .card h2{ margin:0 0 12px; font-size:1rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:8px; }
+  .card h3{ margin: 14px 0 8px; font-size:0.9rem; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
+  .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  label{ font-size:0.85rem; color:var(--text-dim); }
+  input[type=text], input[type=number], select, textarea{
+    background: var(--panel-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:6px 8px;
+    font-size:0.9rem;
+  }
+  button{
+    background: var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:8px 14px;
+    font-size:0.85rem;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.secondary{ background: var(--panel-2); color:var(--text); border:1px solid var(--border); }
+  button.danger{ background: var(--bad); }
+  button.ok{ background: var(--ok); color:#08281c; }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  button:hover:not(:disabled){ filter:brightness(1.1); }
+  table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  th, td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+  th{ color:var(--text-dim); font-weight:600; font-size:0.75rem; text-transform:uppercase; }
+  .pill{ display:inline-block; padding:2px 8px; border-radius:20px; font-size:0.72rem; font-weight:700; }
+  .pill.actif{ background:#1c3d2c; color:var(--ok); }
+  .pill.gele{ background:#3d341c; color:var(--warn); }
+  .pill.revoque{ background:#3d1c1c; color:var(--bad); }
+  .pill.honnete{ background:#1c2c3d; color:#7fb3ff; }
+  .pill.infiltre{ background:#3d1c33; color:#e07fd4; }
+  .banner{ padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:0.88rem; }
+  .banner.bad{ background:#3d1c1c; color:#ffb3a8; border:1px solid var(--bad); }
+  .banner.ok{ background:#1c3d2c; color:#b3ffd8; border:1px solid var(--ok); }
+  .banner.info{ background:#1c2c3d; color:#b3d4ff; border:1px solid var(--accent); }
+  .flex-cols{ display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .flex-cols > div{ flex:1 1 320px; min-width:280px; }
+  .journal{ max-height:260px; overflow-y:auto; font-size:0.8rem; }
+  .journal .entry{ padding:5px 0; border-bottom:1px dashed var(--border); }
+  .journal .entry .meta{ color:var(--text-dim); font-size:0.72rem; }
+  svg text{ fill: var(--text); font-family: inherit; }
+  .hidden{ display:none !important; }
+  .small{ font-size:0.78rem; color:var(--text-dim); }
+  .test-pass{ color: var(--ok); font-weight:700; }
+  .test-fail{ color: var(--bad); font-weight:700; }
+  .join-input-list{ display:flex; flex-direction:column; gap:6px; max-height:320px; overflow-y:auto; }
+  .join-input-list .r{ display:flex; gap:6px; align-items:center; }
+  .join-input-list input[type=text]{ flex:1; }
+  .join-input-list input[type=number]{ width:80px; }
+  code{ background:var(--panel-2); padding:1px 5px; border-radius:4px; font-size:0.85em; }
+</style>
+</head>
+<body>
+<header>
+  <h1>INFILTRÉS — Console technique · Lot 1 : Moteur de capital</h1>
+  <div class="sub">Modèle de données, arithmétique en millièmes, 4 actions de capital, camembert SVG, sauvegarde, annulation, mode simulation. (Lots 2 &amp; 3 non traités.)</div>
+</header>
+
+<main>
+
+  <div id="banner-zone"></div>
+
+  <!-- ===================== REPRISE ===================== -->
+  <div class="card" id="resume-card" style="display:none;">
+    <h2>Partie en cours détectée</h2>
+    <p class="small">Une sauvegarde a été trouvée dans ce navigateur (localStorage).</p>
+    <div class="row">
+      <button id="btn-resume">Reprendre la partie</button>
+      <button class="secondary" id="btn-discard">Nouvelle partie (écraser la sauvegarde)</button>
+    </div>
+  </div>
+
+  <!-- ===================== SETUP ===================== -->
+  <div class="card" id="setup-card">
+    <h2>1. Mise en place — Manche 0</h2>
+    <div class="flex-cols">
+      <div>
+        <h3>Joueurs</h3>
+        <div class="row">
+          <label>Nombre de joueurs (8–18)
+            <input type="number" id="input-nb-joueurs" min="8" max="18" value="15">
+          </label>
+          <button class="secondary" id="btn-generer-joueurs">Générer les lignes</button>
+          <button class="secondary" id="btn-noms-fictifs">Prénoms fictifs</button>
+        </div>
+        <div class="small">Infiltrés recommandés : ⌊N/3⌋ = <b id="lbl-nb-infiltres-reco">5</b>. Répartis équitablement entre les 3 services.</div>
+        <div id="joueurs-liste" class="join-input-list" style="margin-top:10px;"></div>
+      </div>
+      <div>
+        <h3>Répartition du capital</h3>
+        <div class="row">
+          <button id="btn-tirer-parts">Tirer les parts au sort</button>
+          <button class="secondary" id="btn-retirer-parts">Retirer au sort</button>
+        </div>
+        <div class="small">Tirage 0,65×–1,35× la part moyenne, normalisé à 99,000 % (Meridian démarre à 1,000 %). Édition manuelle possible ci-dessous (re-normalisation automatique).</div>
+        <table id="table-parts" style="margin-top:10px;">
+          <thead><tr><th>Prénom</th><th>Service</th><th>Part (%)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="small" id="lbl-somme-parts"></div>
+      </div>
+    </div>
+
+    <h3>Attribution des camps &amp; rôles (secret — saisie console, non contrôlée finement : voir Lot 2)</h3>
+    <div class="small">Un rôle par joueur maximum. Le Président initial doit être désigné.</div>
+    <table id="table-roles" style="margin-top:8px;">
+      <thead><tr><th>Prénom</th><th>Camp</th><th>Rôle</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="row" style="margin-top:14px;">
+      <button class="ok" id="btn-demarrer">Démarrer la partie</button>
+    </div>
+  </div>
+
+  <!-- ===================== JEU ===================== -->
+  <div id="game-card" style="display:none;">
+
+    <div class="card">
+      <h2>2. Tableau de bord</h2>
+      <div class="row" style="justify-content:space-between;">
+        <div class="row">
+          <span>Manche : <b id="lbl-manche">0</b>/5</span>
+          <span>Phase : <b id="lbl-phase">mise en place</b></span>
+          <span>Président : <b id="lbl-president">—</b></span>
+        </div>
+        <div class="row">
+          <button class="secondary" id="btn-annuler">Annuler la dernière action</button>
+          <button class="secondary" id="btn-export">Exporter JSON</button>
+          <label class="secondary" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:6px;border:1px solid var(--border);cursor:pointer;">
+            Importer JSON <input type="file" id="input-import" accept="application/json" style="display:none;">
+          </label>
+        </div>
+      </div>
+
+      <div class="flex-cols" style="margin-top:14px;">
+        <div>
+          <h3>Camembert du capital</h3>
+          <svg id="camembert" viewBox="0 0 300 300" width="300" height="300"></svg>
+        </div>
+        <div style="flex:2 1 480px;">
+          <h3>Associés</h3>
+          <table id="table-joueurs">
+            <thead><tr><th>Prénom</th><th>Service</th><th>Part</th><th>Statut</th><th>Camp / Rôle</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3. Étape 1 — Bilan des défis (par manche)</h2>
+      <div class="row">
+        <button id="btn-bilan-3" title="3 réussis">3 réussis → Indice</button>
+        <button id="btn-bilan-2" title="2/1">2 réussis / 1 échoué → Statu quo</button>
+        <button class="danger" id="btn-bilan-1" title="1/2">1 réussi / 2 échoués → Alerte</button>
+        <button class="danger" id="btn-bilan-0" title="0/3">0 réussi / 3 échoués → Panique</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <label>Montant Alerte (‰)
+          <input type="number" id="input-montant-alerte" value="4000" style="width:90px;">
+        </label>
+        <label>Montant Panique (‰)
+          <input type="number" id="input-montant-panique" value="8000" style="width:90px;">
+        </label>
+        <button class="secondary" id="btn-maj-config">Appliquer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>4. Étape 2 — Conseil &amp; Assemblée générale (révocation)</h2>
+      <div class="row">
+        <label>Suspect visé par la motion
+          <select id="select-cible-revocation"></select>
+        </label>
+        <button id="btn-lancer-vote">Ouvrir le vote (une tentative / manche)</button>
+      </div>
+      <div id="zone-vote" class="hidden" style="margin-top:10px;">
+        <table id="table-vote"><thead><tr><th>Votant</th><th>Part</th><th>Vote</th></tr></thead><tbody></tbody></table>
+        <div class="row" style="margin-top:8px;">
+          <button class="ok" id="btn-valider-vote">Valider le vote</button>
+          <span class="small" id="lbl-recap-vote"></span>
+        </div>
+      </div>
+      <div id="zone-president-vacant" class="hidden banner bad" style="margin-top:10px;">
+        Le Président a été révoqué. Désigner un successeur :
+        <select id="select-nouveau-president"></select>
+        <button id="btn-confirmer-president">Confirmer</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>5. Étape 3 — Phase nocturne (sabotage)</h2>
+      <div class="row">
+        <label>Cible du sabotage
+          <select id="select-cible-sabotage"></select>
+        </label>
+        <label><input type="checkbox" id="check-protege"> Protégé(e) par référé cette nuit</label>
+        <button class="danger" id="btn-sabotage">Appliquer le sabotage</button>
+      </div>
+      <div id="zone-mandataire" class="hidden row" style="margin-top:8px;">
+        <span class="small">Le Juriste a été ciblé : ses titres échappent au séquestre, désigner un mandataire.</span>
+        <select id="select-mandataire"></select>
+        <button id="btn-assigner-mandataire">Assigner la procuration</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>6. Étape 4 — Bilan du matin</h2>
+      <div class="row">
+        <button id="btn-verifier-victoire">Vérifier la condition de victoire</button>
+        <button class="secondary" id="btn-manche-suivante">Passer à la manche suivante</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Journal des événements</h2>
+      <div class="journal" id="journal"></div>
+    </div>
+  </div>
+
+  <!-- ===================== SIMULATION ===================== -->
+  <div class="card">
+    <h2>7. Mode simulation &amp; recette (§8 du cahier des charges)</h2>
+    <div class="row">
+      <button id="btn-run-tests">Lancer la recette T1 – T5</button>
+      <button class="secondary" id="btn-run-partie-fictive">Simuler une partie fictive complète (5 manches)</button>
+    </div>
+    <div id="resultats-tests" style="margin-top:12px;"></div>
+    <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
+  </div>
+
+</main>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   1. UTILITAIRES ARITHMÉTIQUES (millièmes de %, entiers uniquement)
+   ============================================================ */
+
+// Division entière exacte (floor) robuste aux imprécisions flottantes,
+// utilisée uniquement pour des produits d'entiers restant sous 2^53.
+function divFloorExact(num, den){
+  let q = Math.floor(num / den);
+  if ((q + 1) * den <= num) q++;
+  if (q * den > num) q--;
+  return q;
+}
+
+// Répartit `montant` (entier, millièmes) entre `poidsList` ([{id, poids}])
+// proportionnellement aux poids, par la méthode du plus fort reste.
+function repartirProportionnel(montant, poidsList){
+  const sumPoids = poidsList.reduce((a, p) => a + p.poids, 0);
+  if (montant === 0 || sumPoids === 0){
+    return poidsList.map(p => ({ id: p.id, part: 0 }));
+  }
+  const items = poidsList.map((p, idx) => {
+    const num = montant * p.poids;
+    const q = divFloorExact(num, sumPoids);
+    const rem = num - q * sumPoids;
+    return { id: p.id, q, rem, idx };
+  });
+  const distribues = items.reduce((a, it) => a + it.q, 0);
+  const restant = montant - distribues;
+  const ordre = items.slice().sort((a, b) => (b.rem - a.rem) || (a.idx - b.idx));
+  const resultMap = {};
+  items.forEach(it => { resultMap[it.id] = it.q; });
+  for (let k = 0; k < restant; k++){
+    resultMap[ordre[k].id] += 1;
+  }
+  return poidsList.map(p => ({ id: p.id, part: resultMap[p.id] }));
+}
+
+// Tirage initial : chaque joueur reçoit entre 0.65x et 1.35x la part moyenne,
+// puis normalisation exacte à 99000 millièmes (plus fort reste).
+function tirerPartsInitiales(n){
+  const moyenne = 99000 / n;
+  const bruts = [];
+  for (let i = 0; i < n; i++){
+    const facteur = 0.65 + Math.random() * 0.70;
+    bruts.push(facteur * moyenne);
+  }
+  const sumBruts = bruts.reduce((a, b) => a + b, 0);
+  const echelle = 99000 / sumBruts;
+  const exact = bruts.map(b => b * echelle);
+  const floors = exact.map(Math.floor);
+  const sumFloors = floors.reduce((a, b) => a + b, 0);
+  const restant = 99000 - sumFloors;
+  const withFrac = exact.map((v, i) => ({ i, frac: v - floors[i] }));
+  withFrac.sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < restant; k++){
+    floors[withFrac[k].i] += 1;
+  }
+  return floors;
+}
+
+function formatPct(millimes){
+  return (millimes / 1000).toFixed(1) + ' %';
+}
+
+/* ============================================================
+   2. ÉTAT DU JEU
+   ============================================================ */
+
+const STORAGE_KEY = 'infiltres_lot1_partie_v1';
+const SERVICES = ['RH', 'Commercial', 'Finance'];
+const ROLES = ['associe', 'drh', 'avocat', 'daf', 'president', 'juriste'];
+const ROLE_LABELS = {
+  associe: 'Associé simple', drh: 'DRH', avocat: 'Avocat en droit des affaires',
+  daf: 'DAF / Contrôleur de gestion', president: 'Président du conseil', juriste: 'Juriste'
+};
+const PRENOMS_FICTIFS = ['Alice','Baptiste','Camille','Diane','Émile','Farah','Gabin','Hana',
+  'Idris','Julia','Karim','Léa','Malo','Nora','Otis','Priya','Quentin','Rania','Sacha','Théo'];
+
+let state = null; // état courant de la partie (voir nouvellePartie)
+
+function genId(prefix){
+  return prefix + '_' + Math.random().toString(36).slice(2, 9);
+}
+
+function etatInitial(){
+  return {
+    version: 1,
+    config: { alerteMontant: 4000, paniqueMontant: 8000 },
+    partie: {
+      enCours: false,
+      manche: 0,
+      phase: 'mise_en_place',
+      tentativeRevocationParManche: {},
+      paliersMeridianAnnonces: { 15: false, 25: false, 35: false, 45: false },
+      presidentActuelId: null,
+      presidentVacant: false,
+      victoire: null,
+      alerteInvariant: null,
+      journal: []
+    },
+    joueurs: [],
+    meridian: { part: 1000 },
+    pileAnnulation: []
+  };
+}
+
+function getJoueur(id){
+  return state.joueurs.find(j => j.id === id) || null;
+}
+
+function ajouterJournal(type, message){
+  state.partie.journal.push({
+    id: state.partie.journal.length + 1,
+    horodatage: new Date().toISOString(),
+    manche: state.partie.manche,
+    phase: state.partie.phase,
+    type, message
+  });
+}
+
+function empilerSnapshot(label){
+  state.pileAnnulation.push({
+    label,
+    horodatage: Date.now(),
+    data: JSON.parse(JSON.stringify({
+      partie: state.partie, joueurs: state.joueurs, meridian: state.meridian, config: state.config
+    }))
+  });
+}
+
+function annulerDerniereAction(){
+  if (state.pileAnnulation.length === 0) return false;
+  const snap = state.pileAnnulation.pop();
+  state.partie = snap.data.partie;
+  state.joueurs = snap.data.joueurs;
+  state.meridian = snap.data.meridian;
+  state.config = snap.data.config;
+  ajouterJournal('annulation', `Action annulée : ${snap.label}`);
+  sauvegarder();
+  return true;
+}
+
+/* ============================================================
+   3. INVARIANT & VICTOIRE
+   ============================================================ */
+
+function verifierInvariant(){
+  const sommeJoueurs = state.joueurs
+    .filter(j => j.statutCapital !== 'revoque')
+    .reduce((a, j) => a + j.part, 0);
+  const total = sommeJoueurs + state.meridian.part;
+  const ok = total === 100000;
+  state.partie.alerteInvariant = ok ? null : `Invariant violé : total = ${total} millièmes (attendu 100000).`;
+  if (!ok) ajouterJournal('erreur', state.partie.alerteInvariant);
+  return ok;
+}
+
+function verifierVictoireHonneteAnticipee(){
+  if (state.partie.victoire) return false;
+  const infiltres = state.joueurs.filter(j => j.camp === 'infiltre');
+  if (infiltres.length > 0 && infiltres.every(j => j.statutCapital === 'revoque')){
+    state.partie.victoire = { type: 'honnete_anticipee', manche: state.partie.manche };
+    ajouterJournal('victoire', 'Tous les infiltrés ont été démasqués et révoqués. Victoire honnête anticipée.');
+    return true;
+  }
+  return false;
+}
+
+// À appeler à chaque bilan du matin (nuits 1 à 5).
+function verifierVictoireBilanMatin(dernierBilan){
+  if (state.partie.victoire) return state.partie.victoire;
+  const sommeInfiltres = state.joueurs
+    .filter(j => j.camp === 'infiltre' && j.statutCapital !== 'revoque')
+    .reduce((a, j) => a + j.part, 0);
+  const total = sommeInfiltres + state.meridian.part;
+  if (total > 50000){
+    state.partie.victoire = { type: 'meridian', manche: state.partie.manche };
+    ajouterJournal('victoire', 'Meridian et ses agents dépassent 50 % du capital. Victoire Meridian.');
+    return state.partie.victoire;
+  }
+  if (verifierVictoireHonneteAnticipee()) return state.partie.victoire;
+  if (dernierBilan){
+    state.partie.victoire = { type: 'honnete_finale', manche: state.partie.manche };
+    ajouterJournal('victoire', 'Le chevalier blanc entre au capital. Victoire honnête finale.');
+    return state.partie.victoire;
+  }
+  return null;
+}
+
+function verifierPaliersMeridian(){
+  const pct = state.meridian.part / 1000;
+  [15, 25, 35, 45].forEach(seuil => {
+    if (pct >= seuil && !state.partie.paliersMeridianAnnonces[seuil]){
+      state.partie.paliersMeridianAnnonces[seuil] = true;
+      ajouterJournal('palier', `Meridian franchit le seuil de ${seuil} % du capital.`);
+    }
+  });
+}
+
+/* ============================================================
+   4. LES 4 ACTIONS DU MOTEUR
+   ============================================================ */
+
+// --- 4.1 Sabotage (phase nocturne) ---
+function actionSabotage(cibleId, estProtege){
+  const cible = getJoueur(cibleId);
+  if (!cible) throw new Error('Cible introuvable.');
+  if (cible.statutCapital !== 'actif') throw new Error('Cible invalide : doit être un joueur actif.');
+  empilerSnapshot('Sabotage : ' + cible.prenom);
+  if (estProtege){
+    ajouterJournal('nuit_calme', `Nuit calme : ${cible.prenom} était visé(e) mais protégé(e) par référé. Le sabotage est annulé.`);
+  } else {
+    cible.revele = true;
+    if (cible.role === 'juriste'){
+      // Exception Juriste : pas de séquestre, ses titres restent votants (procuration à désigner).
+      ajouterJournal('sabotage_juriste', `${cible.prenom} (Juriste) est saboté(e). Ses titres échappent au séquestre : une procuration doit être désignée.`);
+    } else {
+      cible.statutCapital = 'gele';
+      ajouterJournal('sabotage', `${cible.prenom} est saboté(e) : titres placés sous séquestre, fonctions suspendues.`);
+    }
+  }
+  verifierInvariant();
+  sauvegarder();
+}
+
+function assignerMandataireJuriste(juristeId, mandataireId){
+  const juriste = getJoueur(juristeId);
+  const mandataire = getJoueur(mandataireId);
+  if (!juriste || juriste.role !== 'juriste') throw new Error("Ce joueur n'est pas le Juriste.");
+  if (!mandataire) throw new Error('Mandataire introuvable.');
+  if (mandataireId === juristeId) throw new Error('Le Juriste ne peut pas être son propre mandataire.');
+  if (mandataire.statutCapital !== 'actif') throw new Error('Le mandataire doit être un joueur actif.');
+  const dejaMandataire = state.joueurs.some(j => j.mandataireDe === mandataireId);
+  if (dejaMandataire) throw new Error('Ce joueur détient déjà une procuration (une seule autorisée par mandataire).');
+  empilerSnapshot('Procuration Juriste : ' + juriste.prenom);
+  juriste.mandataireDe = mandataireId;
+  ajouterJournal('procuration', `${mandataire.prenom} détient désormais la procuration de ${juriste.prenom} (vote en AG et voix en CA).`);
+  sauvegarder();
+}
+
+// --- 4.2 Révocation (vote d'AG) ---
+// votesParJoueurId : { [joueurId]: 'pour' | 'contre' | 'abstention' }
+function actionRevocation(cibleId, votesParJoueurId){
+  if (state.partie.tentativeRevocationParManche[state.partie.manche]){
+    throw new Error('Une tentative de révocation a déjà eu lieu cette manche.');
+  }
+  const cible = getJoueur(cibleId);
+  if (!cible || cible.statutCapital === 'revoque') throw new Error('Cible invalide.');
+
+  const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
+  const totalVotante = votants.reduce((a, j) => a + j.part, 0);
+  let pour = 0;
+  votants.forEach(j => { if (votesParJoueurId[j.id] === 'pour') pour += j.part; });
+
+  empilerSnapshot('Révocation : ' + cible.prenom);
+  state.partie.tentativeRevocationParManche[state.partie.manche] = true;
+
+  const acquise = (pour * 2) > totalVotante; // strictement > 50 % des actions votantes totales
+  if (acquise){
+    cible.revele = true;
+    const partRevoquee = cible.part;
+    const beneficiaires = state.joueurs.filter(j => j.id !== cible.id && j.statutCapital !== 'revoque');
+    if (beneficiaires.length > 0 && partRevoquee > 0){
+      const redistribution = repartirProportionnel(partRevoquee, beneficiaires.map(j => ({ id: j.id, poids: j.part })));
+      redistribution.forEach(r => { getJoueur(r.id).part += r.part; });
+    }
+    cible.statutCapital = 'revoque';
+    cible.part = 0;
+    ajouterJournal('revocation', `${cible.prenom} est révoqué(e) par l'AG (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes). Ses parts sont redistribuées au prorata.`);
+    if (state.partie.presidentActuelId === cible.id){
+      state.partie.presidentVacant = true;
+      ajouterJournal('president_vacant', `${cible.prenom} était Président du conseil : un successeur doit être désigné.`);
+    }
+    verifierVictoireHonneteAnticipee();
+  } else {
+    ajouterJournal('revocation_echouee', `La motion de révocation contre ${cible.prenom} échoue (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes).`);
+  }
+  verifierInvariant();
+  sauvegarder();
+  return acquise;
+}
+
+function assignerPresident(joueurId){
+  const j = getJoueur(joueurId);
+  if (!j || j.statutCapital !== 'actif') throw new Error('Le nouveau Président doit être un joueur actif.');
+  empilerSnapshot('Nouveau Président : ' + j.prenom);
+  state.partie.presidentActuelId = joueurId;
+  state.partie.presidentVacant = false;
+  ajouterJournal('president', `${j.prenom} devient Président du conseil.`);
+  sauvegarder();
+}
+
+// --- 4.3 / 4.4 Alerte et Panique (conséquences des défis) ---
+function actionPrelevement(type){
+  const montant = type === 'alerte' ? state.config.alerteMontant : state.config.paniqueMontant;
+  const assiette = state.joueurs.filter(j => j.statutCapital === 'actif');
+  empilerSnapshot(type === 'alerte' ? 'Alerte' : 'Panique');
+  const poids = assiette.map(j => ({ id: j.id, poids: j.part }));
+  const prelevements = repartirProportionnel(montant, poids);
+  let totalPreleve = 0;
+  prelevements.forEach(p => {
+    const j = getJoueur(p.id);
+    j.part -= p.part;
+    totalPreleve += p.part;
+  });
+  state.meridian.part += totalPreleve;
+  ajouterJournal(type, `${type === 'alerte' ? 'Alerte' : 'Panique'} : ${formatPct(totalPreleve)} de capital transférés au Fonds Meridian, prélevés au prorata sur les associés non gelés.`);
+  verifierPaliersMeridian();
+  verifierInvariant();
+  sauvegarder();
+}
+
+function bilanDefis(resultat){
+  // resultat: '3reussis' | '2reussis' | '1reussi' | '0reussi'
+  if (resultat === '3reussis'){
+    ajouterJournal('indice', 'Indice : une information vraie est révélée à tous les joueurs.');
+    sauvegarder();
+  } else if (resultat === '2reussis'){
+    ajouterJournal('statuquo', 'Statu quo : l\'entreprise tient bon.');
+    sauvegarder();
+  } else if (resultat === '1reussi'){
+    actionPrelevement('alerte');
+  } else if (resultat === '0reussi'){
+    actionPrelevement('panique');
+  } else {
+    throw new Error('Résultat de bilan inconnu.');
+  }
+}
+
+/* ============================================================
+   5. MISE EN PLACE (Manche 0)
+   ============================================================ */
+
+function creerJoueurs(nbJoueurs, prenoms){
+  const joueurs = [];
+  for (let i = 0; i < nbJoueurs; i++){
+    joueurs.push({
+      id: genId('j'),
+      prenom: prenoms[i] || ('Joueur' + (i + 1)),
+      service: SERVICES[i % SERVICES.length],
+      part: 0,
+      statutCapital: 'actif',
+      camp: 'honnete',
+      role: 'associe',
+      revele: false,
+      mandataireDe: null // id du joueur dont ce joueur détient la procuration (Juriste sabotage)
+    });
+  }
+  return joueurs;
+}
+
+function tirerParts(){
+  const parts = tirerPartsInitiales(state.joueurs.length);
+  state.joueurs.forEach((j, i) => { j.part = parts[i]; });
+}
+
+function editerPartManuelle(id, nouvelleValeurPct){
+  const nouvelleValeur = Math.max(0, Math.min(99000, Math.round(nouvelleValeurPct * 1000)));
+  const autres = state.joueurs.filter(j => j.id !== id);
+  const restant = 99000 - nouvelleValeur;
+  const sumAutresActuel = autres.reduce((a, j) => a + j.part, 0);
+  const poids = sumAutresActuel === 0
+    ? autres.map(j => ({ id: j.id, poids: 1 }))
+    : autres.map(j => ({ id: j.id, poids: j.part }));
+  const nouveauxAutres = repartirProportionnel(restant, poids);
+  getJoueur(id).part = nouvelleValeur;
+  nouveauxAutres.forEach(r => { getJoueur(r.id).part = r.part; });
+}
+
+/* ============================================================
+   6. SAUVEGARDE / EXPORT / IMPORT
+   ============================================================ */
+
+function sauvegarder(){
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Échec sauvegarde localStorage', e); }
+}
+
+function chargerDepuisStorage(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch(e){ return null; }
+}
+
+function exporterJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `infiltres_partie_manche${state.partie.manche}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importerJSON(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        state = data;
+        sauvegarder();
+        resolve(state);
+      } catch(err){ reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+/* ============================================================
+   7. RENDU — UI
+   ============================================================ */
+
+const el = id => document.getElementById(id);
+
+function afficherBanniere(){
+  const zone = el('banner-zone');
+  zone.innerHTML = '';
+  if (state && state.partie.alerteInvariant){
+    zone.innerHTML += `<div class="banner bad">⚠ ${state.partie.alerteInvariant}</div>`;
+  }
+  if (state && state.partie.victoire){
+    const v = state.partie.victoire;
+    const textes = {
+      meridian: "Victoire Meridian : le Fonds et ses agents détiennent la majorité du capital.",
+      honnete_anticipee: "Victoire honnête anticipée : tous les infiltrés ont été démasqués et révoqués.",
+      honnete_finale: "Victoire honnête finale : le chevalier blanc a recapitalisé NOVENTIS."
+    };
+    zone.innerHTML += `<div class="banner ok">🏁 ${textes[v.type]} (manche ${v.manche})</div>`;
+  }
+}
+
+function couleurJoueur(index){
+  const hue = (index * 47) % 360;
+  return `hsl(${hue}, 55%, 50%)`;
+}
+
+function dessinerCamembert(){
+  const svg = el('camembert');
+  if (!state){ svg.innerHTML = ''; return; }
+  const cx = 150, cy = 150, r = 130;
+  const segments = state.joueurs
+    .filter(j => j.statutCapital !== 'revoque')
+    .map((j, i) => ({ id: j.id, label: j.prenom, part: j.part, color: couleurJoueur(i), gele: j.statutCapital === 'gele' }));
+  segments.push({ id: 'meridian', label: 'Meridian', part: state.meridian.part, color: 'var(--meridian)', gele: false });
+
+  const total = segments.reduce((a, s) => a + s.part, 0) || 1;
+  let angle = -90;
+  let paths = '';
+  segments.forEach(s => {
+    const sweep = (s.part / total) * 360;
+    if (sweep <= 0) return;
+    const start = angle;
+    const end = angle + sweep;
+    angle = end;
+    const large = sweep > 180 ? 1 : 0;
+    const x1 = cx + r * Math.cos(start * Math.PI / 180);
+    const y1 = cy + r * Math.sin(start * Math.PI / 180);
+    const x2 = cx + r * Math.cos(end * Math.PI / 180);
+    const y2 = cy + r * Math.sin(end * Math.PI / 180);
+    const opacity = s.gele ? 0.45 : 1;
+    paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" fill-opacity="${opacity}" stroke="#12161c" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
+  });
+  svg.innerHTML = paths + `<circle cx="${cx}" cy="${cy}" r="46" fill="var(--panel)" /><text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="13">Meridian</text><text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="15" font-weight="700">${formatPct(state.meridian.part)}</text>`;
+}
+
+function libelleStatut(s){
+  return { actif: 'Actif', gele: 'Sous séquestre', revoque: 'Révoqué' }[s] || s;
+}
+
+function afficherTableauJoueurs(){
+  const tbody = el('table-joueurs').querySelector('tbody');
+  tbody.innerHTML = '';
+  state.joueurs.forEach(j => {
+    const tr = document.createElement('tr');
+    const campRole = j.revele ? `<span class="pill ${j.camp}">${j.camp}</span> ${ROLE_LABELS[j.role]}` : '<span class="small">secret</span>';
+    const president = state.partie.presidentActuelId === j.id ? ' 👑' : '';
+    const mandat = j.mandataireDe ? ` <span class="small">(procuration de ${getJoueur(j.mandataireDe) ? getJoueur(j.mandataireDe).prenom : '?'})</span>` : '';
+    tr.innerHTML = `<td>${j.prenom}${president}${mandat}</td><td>${j.service}</td><td>${formatPct(j.part)}</td>
+      <td><span class="pill ${j.statutCapital}">${libelleStatut(j.statutCapital)}</span></td><td>${campRole}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function remplirSelect(select, joueurs, includeEmpty){
+  select.innerHTML = (includeEmpty ? '<option value="">—</option>' : '') +
+    joueurs.map(j => `<option value="${j.id}">${j.prenom} (${formatPct(j.part)})</option>`).join('');
+}
+
+function afficherJournal(){
+  const zone = el('journal');
+  const entries = state.partie.journal.slice().reverse();
+  zone.innerHTML = entries.map(e =>
+    `<div class="entry"><div>${e.message}</div><div class="meta">manche ${e.manche} · ${e.phase} · ${e.type}</div></div>`
+  ).join('') || '<div class="small">Aucun événement.</div>';
+}
+
+function rafraichirJeu(){
+  if (!state || !state.partie.enCours){ return; }
+  el('setup-card').style.display = 'none';
+  el('game-card').style.display = 'block';
+  el('lbl-manche').textContent = state.partie.manche;
+  el('lbl-phase').textContent = state.partie.phase;
+  const president = getJoueur(state.partie.presidentActuelId);
+  el('lbl-president').textContent = president ? president.prenom : '—';
+
+  afficherBanniere();
+  dessinerCamembert();
+  afficherTableauJoueurs();
+  afficherJournal();
+
+  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
+  remplirSelect(el('select-cible-revocation'), actifs, false);
+  remplirSelect(el('select-cible-sabotage'), actifs, false);
+
+  el('btn-lancer-vote').disabled = !!state.partie.tentativeRevocationParManche[state.partie.manche];
+
+  if (state.partie.presidentVacant){
+    el('zone-president-vacant').classList.remove('hidden');
+    remplirSelect(el('select-nouveau-president'), state.joueurs.filter(j => j.statutCapital === 'actif'), false);
+  } else {
+    el('zone-president-vacant').classList.add('hidden');
+  }
+}
+
+/* ============================================================
+   8. MISE EN PLACE — RENDU
+   ============================================================ */
+
+let joueursSetup = []; // liste de travail avant démarrage {prenom, service}
+
+function genererLignesJoueurs(){
+  const n = parseInt(el('input-nb-joueurs').value, 10) || 15;
+  joueursSetup = [];
+  for (let i = 0; i < n; i++){
+    joueursSetup.push({ prenom: '', service: SERVICES[i % SERVICES.length], part: 0, camp: 'honnete', role: 'associe' });
+  }
+  el('lbl-nb-infiltres-reco').textContent = Math.floor(n / 3);
+  rafraichirListeJoueurs();
+  rafraichirTableParts();
+  rafraichirTableRoles();
+}
+
+function rafraichirListeJoueurs(){
+  const zone = el('joueurs-liste');
+  zone.innerHTML = '';
+  joueursSetup.forEach((j, i) => {
+    const row = document.createElement('div');
+    row.className = 'r';
+    row.innerHTML = `<input type="text" placeholder="Prénom ${i+1}" value="${j.prenom}" data-idx="${i}" class="input-prenom">
+      <select data-idx="${i}" class="input-service">${SERVICES.map(s => `<option ${s===j.service?'selected':''}>${s}</option>`).join('')}</select>`;
+    zone.appendChild(row);
+  });
+  zone.querySelectorAll('.input-prenom').forEach(inp => {
+    inp.addEventListener('input', e => { joueursSetup[+e.target.dataset.idx].prenom = e.target.value; });
+  });
+  zone.querySelectorAll('.input-service').forEach(sel => {
+    sel.addEventListener('change', e => { joueursSetup[+e.target.dataset.idx].service = e.target.value; });
+  });
+}
+
+function rafraichirTableParts(){
+  const tbody = el('table-parts').querySelector('tbody');
+  tbody.innerHTML = '';
+  joueursSetup.forEach((j, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${j.prenom || ('Joueur ' + (i+1))}</td><td>${j.service}</td>
+      <td><input type="number" step="0.1" min="0" max="99" style="width:80px;" data-idx="${i}" class="input-part" value="${(j.part/1000).toFixed(1)}"></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.input-part').forEach(inp => {
+    inp.addEventListener('change', e => {
+      const idx = +e.target.dataset.idx;
+      const val = parseFloat(e.target.value) || 0;
+      renormaliserSetup(idx, val);
+    });
+  });
+  const somme = joueursSetup.reduce((a, j) => a + j.part, 0);
+  el('lbl-somme-parts').textContent = `Somme des parts joueurs : ${(somme/1000).toFixed(1)} % (cible 99,0 %) + Meridian 1,0 % = ${((somme+1000)/1000).toFixed(1)} %`;
+}
+
+function renormaliserSetup(idx, nouvelleValeurPct){
+  const nouvelleValeur = Math.max(0, Math.min(99000, Math.round(nouvelleValeurPct * 1000)));
+  const autres = joueursSetup.filter((_, i) => i !== idx);
+  const restant = 99000 - nouvelleValeur;
+  const sumAutres = autres.reduce((a, j) => a + j.part, 0);
+  const poids = sumAutres === 0
+    ? autres.map((j, i) => ({ id: i, poids: 1 }))
+    : autres.map((j, i) => ({ id: i, poids: j.part }));
+  // repartirProportionnel needs global ids; use local indices mapping
+  const poidsIdx = joueursSetup.map((j, i) => i).filter(i => i !== idx).map((originalIdx, i) => ({ id: originalIdx, poids: sumAutres === 0 ? 1 : joueursSetup[originalIdx].part }));
+  const res = repartirProportionnel(restant, poidsIdx);
+  joueursSetup[idx].part = nouvelleValeur;
+  res.forEach(r => { joueursSetup[r.id].part = r.part; });
+  rafraichirTableParts();
+}
+
+function rafraichirTableRoles(){
+  const tbody = el('table-roles').querySelector('tbody');
+  tbody.innerHTML = '';
+  joueursSetup.forEach((j, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${j.prenom || ('Joueur ' + (i+1))}</td>
+      <td><select data-idx="${i}" class="input-camp">
+        <option value="honnete" ${j.camp==='honnete'?'selected':''}>Honnête</option>
+        <option value="infiltre" ${j.camp==='infiltre'?'selected':''}>Infiltré</option>
+      </select></td>
+      <td><select data-idx="${i}" class="input-role">${ROLES.map(r => `<option value="${r}" ${j.role===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('')}</select></td>`;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.input-camp').forEach(sel => {
+    sel.addEventListener('change', e => { joueursSetup[+e.target.dataset.idx].camp = e.target.value; });
+  });
+  tbody.querySelectorAll('.input-role').forEach(sel => {
+    sel.addEventListener('change', e => { joueursSetup[+e.target.dataset.idx].role = e.target.value; });
+  });
+}
+
+function demarrerPartie(){
+  if (joueursSetup.length < 8 || joueursSetup.length > 18){
+    alert('Le nombre de joueurs doit être compris entre 8 et 18.'); return;
+  }
+  const sommeParts = joueursSetup.reduce((a, j) => a + j.part, 0);
+  if (sommeParts !== 99000){
+    alert(`La somme des parts joueurs doit être exactement 99,000 % (actuel : ${(sommeParts/1000).toFixed(3)} %). Tirez ou ajustez les parts.`);
+    return;
+  }
+  const rolesUniques = {};
+  for (const j of joueursSetup){
+    if (j.role !== 'associe'){
+      if (rolesUniques[j.role]) { alert(`Le rôle "${ROLE_LABELS[j.role]}" est attribué à plusieurs joueurs.`); return; }
+      rolesUniques[j.role] = true;
+    }
+  }
+  if (!rolesUniques['president']){
+    if (!confirm('Aucun Président du conseil désigné. Continuer quand même ?')) return;
+  }
+  const nbInfiltres = joueursSetup.filter(j => j.camp === 'infiltre').length;
+  const reco = Math.floor(joueursSetup.length / 3);
+  if (nbInfiltres !== reco){
+    if (!confirm(`Nombre d'infiltrés = ${nbInfiltres}, recommandé ⌊N/3⌋ = ${reco}. Continuer quand même ?`)) return;
+  }
+
+  state = etatInitial();
+  state.joueurs = creerJoueurs(joueursSetup.length, joueursSetup.map(j => j.prenom || undefined));
+  state.joueurs.forEach((j, i) => {
+    j.service = joueursSetup[i].service;
+    j.part = joueursSetup[i].part;
+    j.camp = joueursSetup[i].camp;
+    j.role = joueursSetup[i].role;
+  });
+  const president = state.joueurs.find(j => j.role === 'president');
+  state.partie.presidentActuelId = president ? president.id : null;
+  state.partie.enCours = true;
+  state.partie.manche = 1;
+  state.partie.phase = 'travail';
+  ajouterJournal('debut_partie', `La partie démarre avec ${state.joueurs.length} joueurs. Meridian détient 1,0 % du capital.`);
+  verifierInvariant();
+  sauvegarder();
+  rafraichirJeu();
+}
+
+/* ============================================================
+   9. ÉVÉNEMENTS UI — JEU
+   ============================================================ */
+
+function ouvrirVote(){
+  const cibleId = el('select-cible-revocation').value;
+  if (!cibleId) return;
+  const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
+  const tbody = el('table-vote').querySelector('tbody');
+  tbody.innerHTML = votants.map(j => `
+    <tr>
+      <td>${j.prenom}${j.id===cibleId?' (visé)':''}</td>
+      <td>${formatPct(j.part)}</td>
+      <td>
+        <select data-id="${j.id}" class="input-vote">
+          <option value="pour">Pour</option>
+          <option value="contre" selected>Contre</option>
+          <option value="abstention">Abstention</option>
+        </select>
+      </td>
+    </tr>`).join('');
+  el('zone-vote').classList.remove('hidden');
+  el('zone-vote').dataset.cible = cibleId;
+}
+
+function validerVote(){
+  const cibleId = el('zone-vote').dataset.cible;
+  const votes = {};
+  el('table-vote').querySelectorAll('.input-vote').forEach(sel => { votes[sel.dataset.id] = sel.value; });
+  try {
+    const acquise = actionRevocation(cibleId, votes);
+    el('lbl-recap-vote').textContent = acquise ? 'Révocation acquise.' : 'Révocation rejetée.';
+    el('zone-vote').classList.add('hidden');
+    rafraichirJeu();
+  } catch(e){ alert(e.message); }
+}
+
+function appliquerSabotage(){
+  const cibleId = el('select-cible-sabotage').value;
+  if (!cibleId) return;
+  const estProtege = el('check-protege').checked;
+  try {
+    actionSabotage(cibleId, estProtege);
+    const cible = getJoueur(cibleId);
+    if (!estProtege && cible.role === 'juriste'){
+      el('zone-mandataire').classList.remove('hidden');
+      remplirSelect(el('select-mandataire'), state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== cibleId), false);
+      el('zone-mandataire').dataset.juriste = cibleId;
+    }
+    rafraichirJeu();
+  } catch(e){ alert(e.message); }
+}
+
+function passerMancheSuivante(){
+  const dernierBilan = state.partie.manche >= 5;
+  verifierVictoireBilanMatin(dernierBilan);
+  rafraichirJeu();
+  if (state.partie.victoire){ return; }
+  if (state.partie.manche < 5){
+    empilerSnapshot('Passage à la manche suivante');
+    state.partie.manche += 1;
+    state.partie.phase = 'travail';
+    ajouterJournal('nouvelle_manche', `Début de la manche ${state.partie.manche}.`);
+    sauvegarder();
+    rafraichirJeu();
+  }
+}
+
+/* ============================================================
+   10. TESTS DE RECETTE T1 – T5 (§8 cahier des charges)
+   ============================================================ */
+
+function construireEtatTest(defsJoueurs, meridianPart, config){
+  return {
+    version: 1,
+    config: config || { alerteMontant: 4000, paniqueMontant: 8000 },
+    partie: {
+      enCours: true, manche: 1, phase: 'nuit',
+      tentativeRevocationParManche: {},
+      paliersMeridianAnnonces: { 15: false, 25: false, 35: false, 45: false },
+      presidentActuelId: null, presidentVacant: false, victoire: null, alerteInvariant: null,
+      journal: []
+    },
+    joueurs: defsJoueurs.map((d, i) => ({
+      id: 't' + i, prenom: d.prenom || ('T' + i), service: d.service || 'RH',
+      part: d.part, statutCapital: d.statutCapital || 'actif',
+      camp: d.camp || 'honnete', role: d.role || 'associe', revele: false, mandataireDe: null
+    })),
+    meridian: { part: meridianPart },
+    pileAnnulation: []
+  };
+}
+
+function sommeCapital(s){
+  return s.joueurs.filter(j => j.statutCapital !== 'revoque').reduce((a, j) => a + j.part, 0) + s.meridian.part;
+}
+
+function runAcceptanceTests(){
+  const resultats = [];
+  const originalState = state;
+
+  // --- T1 : Panique — 10 joueurs à 9900 chacun, Meridian 1000, Panique(8000) ---
+  const s1 = construireEtatTest(Array.from({ length: 10 }, () => ({ part: 9900 })), 1000);
+  state = s1;
+  actionPrelevement('panique');
+  const t1ok = s1.joueurs.every(j => j.part === 9100) && s1.meridian.part === 9000 && sommeCapital(s1) === 100000;
+  resultats.push({
+    nom: 'T1 — Panique',
+    pass: t1ok,
+    detail: `joueurs=${[...new Set(s1.joueurs.map(j=>j.part))].join(',')} (attendu 9100), meridian=${s1.meridian.part} (attendu 9000), total=${sommeCapital(s1)}`
+  });
+
+  // --- T2 : Révocation — état final de T1, on révoque le premier joueur (9100) ---
+  const cibleT2 = s1.joueurs[0].id;
+  const votesT2 = {};
+  s1.joueurs.forEach(j => { votesT2[j.id] = (j.id === cibleT2) ? 'contre' : 'pour'; });
+  actionRevocation(cibleT2, votesT2);
+  const restants = s1.joueurs.filter(j => j.statutCapital !== 'revoque');
+  const attendu1011 = restants.filter(j => j.part === 10111).length;
+  const attendu1012 = restants.filter(j => j.part === 10112).length;
+  const t2ok = restants.length === 9 && (attendu1011 + attendu1012) === 9 && attendu1012 === 1
+    && s1.meridian.part === 9000 && sommeCapital(s1) === 100000;
+  resultats.push({
+    nom: 'T2 — Révocation',
+    pass: t2ok,
+    detail: `${attendu1011}×10111‰ + ${attendu1012}×10112‰ (attendu 8×10111 + 1×10112), meridian=${s1.meridian.part}, total=${sommeCapital(s1)}`
+  });
+
+  // --- T3 : Victoire — infiltrés + Meridian à 50,2% puis 49,9% ---
+  const s3a = construireEtatTest([
+    { part: 49200, camp: 'infiltre' }, { part: 50800, camp: 'honnete' }
+  ], 1000); // 49200 + 1000 = 50200 (50,2%)
+  state = s3a;
+  const victoire502 = verifierVictoireBilanMatin(false);
+  const t3a = !!(victoire502 && victoire502.type === 'meridian');
+
+  const s3b = construireEtatTest([
+    { part: 48900, camp: 'infiltre' }, { part: 51100, camp: 'honnete' }
+  ], 1000); // 48900 + 1000 = 49900 (49,9%)
+  state = s3b;
+  const victoire499 = verifierVictoireBilanMatin(false);
+  const t3b = victoire499 === null;
+  resultats.push({
+    nom: 'T3 — Victoire (seuil 50 %)',
+    pass: t3a && t3b,
+    detail: `à 50,2% → ${victoire502 ? victoire502.type : 'aucune'} (attendu meridian) ; à 49,9% → ${victoire499 ? victoire499.type : 'aucune'} (attendu aucune, partie continue)`
+  });
+
+  // --- T4 : Séquestre — état de T1 initial, un joueur gelé (non-Juriste), Alerte(4000) ---
+  const s4 = construireEtatTest(Array.from({ length: 10 }, (_, i) => ({ part: 9900, statutCapital: i === 0 ? 'gele' : 'actif', camp: i === 0 ? 'infiltre' : 'honnete' })), 1000);
+  state = s4;
+  const geleAvant = s4.joueurs[0].part;
+  actionPrelevement('alerte');
+  const geleApres = s4.joueurs[0].part;
+  const t4ok = geleApres === geleAvant && s4.meridian.part === 5000 && sommeCapital(s4) === 100000;
+  resultats.push({
+    nom: 'T4 — Séquestre',
+    pass: t4ok,
+    detail: `part du gelé inchangée : ${geleAvant}→${geleApres} (attendu identique), meridian=${s4.meridian.part} (attendu 5000), total=${sommeCapital(s4)}`
+  });
+
+  // --- T5 : Invariant + garde-fous, sur une mini-simulation ---
+  const s5 = construireEtatTest(Array.from({ length: 9 }, (_, i) => ({
+    part: 11000, camp: i < 3 ? 'infiltre' : 'honnete'
+  })), 1000);
+  state = s5;
+  let t5ok = true;
+  const violations = [];
+  // invariant initial
+  if (!verifierInvariant()) { t5ok = false; violations.push('invariant initial'); }
+  actionSabotage(s5.joueurs[3].id, false);
+  if (!verifierInvariant()) { t5ok = false; violations.push('invariant après sabotage'); }
+  // un joueur déjà gelé ne peut pas être reciblé
+  try {
+    actionSabotage(s5.joueurs[3].id, false);
+    t5ok = false; violations.push("cible déjà gelée acceptée à tort");
+  } catch(e){ /* attendu */ }
+  actionPrelevement('alerte');
+  if (!verifierInvariant()) { t5ok = false; violations.push('invariant après alerte'); }
+  actionRevocation(s5.joueurs[5].id, Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, j.id===s5.joueurs[5].id?'contre':'pour'])));
+  if (!verifierInvariant()) { t5ok = false; violations.push('invariant après révocation'); }
+  // 2e révocation même manche refusée
+  try {
+    actionRevocation(s5.joueurs[6].id, Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, 'pour'])));
+    t5ok = false; violations.push('2e révocation dans la manche acceptée à tort');
+  } catch(e){ /* attendu */ }
+  // palier Meridian annoncé une seule fois
+  s5.meridian.part = 15500;
+  verifierPaliersMeridian();
+  const annoncesAvant = state.partie.journal.filter(e => e.type === 'palier').length;
+  verifierPaliersMeridian();
+  const annoncesApres = state.partie.journal.filter(e => e.type === 'palier').length;
+  if (annoncesAvant !== annoncesApres) { t5ok = false; violations.push('palier annoncé plusieurs fois'); }
+
+  resultats.push({
+    nom: 'T5 — Invariant & garde-fous',
+    pass: t5ok,
+    detail: t5ok ? 'Invariant respecté après chaque action ; cible déjà gelée refusée ; 2e révocation/manche refusée ; palier annoncé une seule fois.' : ('Échecs : ' + violations.join(' / '))
+  });
+
+  state = originalState;
+  return resultats;
+}
+
+function afficherResultatsTests(resultats){
+  const zone = el('resultats-tests');
+  const tousOk = resultats.every(r => r.pass);
+  zone.innerHTML = `<div class="banner ${tousOk ? 'ok' : 'bad'}">${tousOk ? 'Tous les tests passent.' : 'Au moins un test échoue.'}</div>` +
+    '<table><thead><tr><th>Test</th><th>Résultat</th><th>Détail</th></tr></thead><tbody>' +
+    resultats.map(r => `<tr><td>${r.nom}</td><td class="${r.pass ? 'test-pass' : 'test-fail'}">${r.pass ? 'PASS' : 'FAIL'}</td><td class="small">${r.detail}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+/* ---- Simulation d'une partie fictive complète (exploratoire, hors T1-T5) ---- */
+
+function simulerPartieFictive(){
+  const originalState = state;
+  const n = 8 + Math.floor(Math.random() * 11); // 8 à 18
+  const nbInfiltres = Math.floor(n / 3);
+  const prenoms = [...PRENOMS_FICTIFS].sort(() => Math.random() - 0.5).slice(0, n);
+  const defs = prenoms.map((p, i) => ({ prenom: p, part: 0, camp: i < nbInfiltres ? 'infiltre' : 'honnete', service: SERVICES[i % 3] }));
+  const s = construireEtatTest(defs, 1000);
+  const parts = tirerPartsInitiales(n);
+  s.joueurs.forEach((j, i) => { j.part = parts[i]; });
+  s.joueurs[0].role = 'president';
+  s.partie.presidentActuelId = s.joueurs[0].id;
+  if (s.joueurs[1]) s.joueurs[1].role = 'juriste';
+
+  state = s;
+  const log = [];
+  let violation = null;
+  const controle = () => { if (!verifierInvariant()) violation = state.partie.alerteInvariant; };
+
+  controle();
+  for (let manche = 1; manche <= 5 && !violation && !state.partie.victoire; manche++){
+    state.partie.manche = manche;
+    state.partie.phase = 'travail';
+    const tirage = Math.random();
+    const resultat = tirage < 0.15 ? '3reussis' : tirage < 0.55 ? '2reussis' : tirage < 0.85 ? '1reussi' : '0reussi';
+    bilanDefis(resultat);
+    controle();
+    log.push(`Manche ${manche} — défis : ${resultat}`);
+
+    // Tentative de révocation aléatoire (50% de chance)
+    if (Math.random() < 0.5){
+      const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
+      if (actifs.length > 1){
+        const cible = actifs[Math.floor(Math.random() * actifs.length)];
+        const votes = {};
+        actifs.forEach(j => { votes[j.id] = Math.random() < 0.5 ? 'pour' : 'contre'; });
+        try {
+          const acquise = actionRevocation(cible.id, votes);
+          log.push(`Manche ${manche} — révocation de ${cible.prenom} : ${acquise ? 'acquise' : 'rejetée'}`);
+        } catch(e){ /* déjà utilisée cette manche */ }
+        controle();
+      }
+    }
+
+    // Sabotage nocturne
+    const actifsNuit = state.joueurs.filter(j => j.statutCapital === 'actif');
+    if (actifsNuit.length > 0){
+      const cible = actifsNuit[Math.floor(Math.random() * actifsNuit.length)];
+      try {
+        actionSabotage(cible.id, false);
+        log.push(`Manche ${manche} — sabotage de ${cible.prenom}`);
+        if (cible.role === 'juriste'){
+          const mandataires = state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== cible.id);
+          if (mandataires.length){
+            assignerMandataireJuriste(cible.id, mandataires[0].id);
+          }
+        }
+      } catch(e){ /* cible invalide, ignorer */ }
+      controle();
+    }
+
+    verifierVictoireBilanMatin(manche >= 5);
+    controle();
+    log.push(`Manche ${manche} — état capital total = ${sommeCapital(state) / 1000}%`);
+  }
+
+  const finalOk = !violation;
+  state = originalState;
+  return { ok: finalOk, log, victoire: s.partie.victoire, violation, nbManches: s.partie.manche, n };
+}
+
+function afficherResultatPartieFictive(res){
+  const zone = el('resultats-partie-fictive');
+  zone.innerHTML = `<div class="banner ${res.ok ? 'ok' : 'bad'}">
+      Partie fictive à ${res.n} joueurs, ${res.nbManches} manche(s) jouée(s) —
+      ${res.ok ? "aucune violation d'invariant" : 'VIOLATION : ' + res.violation} —
+      issue : ${res.victoire ? res.victoire.type : 'non résolue (fin de simulation)'}
+    </div>
+    <div class="journal">${res.log.map(l => `<div class="entry">${l}</div>`).join('')}</div>`;
+}
+
+/* ============================================================
+   11. INITIALISATION
+   ============================================================ */
+
+function initEvenements(){
+  el('btn-generer-joueurs').addEventListener('click', genererLignesJoueurs);
+  el('btn-noms-fictifs').addEventListener('click', () => {
+    const shuffled = [...PRENOMS_FICTIFS].sort(() => Math.random() - 0.5);
+    joueursSetup.forEach((j, i) => { j.prenom = shuffled[i % shuffled.length]; });
+    rafraichirListeJoueurs(); rafraichirTableParts(); rafraichirTableRoles();
+  });
+  el('btn-tirer-parts').addEventListener('click', () => {
+    if (joueursSetup.length === 0) genererLignesJoueurs();
+    const parts = tirerPartsInitiales(joueursSetup.length);
+    joueursSetup.forEach((j, i) => { j.part = parts[i]; });
+    rafraichirTableParts();
+  });
+  el('btn-retirer-parts').addEventListener('click', () => {
+    const parts = tirerPartsInitiales(joueursSetup.length);
+    joueursSetup.forEach((j, i) => { j.part = parts[i]; });
+    rafraichirTableParts();
+  });
+  el('btn-demarrer').addEventListener('click', demarrerPartie);
+
+  el('btn-annuler').addEventListener('click', () => { annulerDerniereAction(); rafraichirJeu(); });
+  el('btn-export').addEventListener('click', exporterJSON);
+  el('input-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    importerJSON(file).then(() => rafraichirJeu()).catch(err => alert('Import invalide : ' + err.message));
+  });
+
+  el('btn-bilan-3').addEventListener('click', () => { bilanDefis('3reussis'); rafraichirJeu(); });
+  el('btn-bilan-2').addEventListener('click', () => { bilanDefis('2reussis'); rafraichirJeu(); });
+  el('btn-bilan-1').addEventListener('click', () => { bilanDefis('1reussi'); rafraichirJeu(); });
+  el('btn-bilan-0').addEventListener('click', () => { bilanDefis('0reussi'); rafraichirJeu(); });
+  el('btn-maj-config').addEventListener('click', () => {
+    state.config.alerteMontant = parseInt(el('input-montant-alerte').value, 10) || 4000;
+    state.config.paniqueMontant = parseInt(el('input-montant-panique').value, 10) || 8000;
+    sauvegarder();
+  });
+
+  el('btn-lancer-vote').addEventListener('click', ouvrirVote);
+  el('btn-valider-vote').addEventListener('click', validerVote);
+  el('btn-confirmer-president').addEventListener('click', () => {
+    const id = el('select-nouveau-president').value;
+    if (id) { assignerPresident(id); rafraichirJeu(); }
+  });
+
+  el('btn-sabotage').addEventListener('click', appliquerSabotage);
+  el('btn-assigner-mandataire').addEventListener('click', () => {
+    const juristeId = el('zone-mandataire').dataset.juriste;
+    const mandataireId = el('select-mandataire').value;
+    try {
+      assignerMandataireJuriste(juristeId, mandataireId);
+      el('zone-mandataire').classList.add('hidden');
+      rafraichirJeu();
+    } catch(e){ alert(e.message); }
+  });
+
+  el('btn-verifier-victoire').addEventListener('click', () => {
+    verifierVictoireBilanMatin(state.partie.manche >= 5);
+    rafraichirJeu();
+  });
+  el('btn-manche-suivante').addEventListener('click', passerMancheSuivante);
+
+  el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
+  el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
+
+  el('btn-resume').addEventListener('click', () => {
+    const saved = chargerDepuisStorage();
+    if (saved) { state = saved; el('resume-card').style.display = 'none'; rafraichirJeu(); }
+  });
+  el('btn-discard').addEventListener('click', () => {
+    localStorage.removeItem(STORAGE_KEY);
+    el('resume-card').style.display = 'none';
+  });
+}
+
+function init(){
+  initEvenements();
+  genererLignesJoueurs();
+  const saved = chargerDepuisStorage();
+  if (saved && saved.partie && saved.partie.enCours){
+    el('resume-card').style.display = 'block';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+})();
+</script>
+</body>
+</html>
