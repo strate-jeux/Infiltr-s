@@ -2,7 +2,7 @@
 
 ## Diaporama interactif — Cahier des charges
 
-Version 1 — à remettre à Claude Code, lot par lot, avec le Règlement v2
+Version 1.1 — mécanique des défis en QCM auto-corrigés (voir Annexe) — à remettre à Claude Code, lot par lot, avec le Règlement v2
 
 ## 1. Objet et principes directeurs
 
@@ -37,6 +37,7 @@ Repli si la double fenêtre est impossible (projection dupliquée) : un « voile
 | Partie     | manche (0–5), phase (travail / conseil / nuit / matin), tentativeRévocationUtilisée (bool, par manche), conséquenceDéfisEnAttente (indice / statuquo / alerte / panique), paliersMeridianAnnoncés \[15, 25, 35, 45\], journal des événements, pile d'annulation                                                                                                         | L'état complet doit être sérialisable en JSON (sauvegarde, export, simulation).                   |
 | Joueur     | prénom, service (RH / Commercial / Finance), part (en millièmes de %), statut (actif / gelé / révoqué), camp (honnête / infiltré — SECRET), rôle (associé / DRH / Avocat / DAF / Président / Juriste — SECRET jusqu'à révélation), révélé (bool), flags : protégéCetteNuit, protégéNuitPrécédente, miseÀPiedManche (n° de manche concernée), mandataireDuJuriste (bool) | Le Président est un attribut transférable : champ présidentActuel au niveau Partie, réassignable. |
 | Meridian   | part (en millièmes de %)                                                                                                                                                                                                                                                                                                                                                | Démarre à 1,000 % exactement.                                                                     |
+| Défi       | manche (1–5), service (RH / Commercial / Finance), choix (libellés A, B, C… selon le défi), réponseCorrecte (lettre — SECRET, jamais affichée sur la Scène), réponseÉquipe (lettre saisie par l'animateur, vide tant que non joué), réussi (bool, dérivé automatiquement : réponseÉquipe = réponseCorrecte)                                                          | Banque de 15 défis préchargée (5 manches × 3 services), fixe en v1 — voir Annexe. Seules réponseCorrecte et réponseÉquipe sont utiles au moteur ; l'énoncé reste sur la fiche papier. |
 
 **Arithmétique :** tous les calculs internes se font en millièmes de pourcent (entiers), jamais en flottants. Affichage arrondi au dixième de %. Invariant permanent, vérifié après chaque action : somme des parts des joueurs non révoqués + Meridian = 100,000 % exactement. Les restes d'arrondi d'une répartition sont attribués par la méthode du plus fort reste. Toute violation de l'invariant déclenche une alerte visible en Console.
 
@@ -70,6 +71,8 @@ Repli si la double fenêtre est impossible (projection dupliquée) : un « voile
 
 ## 4.4 Alerte et Panique (conséquences des défis)
 
+- **Saisie et correction automatique (QCM) :** pour chaque défi joué, la Console affiche les choix possibles (A, B, C…) issus de la banque de défis ; l'animateur clique la réponse donnée par l'équipe. Comparaison immédiate à la réponse correcte stockée : aucune saisie manuelle de « réussi » ou « échoué ». Le résultat individuel de chaque défi et la bonne réponse ne s'affichent qu'en Console ; seul le bilan agrégé des 3 défis passe sur la Scène.
+
 - Bilan des 3 défis d'une manche : 3 réussis → Indice (révélé immédiatement, avant le vote de la même manche) ; 2/1 → rien ; 1/2 → Alerte (4,000 points) ; 0/3 → Panique (8,000 points). Les valeurs 4 et 8 sont des constantes de configuration modifiables en Console (calibrage playtest).
 
 - Le transfert vers Meridian est appliqué et annoncé au bilan du matin suivant : chaque joueur de l'assiette (actifs + Juriste saboté) cède part_i × montant ÷ somme(assiette). Prélèvement strictement proportionnel, restes au plus fort reste.
@@ -91,7 +94,7 @@ Repli si la double fenêtre est impossible (projection dupliquée) : un « voile
 | S0 — Accueil                      | Logo INFILTRÉS / STRATÉJEUX. Piloté par la Console : Nouvelle partie / Reprendre la partie.                                                                                                                                                                                                                                                                                                                                       |
 | S1 — Le conseil (tableau de bord) | Écran par défaut entre les temps forts. Camembert du capital (une part par joueur, tranche Meridian gris anthracite), liste des joueurs avec statut (actif / sous séquestre / révoqué, rôle si révélé), n° de manche et phase en cours, badge Président. Bandeau permanent rappelant le dernier événement.                                                                                                                        |
 | S2 — Lettre d'intention           | Manche 0. Mise en scène « courrier » : le texte intégral de la lettre (Règlement v2), affiché progressivement. Déclenche l'apparition de la tranche Meridian à 1 % sur le camembert.                                                                                                                                                                                                                                              |
-| S3 — Phase de travail             | Titre de la manche, rappel des 3 services, chronomètre de défi configurable (durée réglée en Console, alerte sonore optionnelle). La saisie des résultats se fait en Console ; si Indice : affichage immédiat de l'indice choisi, plein écran.                                                                                                                                                                                    |
+| S3 — Phase de travail             | Titre de la manche, rappel des 3 services, chronomètre de défi configurable (durée réglée en Console, alerte sonore optionnelle). Pour chaque service, la Console affiche les choix A/B/C… du défi en cours ; l'animateur clique la réponse donnée par l'équipe, comparée aussitôt à la bonne réponse (juste/faux visible en Console uniquement). Une fois les 3 défis saisis, le bilan de la manche est calculé automatiquement ; si Indice : affichage immédiat de l'indice choisi, plein écran. |
 | S4 — Conseil & AG                 | Étape a) Motion : nom du suspect proposé et de son « second » (saisis en Console). Étape b) Débat : chronomètre 5:00. Étape c) Vote : barre de progression du « Pour » en % des actions votantes, seuil 50 % marqué ; résultat ; si révocation : révélation de la carte (camp + rôle) puis animation de redistribution du camembert.                                                                                              |
 | S5 — Voile de nuit                | Visuel sombre « NOVENTIS dort » ; aucun secret. Pendant ce temps, l'animateur traite la nuit en Console.                                                                                                                                                                                                                                                                                                                          |
 | S6 — Bilan du matin               | Séquence ordonnée, avancée manuellement : 1) scénario de sabotage de la manche (textes du Règlement v2) avec révélation de la carte du saboté — ou « nuit calme » ; 2) communiqué Meridian (Alerte ou Panique) avec animation du camembert ; 3) annonce de palier si 15 / 25 / 35 / 45 % vient d'être franchi (chaque palier ne s'annonce qu'une fois) ; 4) vérification de victoire — si déclenchée, transition directe vers S7. |
@@ -104,6 +107,8 @@ Repli si la double fenêtre est impossible (projection dupliquée) : un « voile
 - **Saisie secrète (après distribution physique des cartes) :** camp de chaque joueur, détenteurs des 5 rôles, Président initial. Contrôles de cohérence : nombre d'infiltrés conforme, rôles à pouvoir honnêtes sauf éventuellement le Président, un rôle par joueur maximum.
 
 - **Panneau de nuit :** protection de l'Avocat (contrôles : pas lui-même, pas deux nuits de suite la même personne), cible du sabotage, mise à pied DRH (1×/partie — marque le joueur exclu du défi de son service à la manche suivante, annoncé sobrement au matin), enquête DAF (1×/manche — affiche à l'animateur seul le rôle exact du joueur désigné, pour transmission discrète au DAF).
+
+- **Panneau de défi :** pour chacun des 3 services de la manche, affichage des choix (A, B, C…) préchargés depuis la banque de défis ; un clic sur la réponse donnée par l'équipe déclenche la comparaison automatique à la réponse correcte (juste / faux affiché immédiatement, visible en Console seulement). Une fois les 3 défis de la manche saisis, calcul automatique du bilan (indice / statu quo / alerte / panique).
 
 - **Panneau de vote :** liste des votants avec leurs parts, saisie Pour / Contre / Abstention, calcul en direct, bouton de validation.
 
@@ -136,7 +141,7 @@ La Console comporte un mode simulation : création instantanée d'une partie fic
 ## 9. Découpage en 3 lots — ordre impératif
 
 | **Lot**                           | **Périmètre**                                                                                                                                                                                                                        | **Critère de recette (« terminé quand »)**                                                                                                                                               |
-|-----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Lot 1 — Moteur de capital         | Modèle de données, arithmétique en millièmes, attribution initiale, les 4 actions (sabotage, révocation, alerte, panique), camembert SVG, vérification de victoire, sauvegarde / reprise / export JSON, annulation, mode simulation. | Les tests T1 à T5 passent ; une partie simulée complète se déroule sans violation d'invariant ; fermer et rouvrir le navigateur restaure la partie exactement.                           |
 | Lot 2 — Déroulé et double fenêtre | Scène + Console synchronisées, tous les écrans S0–S7 en version sobre, saisie secrète, panneau de nuit avec tous les contrôles (Avocat, Juriste-procuration, DRH, DAF), panneau de vote pondéré, chronomètres, journal.              | Une partie test réelle à 3 personnes (animateur + 2 « joueurs ») se joue de bout en bout sans toucher au code ni ouvrir la console du navigateur ; aucun secret n'apparaît sur la Scène. |
 | Lot 3 — Habillage narratif        | Identité visuelle, textes du Règlement v2 intégrés, animations, sons optionnels, récapitulatif de fin pour le débriefing.                                                                                                            | Relecture complète des textes projetés ; test de lisibilité en conditions réelles de projection ; les lots 1 et 2 fonctionnent à l'identique.                                            |
@@ -147,8 +152,30 @@ Méthode de travail avec Claude Code : fournir à chaque session ce cahier des c
 
 - Combos de défis, variantes de règles, mode « moins de 8 joueurs ».
 
-- Affichage des fiches de défis dans le diaporama (elles restent sur papier).
+- Affichage des fiches de défis dans le diaporama (les énoncés restent sur papier ; seuls les choix de réponse A/B/C… sont recopiés en Console pour la saisie).
 
 - Multijoueur en réseau, application mobile, multilingue.
 
 - Statistiques inter-parties (pourra venir en v2 pour le calibrage).
+
+## Annexe — Banque de défis (corrigé QCM)
+
+Contenu des 15 fiches défis (Manche 1 à 5 × RH / Finance / Commercial), fourni séparément en fiches imprimables (Infiltres_Fiches_Defis). Ce tableau donne la réponse correcte de chaque QCM et son nombre de choix (variable selon la manche), à charger dans la banque de défis du moteur (§3). En cas de correction du contenu d'un défi, mettre à jour la fiche papier et cette réponse en parallèle.
+
+| **Manche** | **Service**  | **Choix** | **Bonne réponse**                          |
+|------------|--------------|-----------|---------------------------------------------|
+| Manche 1   | RH           | A–C       | A — Faute grave                             |
+| Manche 1   | Finance      | A–C       | A — Faute de gestion                        |
+| Manche 1   | Commercial   | A–C       | A — Relation commerciale établie            |
+| Manche 2   | RH           | A–D       | D — Licenciement pour faute grave           |
+| Manche 2   | Finance      | A–D       | A — Conciliation                            |
+| Manche 2   | Commercial   | A–D       | B — Franchise                               |
+| Manche 3   | RH           | A–B       | B — Plan de résorption de l'absentéisme     |
+| Manche 3   | Finance      | A–B       | B — Plan de recouvrement                    |
+| Manche 3   | Commercial   | A–B       | B — Programme de fidélisation               |
+| Manche 4   | RH           | A–B       | A — M. [J] (le salarié)                     |
+| Manche 4   | Finance      | A–B       | B — Le liquidateur                          |
+| Manche 4   | Commercial   | A–B       | A — La société L'Amy                        |
+| Manche 5   | RH           | A–F       | C — SARL                                    |
+| Manche 5   | Finance      | A–F       | B — SA                                      |
+| Manche 5   | Commercial   | A–F       | D — SAS                                     |
