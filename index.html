@@ -572,7 +572,8 @@ function etatInitial(){
       lettreAffichee: false,
       miseAPiedDrhUtilisee: false,
       enqueteDafParManche: {},
-      dernierEvenementNuitPublic: null, // {type, prenom?, camp?, role?} — construit à partir de champs déjà révélés
+      dernierEvenementNuitPublic: null, // {type, prenom?, camp?, role?} — retenu hors projection Scène tant que non officiellement annoncé (cf. idsEnAttenteAnnonce)
+      idsEnAttenteAnnonce: [], // ids des joueurs révélés cette nuit mais pas encore annoncés au bilan du matin (S6 étape 1)
       etapeBilanMatin: 0, // 0..4, avancement de la séquence S6
       motion: null, // {suspectId, suspectPrenom, secondId, secondPrenom}
       chrono: null, // {type:'defi'|'debat', finAt, dureeTotale, actif}
@@ -658,6 +659,9 @@ function verifierVictoireBilanMatin(dernierBilan){
   const total = sommeInfiltres + state.meridian.part;
   if (total > 50000){
     state.partie.victoire = { type: 'meridian', manche: state.partie.manche };
+    // Victoire Meridian : « les infiltrés se révèlent » (Règlement v2) — toutes
+    // les cartes sont désormais publiques, y compris celles jamais sabotées/révoquées.
+    state.joueurs.forEach(j => { j.revele = true; });
     ajouterJournal('victoire', 'Meridian et ses agents dépassent 50 % du capital. Victoire Meridian.');
     return state.partie.victoire;
   }
@@ -697,8 +701,14 @@ function actionSabotage(cibleId, estProtegeOverride){
   if (estProtege){
     ajouterJournal('nuit_calme', `Nuit calme : ${cible.prenom} était visé(e) mais protégé(e) par référé. Le sabotage est annulé.`);
     state.partie.dernierEvenementNuitPublic = { type: 'nuit_calme' };
+    state.partie.idsEnAttenteAnnonce = [];
   } else {
     cible.revele = true;
+    // La carte est révélée dès maintenant côté moteur (règle du jeu), mais son
+    // annonce côté Scène reste retenue jusqu'à l'étape 1 du bilan du matin
+    // (cf. idsEnAttenteAnnonce, filtré dans etatPublicPourScene) : la Scène ne
+    // doit jamais recevoir cette donnée avant le moment officiel de révélation.
+    state.partie.idsEnAttenteAnnonce = [cible.id];
     if (cible.role === 'juriste'){
       // Exception Juriste : pas de séquestre, ses titres restent votants (procuration à désigner).
       ajouterJournal('sabotage_juriste', `${cible.prenom} (Juriste) est saboté(e). Ses titres échappent au séquestre : une procuration doit être désignée.`);
@@ -967,7 +977,8 @@ function avancerBilanMatin(){
   state.partie.phase = 'matin';
   state.partie.ecranActuel = 's6';
   if (etape === 0){
-    state.partie.etapeBilanMatin = 1; // sabotage/nuit calme déjà en dernierEvenementNuitPublic
+    state.partie.etapeBilanMatin = 1; // annonce officielle : la Scène peut désormais recevoir la révélation
+    state.partie.idsEnAttenteAnnonce = [];
   } else if (etape === 1){
     traiterConsequenceMatin();
     state.partie.etapeBilanMatin = 2;
@@ -1091,9 +1102,17 @@ try { canalSync = new BroadcastChannel(CHANNEL_NAME); } catch(e){ canalSync = nu
 
 // Projection strictement publique de l'état : aucun camp/rôle non révélé, aucune
 // réponse de défi, aucun journal, aucune donnée de la pile d'annulation.
+//
+// Point d'attention : le moteur bascule joueur.revele à true dès l'instant du
+// sabotage (règle du jeu — la carte "tombe" immédiatement, indépendamment de
+// la mise en scène), mais l'annonce à la Scène doit attendre l'étape 1 du
+// bilan du matin (avancerBilanMatin). idsEnAttenteAnnonce retient donc, entre
+// ces deux moments, les joueurs dont la révélation ne doit PAS encore être
+// transmise — ni via dernierEvenementNuitPublic, ni via la liste des joueurs.
 function etatPublicPourScene(){
   if (!state) return null;
   const defisManche = state.partie.enCours ? defisDeLaManche(state.partie.manche) : [];
+  const enAttenteIds = state.partie.idsEnAttenteAnnonce || [];
   return {
     enCours: state.partie.enCours,
     manche: state.partie.manche,
@@ -1103,7 +1122,7 @@ function etatPublicPourScene(){
     victoire: state.partie.victoire,
     indiceTexte: state.partie.indiceTexte,
     lettreAffichee: state.partie.lettreAffichee,
-    dernierEvenementNuitPublic: state.partie.dernierEvenementNuitPublic,
+    dernierEvenementNuitPublic: enAttenteIds.length ? null : state.partie.dernierEvenementNuitPublic,
     consequenceAnnoncee: state.partie.derniereAnnonceMatin || null,
     etapeBilanMatin: state.partie.etapeBilanMatin,
     chrono: state.partie.chrono,
@@ -1111,12 +1130,16 @@ function etatPublicPourScene(){
     voteEnCours: state.partie.voteEnCours,
     meridian: { part: state.meridian.part },
     defisManche: defisManche.map(d => ({ service: d.service, repondu: d.reponseEquipe !== null })),
-    joueurs: state.joueurs.map(j => ({
-      id: j.id, prenom: j.prenom, service: j.service, part: j.part,
-      statutCapital: j.statutCapital, revele: j.revele,
-      camp: j.revele ? j.camp : null,
-      role: j.revele ? j.role : null
-    }))
+    joueurs: state.joueurs.map(j => {
+      const enAttente = enAttenteIds.includes(j.id);
+      const revelePourScene = j.revele && !enAttente;
+      return {
+        id: j.id, prenom: j.prenom, service: j.service, part: j.part,
+        statutCapital: j.statutCapital, revele: revelePourScene,
+        camp: revelePourScene ? j.camp : null,
+        role: revelePourScene ? j.role : null
+      };
+    })
   };
 }
 
@@ -1766,11 +1789,26 @@ function renderScene(root, pub){
     };
     const [titre, texte] = textes[pub.victoire.type] || ['Fin de partie', ''];
     const svgId = 's7-camembert-' + Math.random().toString(36).slice(2,7);
-    s7.innerHTML = `<h1>${titre}</h1><p>${texte}</p><svg id="${svgId}" viewBox="0 0 320 320" width="300" height="300"></svg>`;
+    const listeId = 's7-liste-' + Math.random().toString(36).slice(2,7);
+    s7.innerHTML = `<h1>${titre}</h1><p>${texte}</p>
+      <div class="scene-camembert-wrap">
+        <svg id="${svgId}" viewBox="0 0 320 320" width="300" height="300"></svg>
+        <div class="scene-liste-joueurs" id="${listeId}"></div>
+      </div>`;
     const svgS7 = document.getElementById(svgId);
     if (svgS7){
       const segments = construireSegmentsCamembert(pub.joueurs, pub.meridian.part);
       dessinerCamembertSVG(svgS7, segments, 160, 160, 145, true);
+    }
+    const listeS7 = document.getElementById(listeId);
+    if (listeS7){
+      // Chaque camp/rôle affiché ici provient exclusivement de pub.joueurs, où camp/role
+      // ne sont jamais renseignés (null) tant que revele n'est pas passé à true côté moteur —
+      // aucune carte non révélée ne peut donc apparaître, y compris à l'écran de fin.
+      listeS7.innerHTML = pub.joueurs.map(j => {
+        const roleTxt = j.revele ? ` — ${j.camp === 'infiltre' ? 'INFILTRÉ' : 'honnête'}` : ' — carte non révélée';
+        return `<div class="j"><span>${j.prenom}${roleTxt}</span><span>${formatPct(j.part)}</span></div>`;
+      }).join('');
     }
   }
 }
@@ -1866,7 +1904,7 @@ function construireEtatTest(defsJoueurs, meridianPart, config){
       presidentActuelId: null, presidentVacant: false, victoire: null, alerteInvariant: null,
       journal: [], consequenceDefisEnAttente: null, indiceTexte: null, lettreAffichee: false,
       miseAPiedDrhUtilisee: false, enqueteDafParManche: {}, dernierEvenementNuitPublic: null,
-      etapeBilanMatin: 0, motion: null, chrono: null, voteEnCours: null
+      idsEnAttenteAnnonce: [], etapeBilanMatin: 0, motion: null, chrono: null, voteEnCours: null
     },
     joueurs: defsJoueurs.map((d, i) => ({
       id: 't' + i, prenom: d.prenom || ('T' + i), service: d.service || 'RH',
