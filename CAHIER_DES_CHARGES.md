@@ -160,22 +160,22 @@ Méthode de travail avec Claude Code : fournir à chaque session ce cahier des c
 
 ## Annexe — Banque de défis (corrigé QCM)
 
-Contenu des 15 fiches défis (Manche 1 à 5 × RH / Finance / Commercial), fourni séparément en fiches imprimables. Ce tableau donne uniquement la réponse correcte de chaque QCM, à charger dans la banque de défis du moteur (§3). En cas de correction du contenu d'un défi, mettre à jour la fiche papier et cette réponse en parallèle.
+Contenu des 15 fiches défis (Manche 1 à 5 × RH / Finance / Commercial), fourni séparément en fiches imprimables (Infiltres_Fiches_Defis). Ce tableau donne la réponse correcte de chaque QCM et son nombre de choix (variable selon la manche), à charger dans la banque de défis du moteur (§3). En cas de correction du contenu d'un défi, mettre à jour la fiche papier et cette réponse en parallèle.
 
-| **Manche** | **Service**  | **Bonne réponse**                          |
-|------------|--------------|---------------------------------------------|
-| Manche 1   | RH           | A — Faute grave                             |
-| Manche 1   | Finance      | A — Faute de gestion                        |
-| Manche 1   | Commercial   | A — Relation commerciale établie            |
-| Manche 2   | RH           | D — Licenciement pour faute grave           |
-| Manche 2   | Finance      | A — Conciliation                            |
-| Manche 2   | Commercial   | B — Franchise                               |
-| Manche 3   | RH           | B — Plan de résorption de l'absentéisme     |
-| Manche 3   | Finance      | B — Plan de recouvrement                    |
-| Manche 3   | Commercial   | B — Programme de fidélisation               |
-| Manche 4   | RH           | A — M. [J] (le salarié)                     |
-| Manche 4   | Finance      | B — Le liquidateur                          |
-| Manche 4   | Commercial   | A — La société L'Amy                        |
-| Manche 5   | RH           | C — SARL                                    |
-| Manche 5   | Finance      | B — SA                                      |
-| Manche 5   | Commercial   | D — SAS                                     |
+| **Manche** | **Service**  | **Choix** | **Bonne réponse**                          |
+|------------|--------------|-----------|---------------------------------------------|
+| Manche 1   | RH           | A–C       | A — Faute grave                             |
+| Manche 1   | Finance      | A–C       | A — Faute de gestion                        |
+| Manche 1   | Commercial   | A–C       | A — Relation commerciale établie            |
+| Manche 2   | RH           | A–D       | D — Licenciement pour faute grave           |
+| Manche 2   | Finance      | A–D       | A — Conciliation                            |
+| Manche 2   | Commercial   | A–D       | B — Franchise                               |
+| Manche 3   | RH           | A–B       | B — Plan de résorption de l'absentéisme     |
+| Manche 3   | Finance      | A–B       | B — Plan de recouvrement                    |
+| Manche 3   | Commercial   | A–B       | B — Programme de fidélisation               |
+| Manche 4   | RH           | A–B       | A — M. [J] (le salarié)                     |
+| Manche 4   | Finance      | A–B       | B — Le liquidateur                          |
+| Manche 4   | Commercial   | A–B       | A — La société L'Amy                        |
+| Manche 5   | RH           | A–F       | C — SARL                                    |
+| Manche 5   | Finance      | A–F       | B — SA                                      |
+| Manche 5   | Commercial   | A–F       | D — SAS                                     |

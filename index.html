@@ -518,27 +518,27 @@ const ROLE_LABELS = {
 const PRENOMS_FICTIFS = ['Alice','Baptiste','Camille','Diane','Émile','Farah','Gabin','Hana',
   'Idris','Julia','Karim','Léa','Malo','Nora','Otis','Priya','Quentin','Rania','Sacha','Théo'];
 
-// Banque de défis v1 — corrigé issu de l'annexe du cahier des charges v1.1.
-// Hypothèse documentée (Lot 2) : nbChoix = 4 (A–D) pour les 15 défis, la lettre la
-// plus haute observée dans le corrigé étant D. Ajustable en Console si les fiches
-// imprimées définitives comportent moins d'options pour un défi donné.
+// Banque de défis v1 — d'après les fiches défis imprimables définitives
+// (Infiltres_Fiches_Defis) et le corrigé de l'annexe du cahier des charges v1.1.
+// nbChoix varie réellement par manche : 3 choix (M1), 4 (M2), 2 (M3 et M4,
+// choix d'options A/B), 6 (M5, formes juridiques A à F).
 const BANQUE_DEFIS_DEFAUT = [
-  { manche: 1, service: 'RH', reponseCorrecte: 'A' },
-  { manche: 1, service: 'Finance', reponseCorrecte: 'A' },
-  { manche: 1, service: 'Commercial', reponseCorrecte: 'A' },
-  { manche: 2, service: 'RH', reponseCorrecte: 'D' },
-  { manche: 2, service: 'Finance', reponseCorrecte: 'A' },
-  { manche: 2, service: 'Commercial', reponseCorrecte: 'B' },
-  { manche: 3, service: 'RH', reponseCorrecte: 'B' },
-  { manche: 3, service: 'Finance', reponseCorrecte: 'B' },
-  { manche: 3, service: 'Commercial', reponseCorrecte: 'B' },
-  { manche: 4, service: 'RH', reponseCorrecte: 'A' },
-  { manche: 4, service: 'Finance', reponseCorrecte: 'B' },
-  { manche: 4, service: 'Commercial', reponseCorrecte: 'A' },
-  { manche: 5, service: 'RH', reponseCorrecte: 'C' },
-  { manche: 5, service: 'Finance', reponseCorrecte: 'B' },
-  { manche: 5, service: 'Commercial', reponseCorrecte: 'D' }
-].map((d, i) => ({ id: 'defi_' + i, manche: d.manche, service: d.service, nbChoix: 4,
+  { manche: 1, service: 'RH', nbChoix: 3, reponseCorrecte: 'A' },
+  { manche: 1, service: 'Finance', nbChoix: 3, reponseCorrecte: 'A' },
+  { manche: 1, service: 'Commercial', nbChoix: 3, reponseCorrecte: 'A' },
+  { manche: 2, service: 'RH', nbChoix: 4, reponseCorrecte: 'D' },
+  { manche: 2, service: 'Finance', nbChoix: 4, reponseCorrecte: 'A' },
+  { manche: 2, service: 'Commercial', nbChoix: 4, reponseCorrecte: 'B' },
+  { manche: 3, service: 'RH', nbChoix: 2, reponseCorrecte: 'B' },
+  { manche: 3, service: 'Finance', nbChoix: 2, reponseCorrecte: 'B' },
+  { manche: 3, service: 'Commercial', nbChoix: 2, reponseCorrecte: 'B' },
+  { manche: 4, service: 'RH', nbChoix: 2, reponseCorrecte: 'A' },
+  { manche: 4, service: 'Finance', nbChoix: 2, reponseCorrecte: 'B' },
+  { manche: 4, service: 'Commercial', nbChoix: 2, reponseCorrecte: 'A' },
+  { manche: 5, service: 'RH', nbChoix: 6, reponseCorrecte: 'C' },
+  { manche: 5, service: 'Finance', nbChoix: 6, reponseCorrecte: 'B' },
+  { manche: 5, service: 'Commercial', nbChoix: 6, reponseCorrecte: 'D' }
+].map((d, i) => ({ id: 'defi_' + i, manche: d.manche, service: d.service, nbChoix: d.nbChoix,
   reponseCorrecte: d.reponseCorrecte, reponseEquipe: null, reussi: null }));
 
 function clonerBanqueDefis(){
