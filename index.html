@@ -1265,6 +1265,34 @@ function rendreGrilleJoueurs(containerEl, joueurs, onClick, selectedIds){
 let indexParagrapheLettre = 0;
 let indexCartePreview = 0;
 
+// Textes du Règlement v3 — intégrés tels quels (lettre d'intention, scénarios
+// de sabotage, communiqués Meridian, annonces de palier, textes de fin).
+const SCENARIOS_SABOTAGE = {
+  1: { titre: "Audition par les enquêteurs", texte: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition se prolonge. Suspension immédiate, en attendant la fin de la procédure : {prenom} ne siège plus, ne vote plus, et ses titres sont placés sous séquestre." },
+  2: { titre: "Contrôle de conformité", texte: "Ce matin, les autorités lancent un contrôle de conformité sur le travail de {prenom}. Par précaution, ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin du contrôle." },
+  3: { titre: "Fuite de documents confidentiels", texte: "Cette nuit, des documents confidentiels ont fuité. Ils mettent directement en cause {prenom}. Le conseil prononce sa mise en retrait immédiate. Ses titres sont placés sous séquestre le temps de la procédure." },
+  4: { titre: "Cyberattaque ciblée", texte: "Une cyberattaque a paralysé une partie des outils de l'entreprise cette nuit. Elle a été tracée jusqu'aux accès de {prenom}. Ses accès sont coupés, ses fonctions suspendues, ses titres placés sous séquestre." },
+  5: { titre: "Perquisition au siège", texte: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves. Ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin de l'instruction." }
+};
+
+function texteScenarioSabotage(manche, prenom){
+  const s = SCENARIOS_SABOTAGE[manche];
+  if (!s) return { titre: 'Sabotage', texte: '' };
+  return { titre: s.titre, texte: s.texte.replace(/\{prenom\}/g, prenom) };
+}
+
+const COMMUNIQUES_MERIDIAN = {
+  alerte: "La journée d'hier a inquiété les associés. Ce matin, plusieurs d'entre eux ont vendu une partie de leurs parts. L'acheteur : le Fonds Meridian. Il a tout payé comptant. Son cabinet confirme simplement : nous continuons nos achats.",
+  panique: "Hier, c'était la panique. Ce matin, les ventes se multiplient — et Meridian achète tout, sans discuter. Sa part du capital vient de faire un bond. Son message tient en une ligne : nous serons majoritaires avant la fin de la semaine."
+};
+
+const ANNONCES_PALIER = {
+  15: "Meridian dépasse 15 % du capital. Son avocat demande au conseil la communication des comptes. C'est son droit d'associé : le conseil s'exécute. Rien d'autre ne change.",
+  25: "Meridian dépasse 25 %. Il exige un siège au conseil d'administration. Le conseil refuse. Meridian n'insiste pas — pour l'instant.",
+  35: "Meridian dépasse 35 %. Il promet un bon prix à tout associé qui voudrait vendre. Le conseil appelle chacun à tenir bon.",
+  45: "Meridian dépasse 45 %. Ses avocats l'annoncent : dès qu'il sera majoritaire, il convoquera une assemblée générale et prendra les commandes. Chaque part compte désormais."
+};
+
 const PARAGRAPHES_LETTRE = [
   "Mesdames, Messieurs les membres du conseil,",
   "le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle.",
@@ -1801,9 +1829,10 @@ function afficherMatinSabotage(){
     return;
   }
   const cible = getJoueur(evt.joueurId);
+  const scenario = texteScenarioSabotage(state.partie.manche, cible.prenom);
   carteEcran(`
-    <h2>Bilan du matin</h2>
-    <div class="texte-narratif" style="text-align:center;">Une procédure visant ${cible.prenom} a abouti cette nuit (texte définitif du Règlement v2 — Lot 3).</div>
+    <h2>Bilan du matin — ${scenario.titre}</h2>
+    <div class="texte-narratif" style="text-align:center;">${scenario.texte}</div>
     <div class="carte-reveal infiltre">${cible.prenom} était... ${ROLE_LABELS[cible.role]}</div>
     <button id="btn-suivant-scene" style="margin-top:16px;">Suivant</button>
   `);
@@ -1833,11 +1862,8 @@ function afficherMatinCommunique(){
   const paliers = state.partie.palierVenantDetreFranchis || [];
   carteEcran(`
     <h2>Communiqué Meridian</h2>
-    <div class="texte-narratif" style="text-align:center;">
-      Communiqué ${type === 'panique' ? 'Panique' : 'Alerte'} (texte définitif du Règlement v2 — Lot 3).
-      Meridian détient désormais ${formatPct(state.meridian.part)} du capital.
-    </div>
-    ${paliers.length ? `<div class="banner info">${paliers.map(s => `Meridian dépasse ${s} % du capital (annonce définitive — Lot 3).`).join('<br>')}</div>` : ''}
+    <div class="texte-narratif" style="text-align:center;">${COMMUNIQUES_MERIDIAN[type] || ''}</div>
+    ${paliers.length ? `<div class="banner info">${paliers.map(s => ANNONCES_PALIER[s]).join('<br><br>')}</div>` : ''}
     <button id="btn-suivant-scene">Suivant</button>
   `);
   el('btn-suivant-scene').addEventListener('click', () => { state.partie.palierVenantDetreFranchis = []; finBilanMatin(); });
@@ -1855,9 +1881,9 @@ function finBilanMatin(){
    ============================================================ */
 
 const TEXTES_FIN = {
-  meridian: "Le Fonds Meridian et ses agents détiennent la majorité du capital. Les infiltrés se révèlent. Meridian prend le contrôle de NOVENTIS. (Texte définitif du Règlement v2 — Lot 3.)",
-  honnete_anticipee: "Tous les infiltrés ont été démasqués et révoqués. NOVENTIS est sauvée. (Texte définitif du Règlement v2 — Lot 3.)",
-  honnete_finale: "Le chevalier blanc entre au capital et recapitalise NOVENTIS. (Texte définitif du Règlement v2 — Lot 3.)"
+  meridian: "Le Fonds Meridian et ses agents détiennent la majorité du capital. Les infiltrés se révèlent. Meridian prend le contrôle de NOVENTIS — exactement comme sa lettre l'annonçait. La partie est terminée.",
+  honnete_anticipee: "Tous les infiltrés ont été démasqués et révoqués. Privé de ses agents, Meridian ne trouve plus de vendeurs. NOVENTIS est sauvée.",
+  honnete_finale: "Cinq jours ont passé. Meridian n'a pas atteint la majorité. Ce matin, le chevalier blanc entre au capital et recapitalise NOVENTIS. L'entreprise est sauvée. Meridian jette l'éponge."
 };
 const TITRES_FIN = {
   meridian: 'Victoire Meridian',
