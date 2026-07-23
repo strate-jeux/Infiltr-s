@@ -1,162 +1,293 @@
-## INFILTRÉS
+# INFILTRÉS — Diaporama interactif pour l'animateur
 
-## Diaporama interactif — Cahier des charges
+**Cahier des charges — Version 2**
 
-Version 1.1 — mécanique des défis en QCM auto-corrigés (voir Annexe) — à remettre à Claude Code, lot par lot, avec le Règlement v2
+À remettre à Claude Code, lot par lot, avec le Règlement v2. Cette version 2 remplace l'architecture double fenêtre (Scène/Console) par une **fenêtre unique**, et actualise l'habillage visuel sur la base des cartes physiques du jeu. Le modèle de données, l'arithmétique et les tests d'acceptation (§3, §4, §8) restent inchangés sauf mention contraire ci-dessous. Le document de référence des règles reste le Règlement v2 ; en cas de contradiction, le règlement prime.
+
+---
 
 ## 1. Objet et principes directeurs
 
-Application web pilotant une partie complète d'INFILTRÉS : attribution et affichage du capital, déroulé des phases, votes pondérés, mouvements de capital vers le Fonds Meridian, vérification automatique des conditions de victoire, habillage narratif. Un seul opérateur : l'animateur. Un seul écran public : le vidéoprojecteur. Le document de référence des règles est le Règlement v2 ; en cas de contradiction, le règlement prime.
+Application web pilotant une partie complète d'INFILTRÉS : attribution et affichage du capital, déroulé des phases, votes pondérés, mouvements de capital vers le Fonds Meridian, vérification automatique des conditions de victoire, habillage narratif. Un seul opérateur : l'animateur, qui **clique — il ne saisit jamais de texte libre**. Tout le contenu (questions, QCM, réponses, textes narratifs, durées de chronomètre) est préchargé dans le fichier.
 
-## Principes non négociables
+**Principes non négociables**
 
-- **Un seul fichier HTML autonome** (HTML + CSS + JS embarqués, aucune dépendance CDN, aucun appel réseau). Doit fonctionner ouvert en local (file://) comme hébergé sur GitHub Pages, entièrement hors ligne une fois chargé. Le camembert est dessiné en SVG maison — pas de bibliothèque graphique externe.
-
+- **Un seul fichier HTML autonome** (HTML + CSS + JS embarqués, aucune dépendance CDN, aucun appel réseau, images encodées en base64 dans le fichier). Doit fonctionner ouvert en local (`file://`) comme hébergé sur GitHub Pages, entièrement hors ligne une fois chargé. Le camembert est dessiné en SVG maison — pas de bibliothèque graphique externe.
+- **Fenêtre unique, projetée directement.** Il n'y a plus de séparation Scène/Console : un seul écran, celui que l'animateur pilote, est celui qui est projeté. La confidentialité ne repose plus sur une séparation technique mais sur le déroulé du jeu lui-même (yeux fermés pendant la nuit, saisie des rôles faite avant branchement du vidéoprojecteur — voir §2).
 - **Sauvegarde continue :** l'état complet de la partie est enregistré dans le localStorage après chaque action. À l'ouverture, si une partie est en cours, proposer « Reprendre la partie ». En complément : export et import de l'état en fichier JSON téléchargeable (secours en cas de changement de machine).
-
-- **Annulation :** chaque action de jeu empile un instantané de l'état. Bouton « Annuler la dernière action » dans la console animateur, utilisable en cascade jusqu'au début de la partie.
-
-- **Séparation public / secret :** aucune information secrète (camps, rôles, cibles nocturnes) ne doit jamais pouvoir apparaître sur l'écran projeté. Voir architecture double fenêtre, §2.
-
+- **Annulation :** chaque action de jeu empile un instantané de l'état. Un bouton « ◀ Annuler » discret, accessible en permanence, utilisable en cascade jusqu'au début de la partie.
+- **Mode masqué :** un bouton permet à tout moment de cacher l'écran (calque plein écran, fond uni + texte « Préparation en cours »), en filet de sécurité si le vidéoprojecteur est déjà branché pendant une saisie sensible.
 - **Mode simulation** intégré pour la recette : voir §8.
 
-## 2. Architecture d'affichage : double fenêtre
+---
 
-Deux fenêtres synchronisées en temps réel (BroadcastChannel ou équivalent localStorage) :
+## 2. Architecture
 
-- **La Scène** (fenêtre projetée, plein écran 16:9) : camembert, bandeau d'état, écrans narratifs, votes, bilans. Ne contient jamais de commande ni de secret.
+### 2.1 Principe général
 
-- **La Console** (fenêtre sur l'écran du portable de l'animateur) : toutes les commandes, les données secrètes, le journal des événements, l'annulation, les corrections manuelles.
+Une seule page HTML, un seul état de jeu, un déroulé linéaire d'écrans que l'animateur fait avancer par ses clics. La structure visuelle commune à la quasi-totalité des écrans :
 
-Repli si la double fenêtre est impossible (projection dupliquée) : un « voile de nuit » plein écran s'affiche sur la Scène pendant que l'animateur manipule la Console, et la Console peut être masquée d'une touche (Échap). La Console pilote la navigation de la Scène : l'animateur choisit à tout moment quel écran est projeté.
+- **Bandeau haut** : numéro de manche, phase en cours, nombre de joueurs actifs.
+- **Camembert du capital**, affiché en permanence (compact, toujours visible), qui s'anime (transition 800 ms) à chaque mouvement de capital.
+- **Carte centrale** : le contenu propre à l'écran courant (question, choix, résultat...).
+- **Bandeau « Joueurs »** en bas : un bouton par joueur, visuellement grisé + icône si gelé/révoqué.
+- **Historique** dépliable, journal horodaté de tous les événements.
+- **Contrôles animateur**, discrets et toujours accessibles : ◀ Annuler · Masquer.
+
+### 2.2 Confidentialité sans double fenêtre
+
+Le règlement impose qu'aucune information secrète (camps, rôles, cibles nocturnes) n'apparaisse publiquement en dehors des moments de révélation prévus. Sans double fenêtre, cette confidentialité est assurée par :
+
+1. **La saisie des rôles se fait avant de brancher le vidéoprojecteur** (réflexe par défaut).
+2. **Le bouton « Masquer »** (calque plein écran neutre) reste disponible à tout instant en filet de sécurité, y compris pendant la partie si un rôle doit être corrigé.
+3. **Pendant la phase nocturne**, la confidentialité n'est plus technique mais physique : les joueurs honnêtes ferment les yeux ; seul le rôle appelé ouvre les yeux pour agir, exactement comme au Loup-Garou classique. Aucun nom n'est jamais affiché à l'écran pour ces appels (voir §5.6) — l'écran reste neutre, ce sont les joueurs eux-mêmes qui se reconnaissent.
+
+### 2.3 Le camembert du capital
+
+- Tranches **bleues** : tous les joueurs actifs, camp non révélé (l'écrasante majorité du temps).
+- Tranche **rouge** : joueur infiltré, uniquement une fois son camp révélé (sabotage ou révocation).
+- Tranche **noire** : Fonds Meridian.
+- Le camembert ne doit jamais laisser deviner un camp avant sa révélation officielle : tant qu'un joueur n'est pas révélé, sa tranche reste bleue quel que soit son camp réel.
+
+---
 
 ## 3. Modèle de données
 
-| **Entité** | **Champs**                                                                                                                                                                                                                                                                                                                                                              | **Notes**                                                                                         |
-|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| Partie     | manche (0–5), phase (travail / conseil / nuit / matin), tentativeRévocationUtilisée (bool, par manche), conséquenceDéfisEnAttente (indice / statuquo / alerte / panique), paliersMeridianAnnoncés \[15, 25, 35, 45\], journal des événements, pile d'annulation                                                                                                         | L'état complet doit être sérialisable en JSON (sauvegarde, export, simulation).                   |
-| Joueur     | prénom, service (RH / Commercial / Finance), part (en millièmes de %), statut (actif / gelé / révoqué), camp (honnête / infiltré — SECRET), rôle (associé / DRH / Avocat / DAF / Président / Juriste — SECRET jusqu'à révélation), révélé (bool), flags : protégéCetteNuit, protégéNuitPrécédente, miseÀPiedManche (n° de manche concernée), mandataireDuJuriste (bool) | Le Président est un attribut transférable : champ présidentActuel au niveau Partie, réassignable. |
-| Meridian   | part (en millièmes de %)                                                                                                                                                                                                                                                                                                                                                | Démarre à 1,000 % exactement.                                                                     |
-| Défi       | manche (1–5), service (RH / Commercial / Finance), choix (libellés A, B, C… selon le défi), réponseCorrecte (lettre — SECRET, jamais affichée sur la Scène), réponseÉquipe (lettre saisie par l'animateur, vide tant que non joué), réussi (bool, dérivé automatiquement : réponseÉquipe = réponseCorrecte)                                                          | Banque de 15 défis préchargée (5 manches × 3 services), fixe en v1 — voir Annexe. Seules réponseCorrecte et réponseÉquipe sont utiles au moteur ; l'énoncé reste sur la fiche papier. |
+*(Reprend le modèle de la v1, avec les ajustements suivants.)*
 
-**Arithmétique :** tous les calculs internes se font en millièmes de pourcent (entiers), jamais en flottants. Affichage arrondi au dixième de %. Invariant permanent, vérifié après chaque action : somme des parts des joueurs non révoqués + Meridian = 100,000 % exactement. Les restes d'arrondi d'une répartition sont attribués par la méthode du plus fort reste. Toute violation de l'invariant déclenche une alerte visible en Console.
+| Entité | Champs | Notes |
+| --- | --- | --- |
+| Partie | manche (0–5), phase, tentativeRévocationUtilisée (bool, par manche), résolutionsEnCours (liste de 0 à 3 noms), paliers Meridian Annoncés [15, 25, 35, 45], journal des événements, pile d'annulation | Sérialisable en JSON (sauvegarde, export, simulation). |
+| Joueur | prénom, service (RH / Commercial / Finance), part (en millièmes de %, **non éditable manuellement**), statut (actif / gelé / révoqué), **rôle** (associé / DRH / Avocat(e) / DAF / Juriste / infiltré — SECRET), révélé (bool), flags : protégéCetteNuit, protégéNuitPrécédente, miseÀPiedManche, mandataireDuJuriste (bool) | **Le camp n'est plus un champ séparé : il se déduit du rôle** (rôle = « infiltré » → camp infiltré, tout autre rôle → camp honnête). Le Président est un attribut de Partie (`présidentActuel`), assigné en cours de partie et non plus à la Préparation. |
+| Meridian | part (en millièmes de %) | Démarre à 1,000 % exactement. |
+| Défi | manche, service, choix (A/B/C/D préchargés), réponseCorrecte (secrète, préchargée), réponseÉquipe (saisie par tap animateur), réussi (dérivé automatiquement) | Les 15 défis et leur clé de réponse sont préchargés dans le fichier (annexe corrigé, à fusionner depuis la version existante du cahier des charges v1.1). |
+
+**Arithmétique :** tous les calculs internes se font en millièmes de pourcent (entiers), jamais en flottants. Affichage arrondi au dixième de %. Invariant permanent : somme des parts des joueurs non révoqués + Meridian = 100,000 % exactement. Restes d'arrondi attribués par la méthode du plus fort reste. Toute violation déclenche une alerte visible.
+
+**Durées de chronomètre** (préréglées, non modifiables en cours de partie) :
+
+| Manches | Durée du défi |
+| --- | --- |
+| 1 et 2 | 5 min |
+| 3 et 4 | 15 min |
+| 5 | 7 min |
+
+Débat en AG : 5:00 fixe, toutes manches confondues.
+
+---
 
 ## 4. Règles de calcul — le moteur
 
-## 4.1 Attribution initiale des parts
+*(Identique à la v1, sauf les points suivants.)*
+
+### 4.1 Attribution initiale des parts
 
 - Les joueurs se partagent 99,000 % ; Meridian détient 1,000 %.
+- Tirage aléatoire légèrement inégal (0,65× à 1,35× la moyenne), normalisé à 99,000 %.
+- Bouton **« Retirer au sort »** pour relancer le tirage. **Aucune édition manuelle des parts** : l'invariant est garanti dès le tirage, sans risque de saisie erronée.
 
-- Tirage aléatoire légèrement inégal : chaque joueur reçoit entre 0,65× et 1,35× la part moyenne (99/N), puis normalisation à 99,000 %. À 15 joueurs, cela donne des parts entre 4 % et 9 % environ.
+### 4.2 Sabotage (phase nocturne)
 
-- La Console affiche le tirage avant validation, avec « Retirer au sort » et l'édition manuelle de chaque part (re-normalisation automatique).
+Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme » ; sinon gel + révélation du **rôle** (plus de mention de camp séparée, voir §3) au bilan du matin. Exception Juriste inchangée (procuration).
 
-## 4.2 Sabotage (phase nocturne)
+**Ajout — avantage des Infiltrés :** juste après le choix de la cible, les Infiltrés (seuls éveillés à ce moment) voient s'afficher les réponses correctes des 3 défis de la manche suivante (voir §5.6, étape « Infiltrés »).
 
-- Cible sélectionnée en Console parmi les joueurs actifs. Si la cible est le joueur protégé cette nuit : le sabotage échoue, le matin annonce une « nuit calme », rien d'autre ne change.
+### 4.3 Révocation — vote d'AG par résolutions successives
 
-- Sinon : statut → gelé ; camp et rôle révélés publiquement au bilan du matin ; ses parts restent comptées au capital total mais sortent des actions votantes et sont exclues des prélèvements d'Alerte / Panique.
+*(Remplace intégralement le mécanisme de la v1 : plus de « Motion » avec proposeur/second, plus de vote en CA.)*
 
-- **Exception Juriste :** s'il est saboté, la Console demande de désigner son mandataire (contrôle : un mandataire ne peut détenir qu'une procuration). Ses parts restent votantes (votées par le mandataire) et restent dans l'assiette des prélèvements — pas de séquestre, c'est son pouvoir.
+- Pendant le **débat** (5:00), l'animateur peut inscrire **jusqu'à 3 noms** à l'ordre du jour, dans l'ordre où les accusations émergent — sans exigence de soutien formalisé.
+- Chaque nom devient une **résolution** (« Révocation de [Nom] »), votée **une à la fois, dans l'ordre d'inscription**, par la grille pondérée Pour / Contre / Abstention (abstention = compte comme contre, cf. règle des 50 % des actions votantes totales).
+- Dès qu'une résolution dépasse strictement 50 % des actions votantes, elle est adoptée : révocation immédiate, révélation du **rôle** du révoqué, redistribution au prorata entre les joueurs non révoqués (actifs et gelés) — jamais à Meridian — et les résolutions suivantes ne sont pas votées.
+- Si une résolution échoue, on passe à la suivante. Si les 3 échouent (ou s'il y a eu moins de 3 noms), la manche se termine sans révocation.
+- Une seule révocation possible par manche (verrouillage automatique dès qu'une résolution est adoptée).
+- Si le révoqué est le Président : succession désignée immédiatement après (parmi les joueurs restants), annoncée à l'écran.
+- **Vérification de palier** (voir §4.5) effectuée immédiatement après toute redistribution consécutive à une révocation.
 
-## 4.3 Révocation (vote d'AG)
+### 4.4 Alerte et Panique — mécanique QCM
 
-- Une seule tentative par manche (verrouillage automatique).
+*(Remplace la saisie manuelle « réussi/échoué » de la v1.)*
 
-- Vote pondéré : la Console saisit Pour / Contre / Abstention pour chaque votant. Votants = joueurs actifs + le mandataire pour les parts du Juriste saboté. La révocation est acquise si le total « Pour » dépasse strictement 50,000 % des actions votantes totales (pas seulement des exprimées : s'abstenir revient à voter contre).
+- Pour chacun des 3 défis de la manche (un par service), l'animateur **sélectionne la réponse donnée par l'équipe** parmi les choix A/B/C/D préchargés (entité Défi, §3).
+- Le système compare automatiquement à la réponse correcte secrète et en déduit réussi/échoué.
+- Bilan des 3 défis : 3 réussis → **Indice**, affiché immédiatement en plein écran, avant le vote de la même manche ; 2/1 → rien ; 1/2 → **Alerte** (4 000 points, constante configurable) ; 0/3 → **Panique** (8 000 points, constante configurable).
+- Transfert vers Meridian appliqué et annoncé au Bilan du matin, avec animation du camembert : chaque joueur de l'assiette (actifs + Juriste saboté) cède part_i × montant ÷ somme(assiette), au plus fort reste.
+- **Vérification de palier** (voir §4.5) effectuée immédiatement après cette animation, avant de passer à l'étape suivante du Bilan du matin.
+- Indices proposés à l'animateur (il en choisit un), inchangé par rapport à la v1.
 
-- Si acquise : carte révélée ; ses parts sont redistribuées au prorata de leurs parts entre tous les joueurs non révoqués (actifs ET gelés) — jamais à Meridian ; statut → révoqué, part → 0.
+### 4.5 Paliers et vérification de la victoire
 
-- Si le révoqué est le Président : la Console invite à désigner son successeur (annoncé sur la Scène).
+- **Paliers Meridian (15/25/35/45 %)** : vérifiés et annoncés **immédiatement après chaque mouvement de capital** — fin d'une résolution de révocation adoptée (§4.3), ou communiqué Meridian Alerte/Panique (§4.4). Chaque palier ne s'annonce qu'une seule fois par partie.
+- **Vérification de victoire** : à chaque Bilan du matin (nuits 1 à 5), si somme des parts des infiltrés non révoqués + part Meridian > 50,000 % → écran de victoire Meridian. À tout moment, si tous les infiltrés sont révoqués → victoire honnête anticipée. Après le Bilan du matin de la nuit 5, si aucune condition n'est atteinte → chevalier blanc, victoire honnête finale.
 
-## 4.4 Alerte et Panique (conséquences des défis)
+---
 
-- **Saisie et correction automatique (QCM) :** pour chaque défi joué, la Console affiche les choix possibles (A, B, C…) issus de la banque de défis ; l'animateur clique la réponse donnée par l'équipe. Comparaison immédiate à la réponse correcte stockée : aucune saisie manuelle de « réussi » ou « échoué ». Le résultat individuel de chaque défi et la bonne réponse ne s'affichent qu'en Console ; seul le bilan agrégé des 3 défis passe sur la Scène.
+## 5. Écrans (fenêtre unique)
 
-- Bilan des 3 défis d'une manche : 3 réussis → Indice (révélé immédiatement, avant le vote de la même manche) ; 2/1 → rien ; 1/2 → Alerte (4,000 points) ; 0/3 → Panique (8,000 points). Les valeurs 4 et 8 sont des constantes de configuration modifiables en Console (calibrage playtest).
+### 5.1 Préparation (avant de brancher le vidéoprojecteur)
 
-- Le transfert vers Meridian est appliqué et annoncé au bilan du matin suivant : chaque joueur de l'assiette (actifs + Juriste saboté) cède part_i × montant ÷ somme(assiette). Prélèvement strictement proportionnel, restes au plus fort reste.
+**Étape 1 — Joueurs et services**
+Ajout des prénoms, affectation automatique aux 3 services (RH / Commercial / Finance), modifiable.
 
-- Indices proposés par la Console (l'animateur en choisit un) : « le service X compte n infiltré(s) » (service au choix ou au hasard) ; « le camp adverse — infiltrés et Meridian réunis — détient entre Y et Y+5 % du capital » (fourchette de 5 points contenant la vraie valeur, bornes en multiples de 5).
+**Étape 2 — Tirage des parts**
+Tableau des parts (résultat du tirage) + ligne Meridian (1,000 %). Bouton « Retirer au sort ». Total affiché (toujours 100,000 %, aucune édition manuelle possible). Bouton « Suivant ».
 
-## 4.5 Vérification de la victoire
+**Étape 3 — Rôles**
+Phrase calculée automatiquement : *« Pour [N] joueurs, vous devez désigner [⌊N/3⌋] infiltrés parmi eux. »* Un menu déroulant par joueur : Associé (par défaut) · DRH · Avocat(e) · DAF · Juriste · Infiltré. Chaque rôle à pouvoir ne peut être attribué qu'une fois (retiré des menus dès qu'il est pris). Compteur en direct *« Infiltrés désignés : X / [⌊N/3⌋] »*. Bouton **« Lancer la partie »** inactif tant que le compte n'est pas exact, activé automatiquement à l'égalité, regrisé si on redescend en dessous.
 
-- **À chaque bilan du matin (nuits 1 à 5 incluses) :** si somme des parts personnelles des infiltrés non révoqués (quel que soit leur statut) + part Meridian \> 50,000 % → écran de victoire Meridian, partie terminée.
+Pas de saisie du Président à cette étape (voir §5.4).
 
-- À tout moment : si tous les infiltrés sont révoqués → écran de victoire honnête anticipée.
+### 5.2 Manche 0 — Lettre d'intention et mise en place
 
-- Après le bilan du matin de la nuit 5, si aucune des deux conditions : écran du chevalier blanc, victoire honnête finale.
+1. **Lettre d'intention** : mise en scène « courrier », texte intégral (Règlement v2) affiché progressivement via « Suivant ». Au dernier paragraphe, apparition animée de la tranche Meridian (1 %) sur le camembert.
+2. **Reconnaissance des Infiltrés** : *« Les Infiltrés ouvrent les yeux. C'est le moment de se rassembler pour préparer le plan de sabotage de la semaine. »* Écran neutre, sans aucun nom affiché — les infiltrés se reconnaissent physiquement entre eux. Bouton « Suivant » quand l'animateur juge que c'est fait. *« Les Infiltrés se rendorment. »*
+3. **Réponses de la Manche 1** : 3 cartes A/B/C/D (une par service), minimum 3 secondes chacune, avec bouton « Suivant » discret pour accélérer si besoin.
+4. **Reconnaissance des rôles à pouvoir**, un par un, ordre fixe : Avocat(e) → DAF → DRH → Juriste. Pour chacun : *« [Rôle] ouvre les yeux. Prenez connaissance de votre rôle. »* → Suivant → *« [Rôle] se rendort. »* Écran neutre, sans nom affiché. (Le Président n'est pas concerné : rôle de jour, sans carte à connaître en secret.)
+5. **Réveil général** : *« NOVENTIS se réveille ! Ouvrez les yeux. »* → enchaîne vers la Manche 1 (Phase de travail).
 
-## 5. Écrans de la Scène
+### 5.3 Tableau de bord (écran par défaut)
 
-| **Écran**                         | **Contenu et comportement**                                                                                                                                                                                                                                                                                                                                                                                                       |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| S0 — Accueil                      | Logo INFILTRÉS / STRATÉJEUX. Piloté par la Console : Nouvelle partie / Reprendre la partie.                                                                                                                                                                                                                                                                                                                                       |
-| S1 — Le conseil (tableau de bord) | Écran par défaut entre les temps forts. Camembert du capital (une part par joueur, tranche Meridian gris anthracite), liste des joueurs avec statut (actif / sous séquestre / révoqué, rôle si révélé), n° de manche et phase en cours, badge Président. Bandeau permanent rappelant le dernier événement.                                                                                                                        |
-| S2 — Lettre d'intention           | Manche 0. Mise en scène « courrier » : le texte intégral de la lettre (Règlement v2), affiché progressivement. Déclenche l'apparition de la tranche Meridian à 1 % sur le camembert.                                                                                                                                                                                                                                              |
-| S3 — Phase de travail             | Titre de la manche, rappel des 3 services, chronomètre de défi configurable (durée réglée en Console, alerte sonore optionnelle). Pour chaque service, la Console affiche les choix A/B/C… du défi en cours ; l'animateur clique la réponse donnée par l'équipe, comparée aussitôt à la bonne réponse (juste/faux visible en Console uniquement). Une fois les 3 défis saisis, le bilan de la manche est calculé automatiquement ; si Indice : affichage immédiat de l'indice choisi, plein écran. |
-| S4 — Conseil & AG                 | Étape a) Motion : nom du suspect proposé et de son « second » (saisis en Console). Étape b) Débat : chronomètre 5:00. Étape c) Vote : barre de progression du « Pour » en % des actions votantes, seuil 50 % marqué ; résultat ; si révocation : révélation de la carte (camp + rôle) puis animation de redistribution du camembert.                                                                                              |
-| S5 — Voile de nuit                | Visuel sombre « NOVENTIS dort » ; aucun secret. Pendant ce temps, l'animateur traite la nuit en Console.                                                                                                                                                                                                                                                                                                                          |
-| S6 — Bilan du matin               | Séquence ordonnée, avancée manuellement : 1) scénario de sabotage de la manche (textes du Règlement v2) avec révélation de la carte du saboté — ou « nuit calme » ; 2) communiqué Meridian (Alerte ou Panique) avec animation du camembert ; 3) annonce de palier si 15 / 25 / 35 / 45 % vient d'être franchi (chaque palier ne s'annonce qu'une fois) ; 4) vérification de victoire — si déclenchée, transition directe vers S7. |
-| S7 — Écrans de fin                | Trois variantes : victoire Meridian (prise de contrôle, révélation de tous les camps), victoire honnête anticipée (tous les infiltrés révoqués), victoire honnête finale (chevalier blanc). Camembert final + récapitulatif de la partie (chronologie des événements).                                                                                                                                                            |
+Camembert permanent + dernier événement en rappel. Bandeau Joueurs en bas (statut visuel). Badge Président si désigné. Un seul bouton **« Suivant »** qui enchaîne automatiquement la séquence programmée de la manche. Un « ◀ Retour » discret à côté, pour rattraper un clic en trop.
 
-## 6. La Console animateur
+### 5.4 Phase de travail
 
-- **Configuration :** nombre de joueurs (8–18), prénoms, affectation aux services (proposition automatique équilibrée, modifiable), rappel du nombre d'infiltrés recommandé (⌊N/3⌋), tirage des parts (§4.1).
+- Titre « Manche X — Phase de travail », rappel des 3 services.
+- Chronomètre préréglé selon la manche (§3), déclenché automatiquement.
+- Pour chaque service, le QCM du défi de la manche s'affiche ; l'animateur tape la réponse donnée par l'équipe (aucune saisie libre).
+- Bouton « Valider les résultats » → calcul automatique (§4.4).
+- Si Indice (3/3) : rupture immédiate, écran plein écran de l'indice choisi.
+- Sinon : retour au tableau de bord.
 
-- **Saisie secrète (après distribution physique des cartes) :** camp de chaque joueur, détenteurs des 5 rôles, Président initial. Contrôles de cohérence : nombre d'infiltrés conforme, rôles à pouvoir honnêtes sauf éventuellement le Président, un rôle par joueur maximum.
+### 5.5 Conseil & Assemblée générale
 
-- **Panneau de nuit :** protection de l'Avocat (contrôles : pas lui-même, pas deux nuits de suite la même personne), cible du sabotage, mise à pied DRH (1×/partie — marque le joueur exclu du défi de son service à la manche suivante, annoncé sobrement au matin), enquête DAF (1×/manche — affiche à l'animateur seul le rôle exact du joueur désigné, pour transmission discrète au DAF).
+**a) Débat (5:00)**
+Titre : *« Le Conseil délibère. »* Sous-titre permanent : *« Le Président du conseil retient jusqu'à 3 noms qui seront soumis au vote de l'Assemblée Générale. »* L'animateur tape sur les joueurs accusés au fil du débat pour les ajouter à l'ordre du jour (compteur *« X / 3 noms retenus »*, retrait possible avant la fin du chrono).
 
-- **Panneau de défi :** pour chacun des 3 services de la manche, affichage des choix (A, B, C…) préchargés depuis la banque de défis ; un clic sur la réponse donnée par l'équipe déclenche la comparaison automatique à la réponse correcte (juste / faux affiché immédiatement, visible en Console seulement). Une fois les 3 défis de la manche saisis, calcul automatique du bilan (indice / statu quo / alerte / panique).
+**b) Vote, résolution par résolution**
+Titre : *« Résolution [n] — Révocation de [Nom] »*. Sous-titre : *« Chaque actionnaire vote selon son nombre de parts. »* Grille pondérée Pour / Contre / Abstention (voir §5.7 pour le mode de saisie), barre de progression en direct, seuil 50 % marqué.
+- Adoptée : *« Résolution adoptée — [Nom] est révoqué. »* → révélation du rôle + animation de redistribution + vérification de palier → fin du vote, résolutions suivantes non votées.
+- Rejetée : *« Résolution rejetée — [Nom] reste en fonction. »* → passage automatique à la résolution suivante.
+- Aucune résolution adoptée (3 échecs ou moins de 3 noms) : *« Aucune résolution n'a été adoptée. Le conseil reste inchangé. »*
 
-- **Panneau de vote :** liste des votants avec leurs parts, saisie Pour / Contre / Abstention, calcul en direct, bouton de validation.
+### 5.6 Séquence de nuit
 
-- **Corrections :** annulation en cascade, édition manuelle d'une part (avec re-normalisation et trace au journal), changement du Président, bascule manuelle de tout écran de la Scène.
+Écran neutre entre chaque appel, aucun nom jamais affiché pour les appels eux-mêmes.
 
-- **Journal :** chaque événement horodaté (sabotages, votes avec détail, mouvements de capital, indices révélés). Exportable en texte pour le débriefing.
+1. *« Fin de journée chez NOVENTIS. Tout le monde ferme les yeux. »* → Suivant
+2. *« L'Avocat(e) se réveille. Qui protège-t-il/elle cette nuit ? »* → grille des joueurs actifs (exclusion automatique de lui-même et de la cible protégée la nuit précédente) → tap + Confirmer → *« L'Avocat(e) se rendort. »*
+3. *(si applicable)* *« Le DAF se réveille. Sur qui exerce-t-il son droit à l'information ? »* → tap sur un joueur → encart avec le rôle exact révélé à l'animateur seul → « Fermer » → *« Le DAF se rendort. »*
+4. *(si pas encore utilisée)* *« La DRH se réveille. Qui met-elle à pied ? »* → tap → Confirmer → *« La DRH se rendort. »*
+5. *« Les Infiltrés se réveillent. Qui sabotent-ils ? »* → grille des actifs → tap + Confirmer → *« Les Infiltrés se rendorment. »*
+6. **Réponses de la manche suivante** *(dès la Manche 1, avant chaque nouvelle phase de travail)* : 3 cartes A/B/C/D, minimum 3 secondes chacune + bouton Suivant discret.
+7. *« NOVENTIS se réveille ! Ouvrez les yeux. »* → enchaîne vers le Bilan du matin.
 
-## 7. Habillage (lot 3)
+### 5.7 Vote pondéré — mode de saisie
 
-- Identité STRATÉJEUX : fond bleu nuit 0E2A47, accents sarcelle 1B8C82, blanc cassé pour les textes. Typographie lisible à 8 mètres (corps minimal équivalent 28 pt projeté).
+Grille à bascule : chaque joueur votant est un seul bouton, qui fait défiler Abstention (état par défaut, gris) → Pour (vert) → Contre (rouge) → Abstention à chaque tap. Un tap suffit dans la majorité des cas. Le mandataire du Juriste saboté vote à la place du Juriste (parts comptées normalement).
 
-- Textes à intégrer tels quels depuis le Règlement v2 : lettre d'intention, 5 scénarios de sabotage, 2 communiqués Meridian, 4 annonces de palier, 3 textes de fin de partie.
+### 5.8 Bilan du matin
 
-- Animations sobres : transitions du camembert (800 ms), effet « communiqué de presse » pour Meridian, révélation de carte façon retournement. Sons optionnels et désactivables (gong de nuit, notification de communiqué).
+1. **Résultat du sabotage** : si réussi, scénario narratif (Règlement v2, un des 5, un par manche) puis révélation du **rôle** du saboté (modale, style « [Prénom] était... [Rôle] », sans mention de camp). Si la cible était protégée : *« Nuit calme. »*
+2. **Communiqué Meridian** *(si Alerte ou Panique)* : texte du communiqué (Règlement v2), animation du camembert, puis vérification et annonce de palier si franchi à cet instant.
+3. **Vérification de victoire** : calcul silencieux. Si la partie continue → retour au tableau de bord (manche suivante). Si une condition de victoire est atteinte → transition directe vers l'écran de fin.
 
-- Tout l'habillage est ajouté sans modifier le moteur : les lots 1 et 2 doivent rester fonctionnels à tout moment.
+### 5.9 Écrans de fin
+
+Sobre et dramatique : l'annonce (une des 3 variantes — victoire Meridian, victoire honnête anticipée, chevalier blanc) + camembert final. Pas de récapitulatif affiché par défaut. Bouton **« Voir le récapitulatif »** qui ouvre la chronologie complète des événements (pour le débriefing), avec export possible.
+
+---
+
+## 6. Contrôles de l'animateur
+
+*(Remplace « La Console animateur » de la v1 — les mêmes fonctions existent, intégrées à la fenêtre unique plutôt que dans un panneau séparé.)*
+
+- **◀ Annuler** : annulation en cascade, disponible en permanence, discrète.
+- **Masquer** : calque plein écran neutre, disponible en permanence (voir §2.2).
+- **Corrections** : édition manuelle d'un rôle en cours de partie possible via Masquer → modification → démasquer ; changement de Président à tout moment ; bascule manuelle d'écran en cas de besoin (accès discret, non mis en avant).
+- **Journal** : chaque événement horodaté (sabotages, votes avec détail par résolution, mouvements de capital, indices révélés). Exportable en texte pour le débriefing.
+
+---
+
+## 7. Habillage
+
+### 7.1 Palette
+
+Fond général de l'application : **noir/anthracite très sombre** (confort visuel sur 2–3 h de projection).
+
+- **Bleu Infiltrés** — dominante des cartes de contenu et des boutons d'action (≈ `#2F6FEB`/`#3B79F0`, à ajuster sur le code exact de l'imprimeur si disponible).
+- **Noir** — texte, contours des illustrations, tranche Meridian sur le camembert.
+- **Blanc cassé** — fond des cartes de contenu (rôle, résolution, révélation), bordure bleue épaisse, coins arrondis — reprend le format des cartes physiques « VOUS ÊTES : [RÔLE] ».
+- **Rouge** — uniquement les tranches de camembert des infiltrés révélés (jamais avant révélation).
+
+### 7.2 Typographie
+
+Grasse, arrondie, capitales pour les titres — type Poppins ExtraBold ou Nunito Black (polices libres, embarquées en base64 ou en `@font-face` local, pas de CDN).
+
+### 7.3 Composants
+
+- Cartes de contenu : fond blanc, bordure bleue épaisse, coins arrondis.
+- Boutons d'action : bleu plein, texte blanc gras, coins arrondis.
+- Camembert : bleu (actifs) / rouge (infiltrés révélés) / noir (Meridian), transitions 800 ms.
+- Illustrations : dessin au trait noir façon bâtonnet, fond transparent, style des cartes physiques (fichiers fournis, à intégrer en base64).
+
+### 7.4 Illustrations — table de correspondance
+
+| Élément | Illustration |
+| --- | --- |
+| Accueil / Préparation | Logo Infiltrés (poignée de main) |
+| Associé honnête | Bonhomme + gratte-ciel |
+| Infiltré | Bonhomme lunettes + cartes/jetons |
+| DRH | Bonhomme au bureau, piles de dossiers |
+| Avocat(e) | Bonhomme au porte-documents, jambe sur l'interrupteur |
+| DAF | Bonhomme + écran, courbe qui chute |
+| Juriste | Bonhomme au contrat + stylo, grand sourire |
+| Président | Pas d'illustration dédiée (badge de statut uniquement) |
+| Reconnaissance des Infiltrés (Manche 0) | Groupe en lunettes noires |
+| Débat (Conseil) | Deux mégaphones face à face |
+| Révocation (résolution adoptée) | Coup de pied + porte-documents qui vole |
+| Sabotage — Manche 1 | Duel au marteau |
+| Sabotage — Manche 2 | Brouette de dossiers envolés |
+| Sabotage — Manche 3 | Écran boursier qui s'effondre |
+| Sabotage — Manche 4 | Homme qui court avec une pile de livres |
+| Sabotage — Manche 5 | Loupe sur un document |
+| Victoire (les 3 variantes) | Trophée |
+
+### 7.5 Textes
+
+Textes à intégrer tels quels depuis le Règlement v2 : lettre d'intention, 5 scénarios de sabotage, 2 communiqués Meridian, 4 annonces de palier, 3 textes de fin de partie. Sons optionnels et désactivables (gong de nuit, notification de communiqué), inchangé par rapport à la v1.
+
+Tout l'habillage est ajouté sans modifier le moteur : les fonctionnalités des lots précédents doivent rester fonctionnelles à tout moment.
+
+---
 
 ## 8. Mode simulation et tests d'acceptation
 
-La Console comporte un mode simulation : création instantanée d'une partie fictive (prénoms générés), exécution pas à pas ou automatique d'un scénario scripté, affichage de l'état chiffré complet à chaque étape. Les trois tests suivants font partie de la recette du lot 1 — les valeurs attendues sont exactes et doivent être reproduites au millième :
+*(Inchangé par rapport à la v1 — voir document d'origine pour le détail des tests T1 à T5. Le mode simulation reste intégré aux contrôles de l'animateur, §6.)*
 
-| **Test**        | **Situation initiale**                                                        | **Action**                       | **Résultat attendu**                                                                                                                                                                                                  |
-|-----------------|-------------------------------------------------------------------------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| T1 — Panique    | 10 joueurs à 9,900 % chacun, Meridian 1,000 %                                 | Panique (8,000 points)           | Chaque joueur cède 9,900 × 8 ÷ 99 = 0,800. Joueurs à 9,100 % chacun ; Meridian à 9,000 % ; total 100,000 %.                                                                                                           |
-| T2 — Révocation | État final de T1                                                              | Révocation d'un joueur (9,100 %) | Redistribution au prorata entre les 9 restants (somme 81,900) : chacun reçoit 9,100 × 9,100 ÷ 81,900 ≈ 1,011. Joueurs à 10,111 % ; Meridian inchangé à 9,000 % ; total 100,000 %.                                     |
-| T3 — Victoire   | Parts des infiltrés non révoqués + Meridian = 50,2 % / puis variante à 49,9 % | Bilan du matin                   | À 50,2 % : écran de victoire Meridian. À 49,9 % : la partie continue. Le seuil est strictement supérieur à 50,000 %.                                                                                                  |
-| T4 — Séquestre  | État de T1, un joueur gelé (non-Juriste)                                      | Alerte (4,000 points)            | Le gelé ne cède rien ; l'assiette est la somme des parts des actifs ; sa part reste comptée dans le capital total et dans le calcul de victoire s'il est infiltré.                                                    |
-| T5 — Invariant  | Toute simulation complète (5 manches, événements mélangés)                    | —                                | Après chaque action : somme joueurs non révoqués + Meridian = 100,000 %. Un joueur ne peut être ciblé deux fois, une 2e révocation dans la même manche est refusée, chaque palier Meridian n'est annoncé qu'une fois. |
+---
 
-## 9. Découpage en 3 lots — ordre impératif
+## 9. Découpage en lots — ordre impératif
 
-| **Lot**                           | **Périmètre**                                                                                                                                                                                                                        | **Critère de recette (« terminé quand »)**                                                                                                                                               |
-|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Lot 1 — Moteur de capital         | Modèle de données, arithmétique en millièmes, attribution initiale, les 4 actions (sabotage, révocation, alerte, panique), camembert SVG, vérification de victoire, sauvegarde / reprise / export JSON, annulation, mode simulation. | Les tests T1 à T5 passent ; une partie simulée complète se déroule sans violation d'invariant ; fermer et rouvrir le navigateur restaure la partie exactement.                           |
-| Lot 2 — Déroulé et double fenêtre | Scène + Console synchronisées, tous les écrans S0–S7 en version sobre, saisie secrète, panneau de nuit avec tous les contrôles (Avocat, Juriste-procuration, DRH, DAF), panneau de vote pondéré, chronomètres, journal.              | Une partie test réelle à 3 personnes (animateur + 2 « joueurs ») se joue de bout en bout sans toucher au code ni ouvrir la console du navigateur ; aucun secret n'apparaît sur la Scène. |
-| Lot 3 — Habillage narratif        | Identité visuelle, textes du Règlement v2 intégrés, animations, sons optionnels, récapitulatif de fin pour le débriefing.                                                                                                            | Relecture complète des textes projetés ; test de lisibilité en conditions réelles de projection ; les lots 1 et 2 fonctionnent à l'identique.                                            |
+| Lot | Périmètre | Critère de recette |
+| --- | --- | --- |
+| **Lot 1 — Moteur de capital** | Modèle de données (avec entité Défi), arithmétique en millièmes, attribution initiale (sans édition manuelle), les 4 actions (sabotage, révocation par résolutions, alerte, panique via QCM), camembert SVG (bleu/rouge/noir), vérification de victoire, sauvegarde / reprise / export JSON, annulation, mode simulation. | Tests T1 à T5 passent ; une partie simulée complète se déroule sans violation d'invariant ; fermer et rouvrir le navigateur restaure la partie exactement. |
+| **Lot 2 — Déroulé fenêtre unique** | Tous les écrans de §5 (Préparation, Manche 0, tableau de bord, phase de travail avec QCM, débat + résolutions AG, séquence de nuit avec appels de rôles, Bilan du matin), mode masqué, contrôles animateur (§6), chronomètres préréglés. | Une partie test réelle à 3 personnes (animateur + 2 « joueurs ») se joue de bout en bout sans toucher au code ; aucun secret n'apparaît jamais à l'écran en dehors des révélations prévues. |
+| **Lot 3 — Habillage narratif** | Identité visuelle (§7), illustrations intégrées, textes du Règlement v2, animations, sons optionnels, récapitulatif de fin pour le débriefing. | Relecture complète des textes projetés ; test de lisibilité en conditions réelles de projection ; les lots 1 et 2 fonctionnent à l'identique. |
 
-Méthode de travail avec Claude Code : fournir à chaque session ce cahier des charges + le Règlement v2, et ne demander qu'un lot à la fois. Ne passer au lot suivant qu'après recette du précédent. Versionner sur GitHub à chaque étape validée (un commit par fonctionnalité recettée).
+Méthode de travail avec Claude Code : fournir à chaque session ce cahier des charges v2 + le Règlement v2, et ne demander qu'un lot à la fois. Ne passer au lot suivant qu'après recette du précédent. Versionner sur GitHub à chaque étape validée (un commit par fonctionnalité recettée).
 
-## 10. Hors périmètre de la v1
+**Note :** l'annexe du corrigé complet des 15 défis (QCM + réponse correcte par service et par manche), déjà rédigée dans la version 1.1 du cahier des charges d'origine, doit être reprise telle quelle et jointe à ce document avant transmission à Claude Code — elle n'est pas reproduite ici.
+
+---
+
+## 10. Hors périmètre de la v2
 
 - Combos de défis, variantes de règles, mode « moins de 8 joueurs ».
-
-- Affichage des fiches de défis dans le diaporama (les énoncés restent sur papier ; seuls les choix de réponse A/B/C… sont recopiés en Console pour la saisie).
-
+- Affichage des fiches de défis dans le diaporama (elles restent sur papier).
 - Multijoueur en réseau, application mobile, multilingue.
+- Statistiques inter-parties (pourra venir en v3 pour le calibrage).
+- Illustration dédiée pour le Président (badge uniquement dans cette version).
 
-- Statistiques inter-parties (pourra venir en v2 pour le calibrage).
 
 ## Annexe — Banque de défis (corrigé QCM)
 
