@@ -180,8 +180,19 @@
   .ecran-card .liste-ordre-jour .item{ background:var(--carte-fond-2); border:1px solid var(--carte-bordure-2); color:var(--carte-texte); }
 
   .ecran-neutre{ min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
-  .camembert-compact{ display:flex; justify-content:center; padding:10px 16px 0; }
-  .camembert-compact svg{ width:150px; height:150px; }
+  /* Camembert ~40 % de la hauteur, centré en permanence (§C2 brief v3). */
+  .camembert-compact{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 16px 0; }
+  .camembert-compact svg{ width:min(40vh, 360px); height:min(40vh, 360px); }
+  .camembert-compact svg .segment-meridian{ transition: fill-opacity 350ms ease; }
+  @keyframes camembert-pulse-meridian{ 0%,100%{ fill-opacity:1; } 50%{ fill-opacity:0.7; } }
+  .camembert-compact svg .segment-meridian.pulse{ animation: camembert-pulse-meridian 550ms ease-in-out 3; }
+  .ligne-meridian{ width:100%; max-width:360px; margin:10px auto 0; font-size:0.82rem; color:var(--text-dim); text-align:center; }
+  .ligne-meridian .barre{ position:relative; height:8px; background:var(--panel-2); border:1px solid var(--border); border-radius:4px; margin-top:4px; overflow:visible; }
+  .ligne-meridian .barre .fill{ height:100%; background: var(--rouge-meridian); border-radius:4px 0 0 4px; transition: width 1200ms cubic-bezier(.4,0,.2,1); }
+  .ligne-meridian .barre .repere-50{ position:absolute; top:-3px; bottom:-3px; width:2px; background:#fff; left:50%; }
+  @keyframes halo-meridian{ 0%{ opacity:0; } 15%{ opacity:1; } 100%{ opacity:0; } }
+  #halo-meridian{ position:fixed; inset:0; z-index:90; pointer-events:none; background: radial-gradient(ellipse at center, rgba(179,38,30,0.35) 0%, rgba(179,38,30,0) 70%); opacity:0; }
+  #halo-meridian.actif{ animation: halo-meridian 900ms ease-out; }
   #zone-bandeau-joueurs{ max-width:900px; margin:0 auto; padding:0 16px; }
   .bandeau-joueurs{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:10px; background:var(--panel); border:1px solid var(--border); border-radius:10px; }
   .joueur-pill{ padding:5px 10px; border-radius:16px; font-size:0.75rem; background:var(--panel-2); border:1px solid var(--border); color:var(--text); transition: opacity 400ms, text-decoration-color 400ms; }
@@ -195,6 +206,25 @@
   button.joueur-tap.vote-abstention{ background:var(--panel-2); color:var(--text-dim); border-color:var(--border); }
   button.joueur-tap:disabled{ opacity:0.35; }
   .chrono-affichage{ font-size:2.2rem; font-weight:700; font-variant-numeric: tabular-nums; margin:8px 0; }
+  /* Chronomètre plein écran (§C6 / §E étape 1) : chiffres énormes seuls,
+     blanc > 1 min, orange < 1 min, rouge + pulsation < 10 s. */
+  .chrono-geant{ font-size:6.5rem; font-weight:800; font-variant-numeric: tabular-nums; margin:32px 0; color:#fff; letter-spacing:0.02em; }
+  .chrono-geant.orange{ color: var(--warn); }
+  .chrono-geant.rouge{ color: var(--bad); animation: chrono-pulse 1s ease-in-out infinite; }
+  @keyframes chrono-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+  /* Saisie des défis (§E étape 2) : sélection sans retour juste/faux. */
+  button.qcm.selectionne{ background:var(--panel-2); color:#fff; border:3px solid var(--bleu-infiltres); box-shadow:0 0 0 2px rgba(47,111,235,0.35); }
+  /* Révélation séquencée (§E étape 3). */
+  .service-box.en-surbrillance{ border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.5); }
+  .service-box .statut-differe{ min-height:1.2em; }
+  button.qcm.correct-discret{ border-color:var(--ok); color:var(--ok); opacity:0.75; }
+  /* Bilan agrégé (§E étape 4). */
+  .bilan-chiffre{ font-size:6rem; font-weight:800; line-height:1; margin:12px 0; }
+  .bilan-libelle{ font-size:1.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:8px 20px; border-radius:10px; display:inline-block; }
+  .bilan-libelle.indice{ background:#1c3d2c; color:var(--ok); }
+  .bilan-libelle.statuquo{ background:var(--panel-2); color:var(--text-dim); }
+  .bilan-libelle.alerte{ background:#3d341c; color:var(--warn); }
+  .bilan-libelle.panique{ background:#3d1c1c; color:var(--bad); }
   .barre-progression{ width:100%; max-width:420px; height:22px; background:var(--panel-2); border:1px solid var(--border); border-radius:11px; margin:10px auto; overflow:hidden; position:relative; }
   .barre-progression .fill{ height:100%; background: var(--accent); transition: width 400ms ease; }
   .barre-progression .seuil{ position:absolute; top:0; bottom:0; width:2px; background:#fff; left:50%; }
@@ -275,8 +305,14 @@
   </div>
 </div>
 
+<div id="halo-meridian"></div>
+
 <div id="zone-camembert-compact" class="camembert-compact hidden">
   <svg id="camembert" viewBox="0 0 300 300"></svg>
+  <div class="ligne-meridian">
+    <span id="lbl-ligne-meridian">Meridian et ses agents : 0,0 %</span>
+    <div class="barre"><div class="fill" id="fill-ligne-meridian" style="width:0%;"></div><div class="repere-50"></div></div>
+  </div>
 </div>
 
 <main id="zone-scene"></main>
@@ -736,7 +772,7 @@ function actionSabotage(cibleId, estProtege){
     cible.part = 0;
     ajouterJournal('sabotage', `${cible.prenom} est saboté(e) : quitte le conseil et cède ses titres — ${formatPct(versAssocies)} préemptés par les associés restants, ${formatPct(versMeridian)} à Meridian (carte révélée : ${CARTE_LABELS[cible.carte]}).`);
     state.partie.dernierEvenementNuitPublic = { type: 'sabotage', joueurId: cible.id };
-    state.partie.palierVenantDetreFranchis = verifierPaliersMeridian(); // mouvement de capital vers Meridian : vérification systématique (§4.5)
+    state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital vers Meridian : vérification systématique (§4.5)
   }
   verifierInvariant();
   sauvegarder();
@@ -840,7 +876,7 @@ function voterResolutionCourante(joueurId, votesParJoueurId){
       state.partie.resolutionCouranteIndex += 1;
     }
     verifierVictoireHonneteAnticipee();
-    state.partie.palierVenantDetreFranchis = verifierPaliersMeridian(); // mouvement de capital : vérification systématique (§4.5)
+    state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital : vérification systématique (§4.5)
   } else {
     ajouterJournal('resolution_rejetee', `Résolution rejetée — ${cible.prenom} reste en fonction (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes).`);
     ajouterChroniquePublique(`Résolution rejetée — ${cible.prenom} reste en fonction.`);
@@ -878,7 +914,7 @@ function actionPrelevement(type){
   });
   state.meridian.part += totalPreleve;
   ajouterJournal(type, `${type === 'alerte' ? 'Alerte' : 'Panique'} : ${formatPct(totalPreleve)} de capital transférés au Fonds Meridian, prélevés au prorata sur les associés non gelés.`);
-  state.partie.palierVenantDetreFranchis = verifierPaliersMeridian(); // mouvement de capital : vérification systématique (§4.5)
+  state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital : vérification systématique (§4.5)
   verifierInvariant();
   sauvegarder();
   return totalPreleve;
@@ -1168,7 +1204,8 @@ function dessinerCamembertImmediat(svg, segments, cx, cy, r){
     const y1 = cy + r * Math.sin(start * Math.PI / 180);
     const x2 = cx + r * Math.cos(end * Math.PI / 180);
     const y2 = cy + r * Math.sin(end * Math.PI / 180);
-    paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" stroke="#4a5568" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
+    const cls = s.id === 'meridian' ? ' class="segment-meridian"' : '';
+    paths += `<path${cls} d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" stroke="#4a5568" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
   });
   const meridianSeg = segments.find(s => s.id === 'meridian');
   const centre = meridianSeg
@@ -1183,8 +1220,24 @@ const raf = (typeof requestAnimationFrame === 'function')
 const cancelRaf = (typeof cancelAnimationFrame === 'function') ? cancelAnimationFrame : clearTimeout;
 const maintenant = (typeof performance !== 'undefined' && performance.now) ? () => performance.now() : () => Date.now();
 
-// Transition du camembert par interpolation linéaire des parts sur 800 ms,
-// à chaque mouvement de capital (§2.1 / §7.3 du CDC v2).
+// Évalue cubic-bezier(x1,y1,x2,y2) au temps linéaire t (Newton-Raphson),
+// pour reproduire en JS la même courbe qu'une transition CSS (§A2 brief v3).
+function cubicBezierEase(t, x1, y1, x2, y2){
+  const bx = (u) => 3*(1-u)*(1-u)*u*x1 + 3*(1-u)*u*u*x2 + u*u*u;
+  const by = (u) => 3*(1-u)*(1-u)*u*y1 + 3*(1-u)*u*u*y2 + u*u*u;
+  let u = t;
+  for (let i = 0; i < 8; i++){
+    const dx = bx(u) - t;
+    if (Math.abs(dx) < 1e-5) break;
+    const deriv = 3*(1-u)*(1-u)*x1 + 6*(1-u)*u*(x2-x1) + 3*u*u*(1-x2);
+    if (Math.abs(deriv) < 1e-6) break;
+    u = Math.min(1, Math.max(0, u - dx / deriv));
+  }
+  return by(u);
+}
+
+// Transition du camembert par interpolation des parts sur 1200 ms,
+// cubic-bezier(.4,0,.2,1), à chaque mouvement de capital (§A2 brief v3).
 function dessinerCamembertSVG(svg, segments){
   const cx = 150, cy = 150, r = 130;
   const ciblePrecedente = svg._infiltresCible;
@@ -1202,10 +1255,10 @@ function dessinerCamembertSVG(svg, segments){
     return;
   }
   const t0 = maintenant();
-  const duree = 800;
+  const duree = 1200;
   const step = (now) => {
     const t = Math.min(1, (now - t0) / duree);
-    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const eased = cubicBezierEase(t, 0.4, 0, 0.2, 1);
     const interp = segments.map((s, i) => ({ ...s, part: Math.round(depart[i].part + (s.part - depart[i].part) * eased) }));
     dessinerCamembertImmediat(svg, interp, cx, cy, r);
     if (t < 1){
@@ -1218,14 +1271,37 @@ function dessinerCamembertSVG(svg, segments){
   svg._infiltresAnimFrame = raf(step);
 }
 
+// Pulse 3× (opacité 100→70→100) de la tranche Meridian + halo rouge diffus
+// traversant l'écran une fois, à chaque gain de terrain (§A2 brief v3).
+function pulserMeridianGainDeTerrain(){
+  const seg = document.querySelector('#camembert .segment-meridian');
+  if (seg){ seg.classList.remove('pulse'); void seg.offsetWidth; seg.classList.add('pulse'); }
+  const halo = el('halo-meridian');
+  if (halo){ halo.classList.remove('actif'); void halo.offsetWidth; halo.classList.add('actif'); }
+}
+
+// Détecte un gain de terrain Meridian d'un rendu à l'autre pour déclencher
+// pulserMeridianGainDeTerrain() automatiquement (§A2), sans jamais le faire
+// sur la simple avance frame-par-frame de l'animation de transition.
+let dernierMeridianAffiche = null;
+
 function dessinerCamembert(){
   const svg = el('camembert');
-  if (!state){ svg.innerHTML = ''; return; }
+  if (!state){ svg.innerHTML = ''; dernierMeridianAffiche = null; return; }
   const gele = state.partie.camembertGeleJusquaReveal;
   const joueurs = gele ? gele.joueurs : state.joueurs;
   const meridianPart = gele ? gele.meridianPart : state.meridian.part;
   const segments = construireSegmentsCamembert(joueurs, meridianPart);
   dessinerCamembertSVG(svg, segments);
+  if (dernierMeridianAffiche != null && meridianPart > dernierMeridianAffiche){
+    pulserMeridianGainDeTerrain();
+  }
+  dernierMeridianAffiche = meridianPart;
+  const pctMeridian = meridianPart / 1000;
+  const lblLigne = el('lbl-ligne-meridian');
+  const fillLigne = el('fill-ligne-meridian');
+  if (lblLigne) lblLigne.textContent = `Meridian et ses agents : ${pctMeridian.toFixed(1).replace('.', ',')} %`;
+  if (fillLigne) fillLigne.style.width = Math.min(100, pctMeridian) + '%';
 }
 
 function libelleStatut(j){
@@ -1354,6 +1430,135 @@ function jouerNotificationCommunique(){
   setTimeout(() => jouerTonalite(660, 0.22, 'triangle', 0.14), 150);
 }
 
+/* ============================================================
+   9ter. TABLE DES SONS (§F brief v3)
+   Deux règles : jamais deux sons simultanés (file d'attente), et la nappe
+   de nuit baisse de 50 % quand un autre son se déclenche.
+   ============================================================ */
+
+let fileAttenteSons = [];
+let lectureSonEnCours = false;
+
+function enfilerSon(fn, dureeMs){
+  fileAttenteSons.push({ fn, dureeMs });
+  traiterFileSons();
+}
+
+function traiterFileSons(){
+  if (lectureSonEnCours || fileAttenteSons.length === 0) return;
+  const { fn, dureeMs } = fileAttenteSons.shift();
+  lectureSonEnCours = true;
+  duckNappeNuit(true);
+  try { fn(); } catch(e){ /* Web Audio indisponible : silencieux, jamais bloquant */ }
+  setTimeout(() => {
+    lectureSonEnCours = false;
+    duckNappeNuit(false);
+    traiterFileSons();
+  }, dureeMs);
+}
+
+// --- Nappe d'ambiance nocturne : bourdon grave en boucle, très sourd ---
+let nappeNuitOsc = null, nappeNuitGain = null;
+function demarrerNappeNuit(){
+  if (!sonsActifs() || nappeNuitOsc) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    nappeNuitOsc = ctx.createOscillator();
+    nappeNuitGain = ctx.createGain();
+    nappeNuitOsc.type = 'sine';
+    nappeNuitOsc.frequency.value = 55;
+    nappeNuitGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    nappeNuitGain.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 1.5);
+    nappeNuitOsc.connect(nappeNuitGain).connect(ctx.destination);
+    nappeNuitOsc.start();
+  } catch(e){ nappeNuitOsc = null; nappeNuitGain = null; }
+}
+function arreterNappeNuit(){
+  if (!nappeNuitOsc) return;
+  try {
+    const ctx = getAudioCtx();
+    nappeNuitGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    nappeNuitOsc.stop(ctx.currentTime + 0.7);
+  } catch(e){ /* silencieux */ }
+  nappeNuitOsc = null; nappeNuitGain = null;
+}
+function duckNappeNuit(actif){
+  if (!nappeNuitGain) return;
+  try {
+    const ctx = getAudioCtx();
+    nappeNuitGain.gain.linearRampToValueAtTime(actif ? 0.0225 : 0.045, ctx.currentTime + 0.15);
+  } catch(e){ /* silencieux */ }
+}
+
+function jouerSonEntreeNuit(){ enfilerSon(() => {
+  jouerTonalite(220, 1.5, 'sine', 0.18);
+  setTimeout(() => jouerTonalite(110, 1.3, 'sine', 0.14), 200);
+}, 1500); }
+
+function jouerSonReveil(){ enfilerSon(() => {
+  jouerTonalite(440, 0.8, 'sine', 0.14);
+  setTimeout(() => jouerTonalite(660, 0.5, 'sine', 0.1), 200);
+}, 800); }
+
+function jouerGongDefiFin(){ enfilerSon(() => {
+  jouerTonalite(90, 3, 'sine', 0.24);
+}, 3000); }
+
+function jouerClocheDebatFin(){ enfilerSon(() => {
+  jouerTonalite(660, 0.5, 'triangle', 0.18);
+  setTimeout(() => jouerTonalite(660, 0.5, 'triangle', 0.18), 500);
+}, 1500); }
+
+function jouerRevelationHonnete(){ enfilerSon(() => {
+  jouerTonalite(523, 1, 'triangle', 0.18);
+}, 1000); }
+
+function jouerRevelationInfiltre(){ enfilerSon(() => {
+  jouerTonalite(80, 1.5, 'sawtooth', 0.2);
+}, 1500); }
+
+function jouerSonDefi(reussi){
+  if (reussi) enfilerSon(() => jouerTonalite(880, 0.4, 'triangle', 0.2), 400);
+  else enfilerSon(() => jouerTonalite(220, 0.5, 'sawtooth', 0.16), 500);
+}
+
+function jouerSonAlerteMeridian(){ enfilerSon(() => {
+  jouerTonalite(180, 2, 'sawtooth', 0.14);
+  setTimeout(() => jouerTonalite(260, 1.2, 'sawtooth', 0.12), 500);
+}, 2000); }
+
+function jouerSonPaniqueMeridian(){ enfilerSon(() => {
+  jouerTonalite(90, 3.5, 'sawtooth', 0.2);
+  setTimeout(() => jouerTonalite(70, 1, 'square', 0.22), 2800);
+}, 3500); }
+
+function jouerSonPalier(){ enfilerSon(() => {
+  jouerTonalite(65, 2, 'square', 0.2);
+}, 2000); }
+
+function jouerSonResolutionAdoptee(){ enfilerSon(() => {
+  jouerTonalite(150, 0.8, 'square', 0.2);
+}, 800); }
+
+function jouerSonVictoireMeridian(){ enfilerSon(() => {
+  jouerTonalite(65, 4, 'sawtooth', 0.2);
+  setTimeout(() => jouerTonalite(98, 3, 'sawtooth', 0.16), 300);
+}, 4000); }
+
+function jouerSonVictoireHonnete(){ enfilerSon(() => {
+  jouerTonalite(523, 1.2, 'triangle', 0.18);
+  setTimeout(() => jouerTonalite(659, 1.2, 'triangle', 0.18), 400);
+  setTimeout(() => jouerTonalite(784, 2, 'triangle', 0.2), 800);
+}, 4000); }
+
+function jouerSonBilanDefis(nbReussis){
+  if (nbReussis === 3) enfilerSon(() => jouerTonalite(784, 1, 'triangle', 0.2), 1000);
+  else if (nbReussis === 2) enfilerSon(() => jouerTonalite(440, 0.6, 'sine', 0.14), 600);
+  else if (nbReussis === 1) jouerSonAlerteMeridian();
+  else jouerSonPaniqueMeridian();
+}
+
 // Empêche de rejouer le même son en boucle si l'écran est simplement
 // ré-affiché (ex. après « ◀ Annuler » resté sur cet écran) — purement
 // éphémère, sans conséquence si perdu au rechargement de la page.
@@ -1399,7 +1604,7 @@ function dashboardSuivant(){
   if (etape === 0){
     demarrerChrono('defi', dureeDefiSecondes(state.partie.manche));
     state.partie.phase = 'travail';
-    allerEcran('travail');
+    allerEcran('travail-chrono');
   } else if (etape === 1){
     state.partie.phase = 'conseil';
     demarrerChrono('debat', DUREE_DEBAT_SECONDES);
@@ -1418,7 +1623,7 @@ function dashboardRetour(){
   if (state.partie.etapeManche <= 0) return;
   state.partie.etapeManche -= 1;
   const etape = state.partie.etapeManche;
-  if (etape === 0){ allerEcran('travail'); }
+  if (etape === 0){ allerEcran('travail-chrono'); }
   else if (etape === 1){ allerEcran('conseil-debat'); }
   else if (etape === 2){ allerEcran('nuit-fermeture'); }
   else if (etape === 3){ state.partie.etapeBilanMatin = 0; allerEcran('matin-sabotage'); }
@@ -1598,6 +1803,14 @@ function afficherNuitReponses(){
   });
 }
 
+function afficherNuitReveil(){
+  jouerSonEcranUneFois('nuit-reveil-' + state.partie.manche, () => { arreterNappeNuit(); jouerSonReveil(); });
+  ecranNeutreAvecSuivant('Séquence de nuit', 'NOVENTIS se réveille ! Ouvrez les yeux.', () => {
+    state.partie.etapeManche = 3;
+    allerEcran('dashboard');
+  }, 'Ouvrir le Bilan du matin');
+}
+
 function afficherM0RoleTour(ouvert){
   const roles = ROLES_A_POUVOIR_PRESENTS();
   if (state.partie.sousEtapeIndex >= roles.length){
@@ -1658,25 +1871,53 @@ function afficherDashboard(){
   el('btn-retour-scene').addEventListener('click', dashboardRetour);
 }
 
-// --- Étape 1 : Phase de travail (§5.4) ---
+// --- Étape 1 : Phase de travail, en 4 temps (§5.4 CDC v2, refonte §E brief v3) ---
 
+// Saisie en cours, non encore validée : { [defiId]: lettre }. Local et
+// éphémère (comme indexCartePreview) — remis à zéro à l'entrée du chrono.
+let travailSelectionTemp = {};
+
+// Temps 1 — Chronomètre seul (§C6/§E) : aucune saisie possible, l'animateur
+// avance quand l'équipe a rendu sa copie papier.
+function afficherTravailChrono(){
+  const misAPied = state.joueurs.filter(j => j.miseAPiedManche === state.partie.manche);
+  const restant = state.partie.chrono ? Math.round((state.partie.chrono.finAt - Date.now())/1000) : 0;
+  carteEcran(`
+    <h2>Manche ${state.partie.manche} — Phase de travail</h2>
+    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied, ne participe pas au défi de son service.</div>` : ''}
+    <div class="chrono-geant ${classeChronoGeant(restant)}" id="chrono-affichage">${formatChrono(restant)}</div>
+    <button id="btn-suivant-scene">Suivant : saisie des réponses</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    travailSelectionTemp = {};
+    allerEcran('travail');
+  });
+}
+
+function classeChronoGeant(secondesRestantes){
+  if (secondesRestantes <= 10) return 'rouge';
+  if (secondesRestantes < 60) return 'orange';
+  return '';
+}
+
+// Temps 2 — Saisie (§E) : sélection seule, aucun retour juste/faux tant que
+// les 3 services ne sont pas renseignés et que « Révéler » n'a pas été cliqué.
 function afficherTravail(){
   const defis = defisDeLaManche(state.partie.manche);
-  const tousRepondus = defis.every(d => d.reponseEquipe !== null);
   const misAPied = state.joueurs.filter(j => j.miseAPiedManche === state.partie.manche);
+  const tousSelectionnes = defis.every(d => travailSelectionTemp[d.id]);
   carteEcran(`
     <h2>Manche ${state.partie.manche} — Phase de travail</h2>
     <div class="sous-titre">RH · Commercial · Finance — chaque service relève son défi.</div>
-    <div class="chrono-affichage" id="chrono-affichage">${state.partie.chrono ? formatChrono(Math.round((state.partie.chrono.finAt - Date.now())/1000)) : ''}</div>
-    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied conservatoire, ne participe pas au défi de son service ce tour-ci (conserve son droit de vote).</div>` : ''}
+    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied, ne participe pas au défi de son service.</div>` : ''}
     <div id="grille-defis" style="text-align:left;"></div>
-    <button id="btn-valider-defis" ${tousRepondus ? '' : 'disabled'}>Valider les résultats</button>
+    <button id="btn-valider-defis" ${tousSelectionnes ? '' : 'disabled'}>Révéler les résultats</button>
   `);
   afficherGrilleDefis();
   el('btn-valider-defis').addEventListener('click', () => {
     arreterChrono();
-    if (state.partie.propositionsIndices){ allerEcran('indice'); }
-    else { state.partie.etapeManche = 1; allerEcran('dashboard'); }
+    defis.forEach(d => { saisirReponseDefi(d.id, travailSelectionTemp[d.id]); });
+    allerEcran('travail-revelation');
   });
 }
 
@@ -1686,21 +1927,84 @@ function afficherGrilleDefis(){
   zone.innerHTML = defis.map(d => {
     const lettres = Array.from({ length: d.nbChoix }, (_, i) => String.fromCharCode(65 + i));
     const boutons = lettres.map(l => {
-      let cls = 'qcm';
-      if (d.reponseEquipe === l){ cls += d.reussi ? ' correct' : ' incorrect'; }
-      const disabled = d.reponseEquipe !== null ? 'disabled' : '';
-      return `<button class="${cls}" data-defi="${d.id}" data-lettre="${l}" ${disabled}>${l}</button>`;
+      const cls = 'qcm' + (travailSelectionTemp[d.id] === l ? ' selectionne' : '');
+      return `<button class="${cls}" data-defi="${d.id}" data-lettre="${l}">${l}</button>`;
     }).join('');
-    const statut = d.reponseEquipe === null
-      ? '<span class="small">En attente de la réponse de l\'équipe</span>'
-      : `<span class="small">${d.reussi ? '✅ Juste' : '❌ Faux'} — bonne réponse : ${d.reponseCorrecte}</span>`;
-    return `<div class="service-box"><h4>${d.service}</h4><div class="qcm-choix">${boutons}</div><div style="margin-top:6px;">${statut}</div></div>`;
+    return `<div class="service-box"><h4>${d.service}</h4><div class="qcm-choix">${boutons}</div></div>`;
   }).join('');
-  zone.querySelectorAll('button.qcm:not(:disabled)').forEach(b => {
+  zone.querySelectorAll('button.qcm').forEach(b => {
     b.addEventListener('click', () => {
-      try { saisirReponseDefi(b.dataset.defi, b.dataset.lettre); rafraichirJeu(); }
-      catch(e){ afficherErreur(e.message); }
+      const { defi, lettre } = b.dataset;
+      // Un second clic sur le choix déjà sélectionné désélectionne (§E).
+      travailSelectionTemp[defi] = (travailSelectionTemp[defi] === lettre) ? undefined : lettre;
+      afficherGrilleDefis();
+      el('btn-valider-defis').disabled = !defisDeLaManche(state.partie.manche).every(d => travailSelectionTemp[d.id]);
     });
+  });
+}
+
+// Temps 3 — Révélation séquencée (§E) : RH → Finance → Commercial, 900 ms
+// d'intervalle ; par service : surbrillance → pause 400 ms → couleur + son →
+// si faux, la bonne réponse s'illumine ensuite plus discrètement.
+const ORDRE_REVELATION_DEFIS = ['RH', 'Finance', 'Commercial'];
+
+function afficherTravailRevelation(){
+  const defis = defisDeLaManche(state.partie.manche);
+  carteEcran(`
+    <h2>Manche ${state.partie.manche} — Révélation des résultats</h2>
+    <div id="grille-revelation" style="text-align:left;"></div>
+  `);
+  const zone = el('grille-revelation');
+  zone.innerHTML = ORDRE_REVELATION_DEFIS.map(service => {
+    const d = defis.find(x => x.service === service);
+    const lettres = Array.from({ length: d.nbChoix }, (_, i) => String.fromCharCode(65 + i));
+    const boutons = lettres.map(l => `<button class="qcm" data-lettre="${l}" disabled>${l}</button>`).join('');
+    return `<div class="service-box" id="revelation-${service}"><h4>${service}</h4><div class="qcm-choix">${boutons}</div><div class="statut-differe small"></div></div>`;
+  }).join('');
+
+  ORDRE_REVELATION_DEFIS.forEach((service, idx) => {
+    const d = defis.find(x => x.service === service);
+    setTimeout(() => {
+      const box = document.getElementById('revelation-' + service);
+      if (!box) return;
+      box.classList.add('en-surbrillance');
+      setTimeout(() => {
+        box.classList.remove('en-surbrillance');
+        const boutonChoisi = box.querySelector(`button[data-lettre="${d.reponseEquipe}"]`);
+        if (boutonChoisi) boutonChoisi.classList.add(d.reussi ? 'correct' : 'incorrect');
+        jouerSonDefi(d.reussi);
+        if (!d.reussi){
+          const boutonCorrect = box.querySelector(`button[data-lettre="${d.reponseCorrecte}"]`);
+          if (boutonCorrect) boutonCorrect.classList.add('correct-discret');
+        }
+        box.querySelector('.statut-differe').textContent = d.reussi ? '✅ Juste' : `❌ Faux — bonne réponse : ${d.reponseCorrecte}`;
+      }, 400);
+    }, idx * 900);
+  });
+
+  setTimeout(() => { allerEcran('travail-bilan', true); }, ORDRE_REVELATION_DEFIS.length * 900 + 700);
+}
+
+// Temps 4 — Bilan agrégé (§E) : chiffre énorme + libellé coloré et sonorisé.
+// Alerte/Panique amorcent l'animation du camembert (le transfert réel reste
+// différé au Bilan du matin, §5.7/§G5 — voir traiterConsequenceMatin).
+const LIBELLES_BILAN_DEFIS = { 3: 'INDICE', 2: 'STATU QUO', 1: 'ALERTE', 0: 'PANIQUE' };
+const CLASSES_BILAN_DEFIS = { 3: 'indice', 2: 'statuquo', 1: 'alerte', 0: 'panique' };
+
+function afficherTravailBilan(){
+  const defis = defisDeLaManche(state.partie.manche);
+  const nbReussis = defis.filter(d => d.reussi).length;
+  jouerSonEcranUneFois('travail-bilan-' + state.partie.manche, () => jouerSonBilanDefis(nbReussis));
+  if (nbReussis <= 1) pulserMeridianGainDeTerrain();
+  carteEcran(`
+    <h2>Bilan des défis</h2>
+    <div class="bilan-chiffre">${nbReussis} / 3</div>
+    <div class="bilan-libelle ${CLASSES_BILAN_DEFIS[nbReussis]}">${LIBELLES_BILAN_DEFIS[nbReussis]}</div>
+    <div style="margin-top:20px;"><button id="btn-suivant-scene">Suivant</button></div>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (state.partie.propositionsIndices){ allerEcran('indice'); }
+    else { state.partie.etapeManche = 1; allerEcran('dashboard'); }
   });
 }
 
@@ -1745,6 +2049,7 @@ function afficherConseilDebat(){
   }, inscrits);
   el('btn-suivant-scene').addEventListener('click', () => {
     arreterChrono();
+    jouerClocheDebatFin();
     if (state.partie.resolutionsEnCours.length === 0){
       ajouterChroniquePublique("Aucune résolution n'a été adoptée. Le conseil reste inchangé.");
       state.partie.etapeManche = 2;
@@ -1824,6 +2129,12 @@ function afficherConseilResultat(){
   if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard', true); return; }
   const cible = getJoueur(resolution.joueurId);
   const adoptee = resolution.statut === 'adoptee';
+  jouerSonEcranUneFois('conseil-resultat-' + resolution.joueurId + '-' + resolution.statut, () => {
+    if (adoptee){
+      jouerSonResolutionAdoptee();
+      setTimeout(() => { campDe(cible) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete(); }, 900);
+    }
+  });
   const titre = adoptee
     ? `Résolution adoptée — ${resolution.prenom} est révoqué(e).`
     : `Résolution rejetée — ${resolution.prenom} reste en fonction.`;
@@ -1905,7 +2216,8 @@ function avancerNuit(){
 }
 
 function afficherNuitFermeture(){
-  jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerGongNuit);
+  jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerSonEntreeNuit);
+  demarrerNappeNuit();
   state.partie.sousEtapeIndex = 0;
   state.partie.etapesNuitSnapshot = etapesNuitDisponibles();
   sauvegarder();
@@ -2041,7 +2353,9 @@ function afficherMatinSabotage(){
 function avancerApresMatinSabotage(){
   state.partie.etapeBilanMatin = 1;
   sauvegarder();
-  if (state.partie.consequenceDefisEnAttente){
+  // Un sabotage peut à lui seul franchir un palier Meridian (§4.5) : ne
+  // jamais sauter le communiqué dans ce cas, sous peine de perdre l'annonce.
+  if (state.partie.consequenceDefisEnAttente || (state.partie.palierVenantDetreFranchis || []).length){
     allerEcran('matin-communique');
   } else {
     finBilanMatin();
@@ -2049,7 +2363,6 @@ function avancerApresMatinSabotage(){
 }
 
 function afficherMatinCommunique(){
-  jouerSonEcranUneFois('matin-communique-' + state.partie.manche, jouerNotificationCommunique);
   // Traité une seule fois à l'entrée de cet écran (le rendu peut être rappelé
   // sans effet de bord grâce à ce garde d'idempotence sur etapeBilanMatin).
   if (state.partie.etapeBilanMatin === 1){
@@ -2060,6 +2373,12 @@ function afficherMatinCommunique(){
   }
   const type = state.partie.derniereAnnonceMatin ? state.partie.derniereAnnonceMatin.type : null;
   const paliers = state.partie.palierVenantDetreFranchis || [];
+  jouerSonEcranUneFois('matin-communique-' + state.partie.manche, () => {
+    if (type === 'alerte') jouerSonAlerteMeridian();
+    else if (type === 'panique') jouerSonPaniqueMeridian();
+    else jouerNotificationCommunique();
+    if (paliers.length) setTimeout(jouerSonPalier, 900);
+  });
   carteEcran(`
     <h2>Communiqué Meridian</h2>
     <div class="texte-narratif" style="text-align:center;">${COMMUNIQUES_MERIDIAN[type] || ''}</div>
@@ -2094,6 +2413,10 @@ const TITRES_FIN = {
 function afficherFin(){
   const v = state.partie.victoire;
   if (!v){ allerEcran('dashboard', true); return; }
+  jouerSonEcranUneFois('fin-' + v.type, () => {
+    if (v.type === 'meridian') jouerSonVictoireMeridian();
+    else jouerSonVictoireHonnete();
+  });
   carteEcran(`
     <h2>${TITRES_FIN[v.type] || 'Fin de partie'}</h2>
     ${imgTag('victoire')}
@@ -2179,7 +2502,10 @@ function renderEcranActuel(){
   if (id === 'm0-reveil') return afficherM0Reveil();
 
   if (id === 'dashboard') return afficherDashboard();
+  if (id === 'travail-chrono') return afficherTravailChrono();
   if (id === 'travail') return afficherTravail();
+  if (id === 'travail-revelation') return afficherTravailRevelation();
+  if (id === 'travail-bilan') return afficherTravailBilan();
   if (id === 'indice') return afficherIndice();
   if (id === 'conseil-debat') return afficherConseilDebat();
   if (id === 'conseil-vote') return afficherConseilVote();
@@ -2190,10 +2516,7 @@ function renderEcranActuel(){
   if (id === 'nuit-drh') return afficherNuitDrh();
   if (id === 'nuit-infiltres') return afficherNuitInfiltres();
   if (id === 'nuit-reponses') return afficherNuitReponses();
-  if (id === 'nuit-reveil') return ecranNeutreAvecSuivant('Séquence de nuit', 'NOVENTIS se réveille ! Ouvrez les yeux.', () => {
-    state.partie.etapeManche = 3;
-    allerEcran('dashboard');
-  }, 'Ouvrir le Bilan du matin');
+  if (id === 'nuit-reveil') return afficherNuitReveil();
   if (id === 'matin-sabotage') return afficherMatinSabotage();
   if (id === 'matin-communique') return afficherMatinCommunique();
   if (id === 'fin') return afficherFin();
@@ -2221,7 +2544,7 @@ function afficherMasque(){
 function remplirPanneauCorrections(){
   remplirSelect(el('corr-select-joueur'), state.joueurs, false);
   el('corr-select-role').innerHTML = CARTES.map(r => `<option value="${r}">${CARTE_LABELS[r]}</option>`).join('');
-  el('corr-select-ecran').innerHTML = ['dashboard','travail','indice','conseil-debat','conseil-vote','conseil-resultat',
+  el('corr-select-ecran').innerHTML = ['dashboard','travail-chrono','travail','travail-revelation','travail-bilan','indice','conseil-debat','conseil-vote','conseil-resultat',
     'nuit-fermeture','nuit-juriste','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reveil',
     'matin-sabotage','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
 }
@@ -2886,13 +3209,28 @@ function initEvenements(){
 }
 
 // Rafraîchissement du chrono affiché (simple repère visuel, §5.4/§5.5) :
-// une seule minuterie globale, indépendante de l'écran courant.
+// une seule minuterie globale, indépendante de l'écran courant. Sur l'écran
+// géant du chronomètre de défi (§C6), colore blanc/orange/rouge+pulsation et
+// joue le gong une seule fois au passage à zéro.
+let dernierChronoGongId = null;
 setInterval(() => {
   if (!state || !state.partie || !state.partie.chrono) return;
   const zone = document.getElementById('chrono-affichage');
   if (!zone) return;
   const restant = Math.round((state.partie.chrono.finAt - Date.now()) / 1000);
   zone.textContent = formatChrono(restant);
+  if (zone.classList.contains('chrono-geant')){
+    zone.classList.remove('orange', 'rouge');
+    if (restant <= 10 && restant > 0) zone.classList.add('rouge');
+    else if (restant < 60 && restant > 0) zone.classList.add('orange');
+  }
+  if (state.partie.chrono.type === 'defi' && restant <= 0){
+    const chronoId = state.partie.chrono.finAt;
+    if (dernierChronoGongId !== chronoId){
+      dernierChronoGongId = chronoId;
+      jouerGongDefiFin();
+    }
+  }
 }, 250);
 
 /* ============================================================
