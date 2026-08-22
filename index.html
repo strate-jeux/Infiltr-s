@@ -34,6 +34,8 @@
     --bleu-joueur: #3B79F0;
     --rouge-infiltre: #d63a3a;
     --noir-meridian: #050607;
+    --rouge-meridian: #6b1418; /* tranche Meridian, rouge très sombre (§A2 brief v3) */
+    --rouge-meridian-vif: #b3261e; /* halo/pulse lors d'un gain de terrain Meridian */
     --noir: #14171a;
     --blanc-casse: #f7f3e9;
     --carte-texte: #1b1d1f;
@@ -41,8 +43,9 @@
     --carte-fond-2: #efe9d8;
     --carte-bordure-2: #d9d0b8;
 
-    --font-titre: 'Arial Rounded MT Bold', 'Nunito', Nunito, 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
+  /* Une seule police, deux tailles — titre et corps (§C1 brief v3) : jamais
+     de seconde famille de caractères, seuls le poids et la taille varient. */
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -51,7 +54,7 @@
     color: var(--text);
     line-height:1.4;
   }
-  h1, h2, h3, .titre-jeu{ font-family: var(--font-titre); font-weight:900; letter-spacing:0.02em; }
+  h1, h2, h3, .titre-jeu{ font-weight:900; letter-spacing:0.02em; }
   header{
     padding: 14px 20px;
     background: var(--panel);
@@ -178,13 +181,53 @@
   .ecran-card .liste-ordre-jour .item{ background:var(--carte-fond-2); border:1px solid var(--carte-bordure-2); color:var(--carte-texte); }
 
   .ecran-neutre{ min-height:160px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; }
-  .camembert-compact{ display:flex; justify-content:center; padding:10px 16px 0; }
-  .camembert-compact svg{ width:150px; height:150px; }
+  /* Camembert ~40 % de la hauteur, centré en permanence (§C2 brief v3). */
+  .camembert-compact{ display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 16px 0; }
+  .camembert-compact svg{ width:min(40vh, 360px); height:min(40vh, 360px); }
+  .camembert-compact svg .segment-meridian{ transition: fill-opacity 350ms ease; }
+  @keyframes camembert-pulse-meridian{ 0%,100%{ fill-opacity:1; } 50%{ fill-opacity:0.7; } }
+  .camembert-compact svg .segment-meridian.pulse{ animation: camembert-pulse-meridian 550ms ease-in-out 3; }
+  .ligne-meridian{ width:100%; max-width:360px; margin:10px auto 0; font-size:0.82rem; color:var(--text-dim); text-align:center; }
+  .ligne-meridian .barre{ position:relative; height:8px; background:var(--panel-2); border:1px solid var(--border); border-radius:4px; margin-top:4px; overflow:visible; }
+  .ligne-meridian .barre .fill{ height:100%; background: var(--rouge-meridian); border-radius:4px 0 0 4px; transition: width 1200ms cubic-bezier(.4,0,.2,1); }
+  .ligne-meridian .barre .repere-50{ position:absolute; top:-3px; bottom:-3px; width:2px; background:#fff; left:50%; }
+  @keyframes halo-meridian{ 0%{ opacity:0; } 15%{ opacity:1; } 100%{ opacity:0; } }
+  #halo-meridian{ position:fixed; inset:0; z-index:90; pointer-events:none; background: radial-gradient(ellipse at center, rgba(179,38,30,0.35) 0%, rgba(179,38,30,0) 70%); opacity:0; }
+  #halo-meridian.actif{ animation: halo-meridian 900ms ease-out; }
+
+  /* Le noir comme ponctuation (§C3 brief v3) : seul effet de transition,
+     400 ms, à chaque changement de phase de la manche. */
+  @keyframes fondu-noir{ 0%{ opacity:0; } 50%{ opacity:1; } 100%{ opacity:0; } }
+  #fondu-noir{ position:fixed; inset:0; z-index:98; background:#000; opacity:0; pointer-events:none; }
+  #fondu-noir.actif{ animation: fondu-noir 400ms ease; }
+
+  /* La nuit (§C4 brief v3) : assombrissement, camembert désaturé à 60 %,
+     pas de bouton visible (avance à la barre d'espace). */
+  .ecran-nuit-sombre{ min-height:220px; display:flex; align-items:center; justify-content:center; }
+  .ecran-nuit-sombre .texte-nuit{ font-size:1.3rem; color:var(--text-dim); text-align:center; opacity:0; animation: nuit-assombrir 2s ease forwards; }
+  @keyframes nuit-assombrir{ from{ opacity:0; } to{ opacity:1; } }
+  body.nuit-active #zone-camembert-compact svg{ filter: saturate(0.4); transition: filter 2s ease; }
+  /* Réveil (§C4 brief v3) : flash blanc 120 ms puis retour sur 600 ms. */
+  @keyframes reveil-flash{ 0%{ opacity:0; } 16%{ opacity:1; } 100%{ opacity:0; } }
+  #flash-reveil{ position:fixed; inset:0; z-index:99; pointer-events:none; background:#fff; opacity:0; }
+  #flash-reveil.actif{ animation: reveil-flash 720ms ease-out; }
+
+  /* Franchissement de palier Meridian (§C8 brief v3) : plein écran rouge
+     très sombre, entrée en zoom 104 %→100 % avec tremblement. */
+  @keyframes palier-entree{ 0%{ transform: scale(1.04); } 60%{ transform: scale(0.995); } 100%{ transform: scale(1); } }
+  @keyframes palier-tremble{ 0%,100%{ margin-left:0; } 20%{ margin-left:-3px; } 40%{ margin-left:3px; } 60%{ margin-left:-2px; } 80%{ margin-left:2px; } }
+  #palier-overlay{ position:fixed; inset:0; z-index:97; background:#2b0808; color:#fff; display:flex; align-items:center; justify-content:center; text-align:center; padding:32px; }
+  #palier-overlay.hidden{ display:none; }
+  #palier-overlay .palier-texte{ max-width:640px; font-size:1.3rem; line-height:1.6; animation: palier-entree 500ms ease, palier-tremble 500ms ease; }
   #zone-bandeau-joueurs{ max-width:900px; margin:0 auto; padding:0 16px; }
   .bandeau-joueurs{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:10px; background:var(--panel); border:1px solid var(--border); border-radius:10px; }
-  .joueur-pill{ padding:5px 10px; border-radius:16px; font-size:0.75rem; background:var(--panel-2); border:1px solid var(--border); color:var(--text); }
-  .joueur-pill.gele{ opacity:0.55; text-decoration: line-through; }
-  .joueur-pill.revoque{ opacity:0.3; text-decoration: line-through; }
+  .joueur-pill{ position:relative; padding:5px 10px; border-radius:16px; font-size:0.75rem; background:var(--panel-2); border:1px solid var(--border); color:var(--text); }
+  /* Révocation : simple fondu (§C9 brief v3). */
+  .joueur-pill.sorti-revoque{ opacity:0.35; text-decoration: line-through; transition: opacity 400ms ease; }
+  /* Sabotage : animation de barrement — le trait se dessine en 400 ms (§C9). */
+  .joueur-pill.sorti-sabote{ opacity:0.6; }
+  .joueur-pill.sorti-sabote::after{ content:''; position:absolute; left:8px; right:8px; top:50%; height:2px; background:currentColor; transform:translateY(-50%) scaleX(0); transform-origin:left; animation: barrement 400ms ease forwards; }
+  @keyframes barrement{ to{ transform:translateY(-50%) scaleX(1); } }
   .joueur-pill .president-icone{ margin-right:2px; }
   .grille-joueurs-tap{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
   button.joueur-tap{ background:var(--panel-2); color:var(--text); border:1px solid var(--border); padding:10px 16px; border-radius:8px; }
@@ -194,11 +237,42 @@
   button.joueur-tap.vote-abstention{ background:var(--panel-2); color:var(--text-dim); border-color:var(--border); }
   button.joueur-tap:disabled{ opacity:0.35; }
   .chrono-affichage{ font-size:2.2rem; font-weight:700; font-variant-numeric: tabular-nums; margin:8px 0; }
+  /* Chronomètre plein écran (§C6 / §E étape 1) : chiffres énormes seuls,
+     blanc > 1 min, orange < 1 min, rouge + pulsation < 10 s. */
+  .chrono-geant{ font-size:6.5rem; font-weight:800; font-variant-numeric: tabular-nums; margin:32px 0; color:#fff; letter-spacing:0.02em; }
+  .chrono-geant.orange{ color: var(--warn); }
+  .chrono-geant.rouge{ color: var(--bad); animation: chrono-pulse 1s ease-in-out infinite; }
+  @keyframes chrono-pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.06); } }
+  /* Saisie des défis (§E étape 2) : sélection sans retour juste/faux. */
+  button.qcm.selectionne{ background:var(--panel-2); color:#fff; border:3px solid var(--bleu-infiltres); box-shadow:0 0 0 2px rgba(47,111,235,0.35); }
+  /* Révélation séquencée (§E étape 3). */
+  .service-box.en-surbrillance{ border-color:#fff; box-shadow:0 0 0 2px rgba(255,255,255,0.5); }
+  .service-box .statut-differe{ min-height:1.2em; }
+  button.qcm.correct-discret{ border-color:var(--ok); color:var(--ok); opacity:0.75; }
+  /* Bilan agrégé (§E étape 4). */
+  .bilan-chiffre{ font-size:6rem; font-weight:800; line-height:1; margin:12px 0; }
+  .bilan-libelle{ font-size:1.6rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; padding:8px 20px; border-radius:10px; display:inline-block; }
+  .bilan-libelle.indice{ background:#1c3d2c; color:var(--ok); }
+  .bilan-libelle.statuquo{ background:var(--panel-2); color:var(--text-dim); }
+  .bilan-libelle.alerte{ background:#3d341c; color:var(--warn); }
+  .bilan-libelle.panique{ background:#3d1c1c; color:var(--bad); }
   .barre-progression{ width:100%; max-width:420px; height:22px; background:var(--panel-2); border:1px solid var(--border); border-radius:11px; margin:10px auto; overflow:hidden; position:relative; }
-  .barre-progression .fill{ height:100%; background: var(--accent); transition: width 400ms ease; }
+  .barre-progression .fill{ height:100%; background: var(--accent); transition: width 400ms ease, background 400ms ease; }
+  .barre-progression .fill.majorite{ background: var(--ok); }
   .barre-progression .seuil{ position:absolute; top:0; bottom:0; width:2px; background:#fff; left:50%; }
+  @keyframes barre-vibration{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-4px); } 40%{ transform:translateX(4px); } 60%{ transform:translateX(-3px); } 80%{ transform:translateX(3px); } }
+  .barre-progression.vibre{ animation: barre-vibration 300ms; }
   .carte-reveal{ background:#fff; color:#111; border:6px solid var(--bleu-infiltres); border-radius:14px; padding:24px; max-width:420px; margin:0 auto; font-weight:700; font-size:1.2rem; }
   .carte-reveal.infiltre{ border-color: var(--rouge-infiltre); }
+  /* Révélation de carte au clic (§C5 brief v3) : dos visible, rotation 3D
+     600 ms au clic. Réutilisé pour le sabotage et la révocation en AG. */
+  .carte-flip-conteneur{ perspective:1000px; max-width:280px; margin:20px auto; cursor:pointer; }
+  .carte-flip{ position:relative; width:100%; aspect-ratio:3/4; transition: transform 600ms; transform-style:preserve-3d; }
+  .carte-flip.retournee{ transform: rotateY(180deg); }
+  .carte-flip .face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; text-align:center; }
+  .carte-flip .dos{ background:var(--panel-2); border:4px solid var(--bleu-infiltres); color:#fff; font-weight:700; font-size:1.15rem; }
+  .carte-flip .face-avant{ background:#fff; color:#111; border:6px solid var(--bleu-infiltres); transform: rotateY(180deg); font-weight:700; font-size:1.1rem; }
+  .carte-flip .face-avant.infiltre{ border-color: var(--rouge-infiltre); }
   #masque-overlay{
     position:fixed; inset:0; z-index:100; background:#05070a; color:#8892a0;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
@@ -216,6 +290,8 @@
 </style>
 </head>
 <body>
+
+<div id="fondu-noir"></div>
 
 <!-- ===================== VOILE « MASQUER » (§2.2 / §6 CDC v2) ===================== -->
 <div id="masque-overlay" class="hidden">
@@ -240,7 +316,6 @@
   <img id="header-logo" alt="" class="hidden">
   <div>
     <h1>INFILTRÉS</h1>
-    <div class="sub">Diaporama interactif pour l'animateur — fenêtre unique, projetée directement.</div>
   </div>
 </header>
 
@@ -274,8 +349,16 @@
   </div>
 </div>
 
+<div id="halo-meridian"></div>
+<div id="flash-reveil"></div>
+<div id="palier-overlay" class="hidden"><div class="palier-texte" id="palier-overlay-texte"></div></div>
+
 <div id="zone-camembert-compact" class="camembert-compact hidden">
   <svg id="camembert" viewBox="0 0 300 300"></svg>
+  <div class="ligne-meridian">
+    <span id="lbl-ligne-meridian">Meridian et ses agents : 0,0 %</span>
+    <div class="barre"><div class="fill" id="fill-ligne-meridian" style="width:0%;"></div><div class="repere-50"></div></div>
+  </div>
 </div>
 
 <main id="zone-scene"></main>
@@ -425,14 +508,16 @@ function formatPct(millimes){
 const STORAGE_KEY = 'infiltres_v2_lot1_partie_v1';
 const SERVICES = ['RH', 'Commercial', 'Finance'];
 
-// Le Président n'est plus un rôle tiré en Préparation : c'est un attribut de
-// Partie (presidentActuelId), assigné en cours de partie (§3/§5.1 du CDC v2).
-// « Infiltré » est désormais un rôle comme un autre : le camp se déduit du
-// rôle (voir campDe), il n'existe plus de champ camp séparé sur le Joueur.
-const ROLES = ['associe', 'drh', 'avocat', 'daf', 'juriste', 'infiltre'];
-const ROLES_UNIQUES = ['drh', 'avocat', 'daf', 'juriste']; // 1 seul titulaire possible chacun
-const ROLE_LABELS = {
-  associe: 'Associé simple', drh: 'DRH', avocat: 'Avocat en droit des affaires',
+// Un seul champ d'identité par joueur (§1 brief v3) : la carte physique
+// qu'il détient. Connaître le rôle revient exactement à connaître le camp
+// (les cartes imprimées sont Associé honnête, Infiltré, DRH, DAF, Juriste),
+// donc camp et rôle ne sont plus deux informations distinctes — voir campDe.
+// Le Président n'est pas une carte : c'est un attribut de Partie
+// (presidentActuelId), assigné en cours de partie et réassignable.
+const CARTES = ['associe', 'drh', 'daf', 'juriste', 'infiltre'];
+const CARTES_UNIQUES = ['drh', 'daf', 'juriste']; // 1 seul titulaire possible chacune
+const CARTE_LABELS = {
+  associe: 'Associé honnête', drh: 'DRH',
   daf: 'DAF / Contrôleur de gestion', juriste: 'Juriste', infiltre: 'Infiltré'
 };
 const PRENOMS_FICTIFS = ['Alice','Baptiste','Camille','Diane','Émile','Farah','Gabin','Hana',
@@ -519,25 +604,32 @@ function etatInitial(){
       alerteInvariant: null,
       journal: [],
       chroniquePublique: [], // [{manche, texte}] — récapitulatif de fin (§5.9)
-      miseAPiedDrhUtilisee: false,
+      miseAPiedDrhParManche: {}, // DRH : pouvoir chaque nuit (§2 brief v3), pas 1×/partie
       enqueteDafParManche: {},
       consequenceDefisEnAttente: null, // null | 'alerte' | 'panique'
       indiceTexte: null,
       propositionsIndices: null,
       derniereAnnonceMatin: null,
       palierVenantDetreFranchis: [],
-      // Révélation différée (§5.6/§5.8 CDC v2) : le sabotage révèle le rôle côté
-      // moteur dès l'action de nuit, mais l'écran ne doit l'afficher qu'au
-      // moment officiel du Bilan du matin — jamais avant (aucun secret ne doit
-      // apparaître en dehors des révélations prévues).
-      dernierEvenementNuitPublic: null, // {type:'nuit_calme'|'sabotage'|'sabotage_juriste', joueurId?}
+      // Révélation différée (§5.6/§5.8 CDC v2) : le sabotage révèle la carte et
+      // déplace le capital côté moteur dès l'action de nuit, mais l'écran ne
+      // doit l'afficher qu'au moment officiel du Bilan du matin — jamais avant
+      // (aucun secret ne doit apparaître en dehors des révélations prévues).
+      dernierEvenementNuitPublic: null, // {type:'nuit_calme'|'sabotage', joueurId?}
       idsEnAttenteAnnonce: [],
-      // Révocation par résolutions successives (§4.3 CDC v2) : 0 à 3 noms,
-      // votés un par un dans l'ordre d'inscription. Verrouillage automatique
-      // dès qu'une résolution est ADOPTÉE (pas à chaque tentative).
+      // Le camembert reste figé sur l'image d'avant sabotage tant que la
+      // sortie du capital n'a pas été annoncée au Bilan du matin (écran 3 de
+      // §D5) : sinon la disparition de la tranche trahirait le sabotage avant
+      // l'heure. L'animation de transition existante du camembert, rejouée au
+      // dégel, EST la dramatisation de la sortie du capital demandée par §D5.
+      camembertGeleJusquaReveal: null,
+      // Révocation par résolutions successives (§4.3 CDC v2, plafond porté à
+      // 2 adoptions/manche par le §G1 du brief v3) : 0 à 3 noms, votés un par
+      // un dans l'ordre d'inscription. Verrouillage dès que 2 résolutions ont
+      // été ADOPTÉES cette manche (un rejet ne consomme pas le compteur).
       resolutionsEnCours: [], // [{joueurId, prenom, statut, pour?, totalVotante?}]
       resolutionCouranteIndex: 0,
-      revocationVerrouilleeParManche: {},
+      revocationsAdopteesParManche: {},
       // Progression des écrans à cascade (Manche 0, séquence de nuit) : index
       // courant dans une liste programmée, remis à zéro à chaque entrée d'écran.
       sousEtapeIndex: 0,
@@ -557,10 +649,12 @@ function getJoueur(id){
   return state.joueurs.find(j => j.id === id) || null;
 }
 
-// Le camp n'est plus un champ séparé du Joueur (§3 CDC v2) : il se déduit
-// entièrement du rôle. Seul le rôle « infiltre » est du camp infiltré.
+// Le camp n'est pas un champ séparé du Joueur (§1 brief v3) : il se déduit
+// entièrement de la carte détenue. Seule la carte « infiltre » est du camp
+// adverse ; Meridian et les infiltrés forment ensemble le camp adverse pour
+// le calcul de victoire (§A1).
 function campDe(joueur){
-  return joueur.role === 'infiltre' ? 'infiltre' : 'honnete';
+  return joueur.carte === 'infiltre' ? 'adverse' : 'honnete';
 }
 
 function ajouterJournal(type, message){
@@ -611,7 +705,7 @@ function annulerDerniereAction(){
 
 function verifierInvariant(){
   const sommeJoueurs = state.joueurs
-    .filter(j => j.statutCapital !== 'revoque')
+    .filter(j => j.statutCapital === 'actif')
     .reduce((a, j) => a + j.part, 0);
   const total = sommeJoueurs + state.meridian.part;
   const ok = total === 100000;
@@ -622,8 +716,8 @@ function verifierInvariant(){
 
 function verifierVictoireHonneteAnticipee(){
   if (state.partie.victoire) return false;
-  const infiltres = state.joueurs.filter(j => campDe(j) === 'infiltre');
-  if (infiltres.length > 0 && infiltres.every(j => j.statutCapital === 'revoque')){
+  const infiltres = state.joueurs.filter(j => campDe(j) === 'adverse');
+  if (infiltres.length > 0 && infiltres.every(j => j.statutCapital !== 'actif')){
     state.partie.victoire = { type: 'honnete_anticipee', manche: state.partie.manche };
     ajouterJournal('victoire', 'Tous les infiltrés ont été démasqués et révoqués. Victoire honnête anticipée.');
     return true;
@@ -631,11 +725,13 @@ function verifierVictoireHonneteAnticipee(){
   return false;
 }
 
-// À appeler à chaque bilan du matin (nuits 1 à 5).
+// À appeler à chaque bilan du matin (nuits 1 à 5). Aucune victoire n'est
+// vérifiée avant le bilan du matin de la manche 3 (plancher §A1).
 function verifierVictoireBilanMatin(dernierBilan){
   if (state.partie.victoire) return state.partie.victoire;
+  if (state.partie.manche < 3) return null;
   const sommeInfiltres = state.joueurs
-    .filter(j => campDe(j) === 'infiltre' && j.statutCapital !== 'revoque')
+    .filter(j => campDe(j) === 'adverse' && j.statutCapital === 'actif')
     .reduce((a, j) => a + j.part, 0);
   const total = sommeInfiltres + state.meridian.part;
   if (total > 50000){
@@ -675,8 +771,12 @@ function verifierPaliersMeridian(){
    ============================================================ */
 
 // --- 5.1 Sabotage (phase nocturne) ---
-// estProtegeOverride : la protection réelle (Avocat) est déterminée hors
-// console technique par le panneau de nuit (Lot 2) ; ici, simple case à cocher.
+// Règle de sortie unique (§A1 brief v3) : plus de séquestre, plus d'état
+// intermédiaire « gelé ». Tout joueur saboté quitte le conseil et cède la
+// totalité de ses titres — cession libre : 75 % préemptés au prorata par
+// les associés restants, 25 % à Meridian (seul chiffre arbitraire du jeu).
+// estProtege : la protection réelle (Juriste) est déterminée hors console
+// technique par le panneau de nuit ; ici, simple case à cocher.
 function actionSabotage(cibleId, estProtege){
   const cible = getJoueur(cibleId);
   if (!cible) throw new Error('Cible introuvable.');
@@ -687,38 +787,40 @@ function actionSabotage(cibleId, estProtege){
     state.partie.dernierEvenementNuitPublic = { type: 'nuit_calme' };
     state.partie.idsEnAttenteAnnonce = [];
   } else {
+    // Fige le camembert sur l'image d'avant sabotage (capturée AVANT toute
+    // mutation) : la sortie du capital reste invisible jusqu'au dégel au
+    // Bilan du matin (§5.8, §D5).
+    state.partie.camembertGeleJusquaReveal = {
+      joueurs: JSON.parse(JSON.stringify(state.joueurs)),
+      meridianPart: state.meridian.part
+    };
     cible.revele = true;
     // La carte est révélée dès maintenant côté moteur (règle du jeu), mais son
     // annonce à l'écran reste retenue jusqu'au Bilan du matin (idsEnAttenteAnnonce,
     // filtré par construireSegmentsCamembert / afficherTableauJoueurs) : aucun
     // secret ne doit apparaître avant le moment officiel de révélation (§5.8).
     state.partie.idsEnAttenteAnnonce = [cible.id];
-    if (cible.role === 'juriste'){
-      // Exception Juriste : pas de séquestre, ses titres restent votants (procuration à désigner).
-      ajouterJournal('sabotage_juriste', `${cible.prenom} (Juriste) est saboté(e). Ses titres échappent au séquestre : une procuration doit être désignée.`);
-      state.partie.dernierEvenementNuitPublic = { type: 'sabotage_juriste', joueurId: cible.id };
+    const partSortante = cible.part;
+    const [versAssocies, versMeridian] = repartirProportionnel(partSortante, [
+      { id: 'associes', poids: 75 }, { id: 'meridian', poids: 25 }
+    ]).map(r => r.part);
+    const beneficiaires = state.joueurs.filter(j => j.id !== cible.id && j.statutCapital === 'actif');
+    if (beneficiaires.length > 0 && versAssocies > 0){
+      const redistribution = repartirProportionnel(versAssocies, beneficiaires.map(j => ({ id: j.id, poids: j.part })));
+      redistribution.forEach(r => { getJoueur(r.id).part += r.part; });
     } else {
-      cible.statutCapital = 'gele';
-      ajouterJournal('sabotage', `${cible.prenom} est saboté(e) : titres placés sous séquestre, fonctions suspendues (rôle révélé : ${ROLE_LABELS[cible.role]}).`);
-      state.partie.dernierEvenementNuitPublic = { type: 'sabotage', joueurId: cible.id };
+      // Aucun bénéficiaire actif pour préempter (cas limite) : le solde revient à Meridian.
+      state.meridian.part += versAssocies;
     }
+    state.meridian.part += versMeridian;
+    cible.statutCapital = 'sorti';
+    cible.motifSortie = 'sabote';
+    cible.part = 0;
+    ajouterJournal('sabotage', `${cible.prenom} est saboté(e) : quitte le conseil et cède ses titres — ${formatPct(versAssocies)} préemptés par les associés restants, ${formatPct(versMeridian)} à Meridian (carte révélée : ${CARTE_LABELS[cible.carte]}).`);
+    state.partie.dernierEvenementNuitPublic = { type: 'sabotage', joueurId: cible.id };
+    state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital vers Meridian : vérification systématique (§4.5)
   }
   verifierInvariant();
-  sauvegarder();
-}
-
-function assignerMandataireJuriste(juristeId, mandataireId){
-  const juriste = getJoueur(juristeId);
-  const mandataire = getJoueur(mandataireId);
-  if (!juriste || juriste.role !== 'juriste') throw new Error("Ce joueur n'est pas le Juriste.");
-  if (!mandataire) throw new Error('Mandataire introuvable.');
-  if (mandataireId === juristeId) throw new Error('Le Juriste ne peut pas être son propre mandataire.');
-  if (mandataire.statutCapital !== 'actif') throw new Error('Le mandataire doit être un joueur actif.');
-  const dejaMandataire = state.joueurs.some(j => j.mandataireDe === mandataireId);
-  if (dejaMandataire) throw new Error('Ce joueur détient déjà une procuration (une seule autorisée par mandataire).');
-  empilerSnapshot('Procuration Juriste : ' + juriste.prenom);
-  juriste.mandataireDe = mandataireId;
-  ajouterJournal('procuration', `${mandataire.prenom} détient désormais la procuration de ${juriste.prenom} (vote en AG et voix en CA).`);
   sauvegarder();
 }
 
@@ -728,8 +830,8 @@ function assignerMandataireJuriste(juristeId, mandataireId){
 // Inscrit un nom à l'ordre du jour (jusqu'à 3, dans l'ordre des accusations).
 function inscrireResolution(joueurId){
   const manche = state.partie.manche;
-  if (state.partie.revocationVerrouilleeParManche[manche]){
-    throw new Error('Une résolution a déjà été adoptée cette manche : le conseil ne siège plus sur ce point.');
+  if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= 2){
+    throw new Error('Deux résolutions ont déjà été adoptées cette manche : le conseil ne siège plus sur ce point.');
   }
   if (state.partie.resolutionsEnCours.length >= 3){
     throw new Error("Maximum 3 noms à l'ordre du jour.");
@@ -748,8 +850,8 @@ function inscrireResolution(joueurId){
 // Retrait possible avant le vote (pendant le débat), cf. §5.5 CDC v2.
 function retirerResolution(joueurId){
   const manche = state.partie.manche;
-  if (state.partie.revocationVerrouilleeParManche[manche]){
-    throw new Error('Une résolution a déjà été adoptée cette manche.');
+  if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= 2){
+    throw new Error('Deux résolutions ont déjà été adoptées cette manche.');
   }
   const idx = state.partie.resolutionsEnCours.findIndex(r => r.joueurId === joueurId);
   if (idx === -1) throw new Error("Ce joueur n'est pas à l'ordre du jour.");
@@ -766,8 +868,8 @@ function retirerResolution(joueurId){
 // votesParJoueurId : { [joueurId]: 'pour' | 'contre' | 'abstention' }
 function voterResolutionCourante(joueurId, votesParJoueurId){
   const manche = state.partie.manche;
-  if (state.partie.revocationVerrouilleeParManche[manche]){
-    throw new Error('Une résolution a déjà été adoptée cette manche : les résolutions suivantes ne sont pas votées.');
+  if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= 2){
+    throw new Error('Deux résolutions ont déjà été adoptées cette manche : les résolutions suivantes ne sont pas votées.');
   }
   const idx = state.partie.resolutionCouranteIndex;
   const resolution = state.partie.resolutionsEnCours[idx];
@@ -776,7 +878,7 @@ function voterResolutionCourante(joueurId, votesParJoueurId){
     throw new Error("Les résolutions doivent être votées une à la fois, dans leur ordre d'inscription.");
   }
   const cible = getJoueur(joueurId);
-  if (!cible || cible.statutCapital === 'revoque') throw new Error('Cible invalide.');
+  if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide.');
 
   const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
   const totalVotante = votants.reduce((a, j) => a + j.part, 0);
@@ -793,27 +895,34 @@ function voterResolutionCourante(joueurId, votesParJoueurId){
   if (acquise){
     cible.revele = true;
     const partRevoquee = cible.part;
-    const beneficiaires = state.joueurs.filter(j => j.id !== cible.id && j.statutCapital !== 'revoque');
+    // Révocation (bad leaver, §A1) : 100 % aux associés restants, 0 % à Meridian.
+    const beneficiaires = state.joueurs.filter(j => j.id !== cible.id && j.statutCapital === 'actif');
     if (beneficiaires.length > 0 && partRevoquee > 0){
       const redistribution = repartirProportionnel(partRevoquee, beneficiaires.map(j => ({ id: j.id, poids: j.part })));
       redistribution.forEach(r => { getJoueur(r.id).part += r.part; });
     }
-    cible.statutCapital = 'revoque';
+    cible.statutCapital = 'sorti';
+    cible.motifSortie = 'revoque';
     cible.part = 0;
-    state.partie.revocationVerrouilleeParManche[manche] = true;
-    ajouterJournal('revocation', `Résolution adoptée — ${cible.prenom} est révoqué(e) par l'AG (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes ; rôle révélé : ${ROLE_LABELS[cible.role]}). Ses parts sont redistribuées au prorata entre les associés restants.`);
-    ajouterChroniquePublique(`Résolution adoptée — ${cible.prenom} est révoqué(e) par l'Assemblée générale (rôle révélé : ${ROLE_LABELS[cible.role]}).`);
+    const adopteesApres = (state.partie.revocationsAdopteesParManche[manche] || 0) + 1;
+    state.partie.revocationsAdopteesParManche[manche] = adopteesApres;
+    ajouterJournal('revocation', `Résolution adoptée — ${cible.prenom} est révoqué(e) par l'AG (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes ; carte révélée : ${CARTE_LABELS[cible.carte]}). Ses parts sont intégralement redistribuées au prorata entre les associés restants.`);
+    ajouterChroniquePublique(`Résolution adoptée — ${cible.prenom} est révoqué(e) par l'Assemblée générale (carte révélée : ${CARTE_LABELS[cible.carte]}).`);
     if (state.partie.presidentActuelId === cible.id){
       state.partie.presidentVacant = true;
       ajouterJournal('president_vacant', `${cible.prenom} était Président du conseil : un successeur doit être désigné.`);
     }
-    // Les résolutions suivantes de la file ne sont pas votées.
-    for (let k = idx + 1; k < state.partie.resolutionsEnCours.length; k++){
-      state.partie.resolutionsEnCours[k].statut = 'non_votee';
+    if (adopteesApres >= 2){
+      // Plafond de 2 adoptions atteint (§G1) : les résolutions suivantes de la file ne sont pas votées.
+      for (let k = idx + 1; k < state.partie.resolutionsEnCours.length; k++){
+        state.partie.resolutionsEnCours[k].statut = 'non_votee';
+      }
+      state.partie.resolutionCouranteIndex = state.partie.resolutionsEnCours.length;
+    } else {
+      state.partie.resolutionCouranteIndex += 1;
     }
-    state.partie.resolutionCouranteIndex = state.partie.resolutionsEnCours.length;
     verifierVictoireHonneteAnticipee();
-    state.partie.palierVenantDetreFranchis = verifierPaliersMeridian(); // mouvement de capital : vérification systématique (§4.5)
+    state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital : vérification systématique (§4.5)
   } else {
     ajouterJournal('resolution_rejetee', `Résolution rejetée — ${cible.prenom} reste en fonction (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes).`);
     ajouterChroniquePublique(`Résolution rejetée — ${cible.prenom} reste en fonction.`);
@@ -851,7 +960,7 @@ function actionPrelevement(type){
   });
   state.meridian.part += totalPreleve;
   ajouterJournal(type, `${type === 'alerte' ? 'Alerte' : 'Panique'} : ${formatPct(totalPreleve)} de capital transférés au Fonds Meridian, prélevés au prorata sur les associés non gelés.`);
-  state.partie.palierVenantDetreFranchis = verifierPaliersMeridian(); // mouvement de capital : vérification systématique (§4.5)
+  state.partie.palierVenantDetreFranchis = (state.partie.palierVenantDetreFranchis || []).concat(verifierPaliersMeridian()); // mouvement de capital : vérification systématique (§4.5)
   verifierInvariant();
   sauvegarder();
   return totalPreleve;
@@ -902,13 +1011,13 @@ function traiterConsequenceMatin(){
 function genererPropositionsIndices(){
   const parService = SERVICES.map(s => ({
     service: s,
-    n: state.joueurs.filter(j => j.service === s && campDe(j) === 'infiltre' && j.statutCapital !== 'revoque').length
+    n: state.joueurs.filter(j => j.service === s && campDe(j) === 'adverse' && j.statutCapital === 'actif').length
   }));
   const choixService = parService[Math.floor(Math.random() * parService.length)];
   const texteService = `Le service ${choixService.service} compte ${choixService.n} infiltré(s).`;
 
   const campAdverse = state.joueurs
-    .filter(j => campDe(j) === 'infiltre' && j.statutCapital !== 'revoque')
+    .filter(j => campDe(j) === 'adverse' && j.statutCapital === 'actif')
     .reduce((a, j) => a + j.part, 0) + state.meridian.part;
   const pct = campAdverse / 1000;
   const bas = Math.max(0, Math.floor(pct / 5) * 5);
@@ -944,45 +1053,46 @@ function demarrerPhaseNocturne(){
   sauvegarder();
 }
 
-// Avocat(e) : désigne chaque nuit un joueur protégé par référé — jamais
-// lui-même, jamais la même personne deux nuits de suite.
-function definirProtectionAvocat(cibleId){
-  const avocat = state.joueurs.find(j => j.role === 'avocat');
-  if (!avocat) throw new Error('Aucun Avocat en jeu.');
-  if (cibleId === avocat.id) throw new Error("L'Avocat(e) ne peut pas se protéger lui/elle-même.");
+// Juriste : désigne chaque nuit un joueur protégé par référé (auto-protection
+// autorisée, §2 brief v3) — jamais la même personne deux nuits de suite. Si
+// les infiltrés visent ce joueur, le sabotage échoue (nuit calme).
+function definirProtectionJuriste(cibleId){
+  const juriste = state.joueurs.find(j => j.carte === 'juriste' && j.statutCapital === 'actif');
+  if (!juriste) throw new Error('Aucun Juriste en jeu.');
   const cible = getJoueur(cibleId);
   if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide.');
   if (cible.protegeNuitPrecedente) throw new Error('Impossible de protéger la même personne deux nuits de suite.');
-  empilerSnapshot('Protection Avocat : ' + cible.prenom);
+  empilerSnapshot('Protection Juriste : ' + cible.prenom);
   state.joueurs.forEach(j => { j.protegeCetteNuit = (j.id === cibleId); });
   ajouterJournal('protection', `${cible.prenom} est protégé(e) par référé cette nuit.`);
   sauvegarder();
 }
 
-// DAF / Contrôleur de gestion : droit à l'information, 1×/manche, découvre en
-// secret le rôle exact d'un joueur (lui seul en profite — jamais révélé
-// publiquement, le joueur ciblé n'est pas marqué "révélé").
+// DAF / Contrôleur de gestion : droit à l'information, chaque nuit, découvre
+// en secret la carte exacte d'un joueur (lui seul en profite, via la
+// Console — jamais révélé publiquement, le joueur ciblé n'est pas marqué
+// "révélé").
 function enqueteDaf(cibleId){
-  if (state.partie.enqueteDafParManche[state.partie.manche]) throw new Error('Le DAF a déjà exercé son droit à l\'information cette manche.');
+  if (state.partie.enqueteDafParManche[state.partie.manche]) throw new Error('Le DAF a déjà exercé son droit à l\'information cette nuit.');
   const cible = getJoueur(cibleId);
   if (!cible) throw new Error('Cible invalide.');
   empilerSnapshot('Enquête DAF : ' + cible.prenom);
   state.partie.enqueteDafParManche[state.partie.manche] = true;
-  ajouterJournal('enquete_daf', `[Confidentiel] Enquête DAF sur ${cible.prenom} : rôle = ${ROLE_LABELS[cible.role]}.`);
+  ajouterJournal('enquete_daf', `[Confidentiel] Enquête DAF sur ${cible.prenom} : carte = ${CARTE_LABELS[cible.carte]}.`);
   sauvegarder();
-  return { prenom: cible.prenom, role: cible.role, camp: campDe(cible) };
+  return { prenom: cible.prenom, carte: cible.carte, camp: campDe(cible) };
 }
 
-// DRH : met un joueur à pied conservatoire, 1×/partie. Il ne participe pas au
-// défi de son service à la manche suivante (conserve son droit de vote).
+// DRH : met un joueur à pied conservatoire, chaque nuit (§2 brief v3). Il ne
+// participe pas au défi de son service à la manche suivante.
 function appliquerMiseAPied(cibleId){
-  if (state.partie.miseAPiedDrhUtilisee) throw new Error('Le DRH a déjà utilisé son pouvoir cette partie.');
+  if (state.partie.miseAPiedDrhParManche[state.partie.manche]) throw new Error('Le DRH a déjà exercé son pouvoir cette nuit.');
   const cible = getJoueur(cibleId);
   if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide.');
   empilerSnapshot('Mise à pied DRH : ' + cible.prenom);
   cible.miseAPiedManche = state.partie.manche + 1;
-  state.partie.miseAPiedDrhUtilisee = true;
-  ajouterJournal('mise_a_pied', `${cible.prenom} est mis(e) à pied conservatoire : ne participe pas au défi de son service à la manche ${cible.miseAPiedManche} (conserve son droit de vote).`);
+  state.partie.miseAPiedDrhParManche[state.partie.manche] = true;
+  ajouterJournal('mise_a_pied', `${cible.prenom} est mis(e) à pied conservatoire : ne participe pas au défi de son service à la manche ${cible.miseAPiedManche}.`);
   sauvegarder();
 }
 
@@ -1031,12 +1141,13 @@ function creerJoueurs(nbJoueurs, prenoms){
       service: SERVICES[i % SERVICES.length],
       part: 0,
       statutCapital: 'actif',
-      role: 'associe',
+      motifSortie: null, // 'sabote' | 'revoque', renseigné à la sortie (§A1)
+      carte: 'associe',
       revele: false,
-      mandataireDe: null, // id du joueur dont ce joueur détient la procuration (Juriste saboté)
       protegeCetteNuit: false,
       protegeNuitPrecedente: false,
-      miseAPiedManche: null
+      miseAPiedManche: null,
+      miseAPiedAnnoncee: false
     });
   }
   return joueurs;
@@ -1108,19 +1219,20 @@ function afficherBanniere(){
 // attente d'annonce officielle (idsEnAttenteAnnonce, §5.6/§5.8) — sa tranche
 // reste bleue quel que soit son camp réel : le camembert ne doit jamais
 // laisser deviner un camp avant sa révélation prévue par les règles.
+// Un joueur sorti (sabotage ou révocation) a cédé la totalité de ses titres :
+// il disparaît simplement du camembert, aucun état intermédiaire (§A1/§A2).
 function construireSegmentsCamembert(joueurs, meridianPart){
   const enAttente = (state.partie.idsEnAttenteAnnonce || []);
   const segments = joueurs
-    .filter(j => j.statutCapital !== 'revoque')
+    .filter(j => j.statutCapital === 'actif')
     .map(j => {
       const reveleAffiche = j.revele && !enAttente.includes(j.id);
       return {
         id: j.id, label: j.prenom, part: j.part,
-        gele: j.statutCapital === 'gele',
-        color: (reveleAffiche && campDe(j) === 'infiltre') ? 'var(--rouge-infiltre)' : 'var(--bleu-joueur)'
+        color: (reveleAffiche && campDe(j) === 'adverse') ? 'var(--rouge-infiltre)' : 'var(--bleu-joueur)'
       };
     });
-  segments.push({ id: 'meridian', label: 'Meridian', part: meridianPart, color: 'var(--noir-meridian)', gele: false });
+  segments.push({ id: 'meridian', label: 'Meridian', part: meridianPart, color: 'var(--rouge-meridian)' });
   return segments;
 }
 
@@ -1139,8 +1251,8 @@ function dessinerCamembertImmediat(svg, segments, cx, cy, r){
     const y1 = cy + r * Math.sin(start * Math.PI / 180);
     const x2 = cx + r * Math.cos(end * Math.PI / 180);
     const y2 = cy + r * Math.sin(end * Math.PI / 180);
-    const opacity = s.gele ? 0.45 : 1;
-    paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" fill-opacity="${opacity}" stroke="#4a5568" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
+    const cls = s.id === 'meridian' ? ' class="segment-meridian"' : '';
+    paths += `<path${cls} d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" stroke="#4a5568" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
   });
   const meridianSeg = segments.find(s => s.id === 'meridian');
   const centre = meridianSeg
@@ -1155,8 +1267,24 @@ const raf = (typeof requestAnimationFrame === 'function')
 const cancelRaf = (typeof cancelAnimationFrame === 'function') ? cancelAnimationFrame : clearTimeout;
 const maintenant = (typeof performance !== 'undefined' && performance.now) ? () => performance.now() : () => Date.now();
 
-// Transition du camembert par interpolation linéaire des parts sur 800 ms,
-// à chaque mouvement de capital (§2.1 / §7.3 du CDC v2).
+// Évalue cubic-bezier(x1,y1,x2,y2) au temps linéaire t (Newton-Raphson),
+// pour reproduire en JS la même courbe qu'une transition CSS (§A2 brief v3).
+function cubicBezierEase(t, x1, y1, x2, y2){
+  const bx = (u) => 3*(1-u)*(1-u)*u*x1 + 3*(1-u)*u*u*x2 + u*u*u;
+  const by = (u) => 3*(1-u)*(1-u)*u*y1 + 3*(1-u)*u*u*y2 + u*u*u;
+  let u = t;
+  for (let i = 0; i < 8; i++){
+    const dx = bx(u) - t;
+    if (Math.abs(dx) < 1e-5) break;
+    const deriv = 3*(1-u)*(1-u)*x1 + 6*(1-u)*u*(x2-x1) + 3*u*u*(1-x2);
+    if (Math.abs(deriv) < 1e-6) break;
+    u = Math.min(1, Math.max(0, u - dx / deriv));
+  }
+  return by(u);
+}
+
+// Transition du camembert par interpolation des parts sur 1200 ms,
+// cubic-bezier(.4,0,.2,1), à chaque mouvement de capital (§A2 brief v3).
 function dessinerCamembertSVG(svg, segments){
   const cx = 150, cy = 150, r = 130;
   const ciblePrecedente = svg._infiltresCible;
@@ -1174,10 +1302,10 @@ function dessinerCamembertSVG(svg, segments){
     return;
   }
   const t0 = maintenant();
-  const duree = 800;
+  const duree = 1200;
   const step = (now) => {
     const t = Math.min(1, (now - t0) / duree);
-    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const eased = cubicBezierEase(t, 0.4, 0, 0.2, 1);
     const interp = segments.map((s, i) => ({ ...s, part: Math.round(depart[i].part + (s.part - depart[i].part) * eased) }));
     dessinerCamembertImmediat(svg, interp, cx, cy, r);
     if (t < 1){
@@ -1190,26 +1318,55 @@ function dessinerCamembertSVG(svg, segments){
   svg._infiltresAnimFrame = raf(step);
 }
 
-function dessinerCamembert(){
-  const svg = el('camembert');
-  if (!state){ svg.innerHTML = ''; return; }
-  const segments = construireSegmentsCamembert(state.joueurs, state.meridian.part);
-  dessinerCamembertSVG(svg, segments);
+// Pulse 3× (opacité 100→70→100) de la tranche Meridian + halo rouge diffus
+// traversant l'écran une fois, à chaque gain de terrain (§A2 brief v3).
+function pulserMeridianGainDeTerrain(){
+  const seg = document.querySelector('#camembert .segment-meridian');
+  if (seg){ seg.classList.remove('pulse'); void seg.offsetWidth; seg.classList.add('pulse'); }
+  const halo = el('halo-meridian');
+  if (halo){ halo.classList.remove('actif'); void halo.offsetWidth; halo.classList.add('actif'); }
 }
 
-function libelleStatut(s){
-  return { actif: 'Actif', gele: 'Sous séquestre', revoque: 'Révoqué' }[s] || s;
+// Détecte un gain de terrain Meridian d'un rendu à l'autre pour déclencher
+// pulserMeridianGainDeTerrain() automatiquement (§A2), sans jamais le faire
+// sur la simple avance frame-par-frame de l'animation de transition.
+let dernierMeridianAffiche = null;
+
+function dessinerCamembert(){
+  const svg = el('camembert');
+  if (!state){ svg.innerHTML = ''; dernierMeridianAffiche = null; return; }
+  const gele = state.partie.camembertGeleJusquaReveal;
+  const joueurs = gele ? gele.joueurs : state.joueurs;
+  const meridianPart = gele ? gele.meridianPart : state.meridian.part;
+  const segments = construireSegmentsCamembert(joueurs, meridianPart);
+  dessinerCamembertSVG(svg, segments);
+  if (dernierMeridianAffiche != null && meridianPart > dernierMeridianAffiche){
+    pulserMeridianGainDeTerrain();
+  }
+  dernierMeridianAffiche = meridianPart;
+  const pctMeridian = meridianPart / 1000;
+  const lblLigne = el('lbl-ligne-meridian');
+  const fillLigne = el('fill-ligne-meridian');
+  if (lblLigne) lblLigne.textContent = `Meridian et ses agents : ${pctMeridian.toFixed(1).replace('.', ',')} %`;
+  if (fillLigne) fillLigne.style.width = Math.min(100, pctMeridian) + '%';
+}
+
+function libelleStatut(j){
+  if (j.statutCapital === 'actif') return 'Actif';
+  return j.motifSortie === 'sabote' ? 'Sorti (sabotage)' : 'Sorti (révocation)';
 }
 
 // Bandeau « Joueurs » persistant (§2.1) : un bouton par joueur, grisé + icône
-// si gelé/révoqué. Purement informatif — les grilles de sélection propres à
-// chaque écran (sabotage, vote, débat) sont rendues séparément dans la scène.
+// si sorti. Purement informatif — les grilles de sélection propres à chaque
+// écran (sabotage, vote, débat) sont rendues séparément dans la scène.
 function afficherBandeauJoueurs(){
   const zone = el('bandeau-joueurs');
   zone.innerHTML = state.joueurs.map(j => {
     const president = state.partie.presidentActuelId === j.id ? '<span class="president-icone">👑</span>' : '';
-    const icone = j.statutCapital === 'gele' ? '🔒 ' : j.statutCapital === 'revoque' ? '✕ ' : '';
-    return `<span class="joueur-pill ${j.statutCapital}">${president}${icone}${j.prenom}</span>`;
+    const sorti = j.statutCapital === 'sorti';
+    const icone = sorti ? '✕ ' : '';
+    const motifClasse = sorti ? ' sorti-' + j.motifSortie : '';
+    return `<span class="joueur-pill ${j.statutCapital}${motifClasse}">${president}${icone}${j.prenom}</span>`;
   }).join('');
 }
 
@@ -1310,14 +1467,138 @@ function jouerTonalite(freq, duree, type, volume){
   } catch(e){ /* Web Audio indisponible : silencieux, jamais bloquant */ }
 }
 
-function jouerGongNuit(){
-  jouerTonalite(110, 1.8, 'sine', 0.22);
-  setTimeout(() => jouerTonalite(220, 1.1, 'sine', 0.10), 90);
-}
-
-function jouerNotificationCommunique(){
+function jouerNotificationCommunique(){ enfilerSon(() => {
   jouerTonalite(880, 0.16, 'triangle', 0.16);
   setTimeout(() => jouerTonalite(660, 0.22, 'triangle', 0.14), 150);
+}, 400); }
+
+/* ============================================================
+   9ter. TABLE DES SONS (§F brief v3)
+   Deux règles : jamais deux sons simultanés (file d'attente), et la nappe
+   de nuit baisse de 50 % quand un autre son se déclenche.
+   ============================================================ */
+
+let fileAttenteSons = [];
+let lectureSonEnCours = false;
+
+function enfilerSon(fn, dureeMs){
+  fileAttenteSons.push({ fn, dureeMs });
+  traiterFileSons();
+}
+
+function traiterFileSons(){
+  if (lectureSonEnCours || fileAttenteSons.length === 0) return;
+  const { fn, dureeMs } = fileAttenteSons.shift();
+  lectureSonEnCours = true;
+  duckNappeNuit(true);
+  try { fn(); } catch(e){ /* Web Audio indisponible : silencieux, jamais bloquant */ }
+  setTimeout(() => {
+    lectureSonEnCours = false;
+    duckNappeNuit(false);
+    traiterFileSons();
+  }, dureeMs);
+}
+
+// --- Nappe d'ambiance nocturne : bourdon grave en boucle, très sourd ---
+let nappeNuitOsc = null, nappeNuitGain = null;
+function demarrerNappeNuit(){
+  if (!sonsActifs() || nappeNuitOsc) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    nappeNuitOsc = ctx.createOscillator();
+    nappeNuitGain = ctx.createGain();
+    nappeNuitOsc.type = 'sine';
+    nappeNuitOsc.frequency.value = 55;
+    nappeNuitGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    nappeNuitGain.gain.linearRampToValueAtTime(0.045, ctx.currentTime + 1.5);
+    nappeNuitOsc.connect(nappeNuitGain).connect(ctx.destination);
+    nappeNuitOsc.start();
+  } catch(e){ nappeNuitOsc = null; nappeNuitGain = null; }
+}
+function arreterNappeNuit(){
+  if (!nappeNuitOsc) return;
+  try {
+    const ctx = getAudioCtx();
+    nappeNuitGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    nappeNuitOsc.stop(ctx.currentTime + 0.7);
+  } catch(e){ /* silencieux */ }
+  nappeNuitOsc = null; nappeNuitGain = null;
+}
+function duckNappeNuit(actif){
+  if (!nappeNuitGain) return;
+  try {
+    const ctx = getAudioCtx();
+    nappeNuitGain.gain.linearRampToValueAtTime(actif ? 0.0225 : 0.045, ctx.currentTime + 0.15);
+  } catch(e){ /* silencieux */ }
+}
+
+function jouerSonEntreeNuit(){ enfilerSon(() => {
+  jouerTonalite(220, 1.5, 'sine', 0.18);
+  setTimeout(() => jouerTonalite(110, 1.3, 'sine', 0.14), 200);
+}, 1500); }
+
+function jouerSonReveil(){ enfilerSon(() => {
+  jouerTonalite(440, 0.8, 'sine', 0.14);
+  setTimeout(() => jouerTonalite(660, 0.5, 'sine', 0.1), 200);
+}, 800); }
+
+function jouerGongDefiFin(){ enfilerSon(() => {
+  jouerTonalite(90, 3, 'sine', 0.24);
+}, 3000); }
+
+function jouerClocheDebatFin(){ enfilerSon(() => {
+  jouerTonalite(660, 0.5, 'triangle', 0.18);
+  setTimeout(() => jouerTonalite(660, 0.5, 'triangle', 0.18), 500);
+}, 1500); }
+
+function jouerRevelationHonnete(){ enfilerSon(() => {
+  jouerTonalite(523, 1, 'triangle', 0.18);
+}, 1000); }
+
+function jouerRevelationInfiltre(){ enfilerSon(() => {
+  jouerTonalite(80, 1.5, 'sawtooth', 0.2);
+}, 1500); }
+
+function jouerSonDefi(reussi){
+  if (reussi) enfilerSon(() => jouerTonalite(880, 0.4, 'triangle', 0.2), 400);
+  else enfilerSon(() => jouerTonalite(220, 0.5, 'sawtooth', 0.16), 500);
+}
+
+function jouerSonAlerteMeridian(){ enfilerSon(() => {
+  jouerTonalite(180, 2, 'sawtooth', 0.14);
+  setTimeout(() => jouerTonalite(260, 1.2, 'sawtooth', 0.12), 500);
+}, 2000); }
+
+function jouerSonPaniqueMeridian(){ enfilerSon(() => {
+  jouerTonalite(90, 3.5, 'sawtooth', 0.2);
+  setTimeout(() => jouerTonalite(70, 1, 'square', 0.22), 2800);
+}, 3500); }
+
+function jouerSonPalier(){ enfilerSon(() => {
+  jouerTonalite(65, 2, 'square', 0.2);
+}, 2000); }
+
+function jouerSonResolutionAdoptee(){ enfilerSon(() => {
+  jouerTonalite(150, 0.8, 'square', 0.2);
+}, 800); }
+
+function jouerSonVictoireMeridian(){ enfilerSon(() => {
+  jouerTonalite(65, 4, 'sawtooth', 0.2);
+  setTimeout(() => jouerTonalite(98, 3, 'sawtooth', 0.16), 300);
+}, 4000); }
+
+function jouerSonVictoireHonnete(){ enfilerSon(() => {
+  jouerTonalite(523, 1.2, 'triangle', 0.18);
+  setTimeout(() => jouerTonalite(659, 1.2, 'triangle', 0.18), 400);
+  setTimeout(() => jouerTonalite(784, 2, 'triangle', 0.2), 800);
+}, 4000); }
+
+function jouerSonBilanDefis(nbReussis){
+  if (nbReussis === 3) enfilerSon(() => jouerTonalite(784, 1, 'triangle', 0.2), 1000);
+  else if (nbReussis === 2) enfilerSon(() => jouerTonalite(440, 0.6, 'sine', 0.14), 600);
+  else if (nbReussis === 1) jouerSonAlerteMeridian();
+  else jouerSonPaniqueMeridian();
 }
 
 // Empêche de rejouer le même son en boucle si l'écran est simplement
@@ -1336,9 +1617,25 @@ function basculerSons(){
   el('btn-sons').textContent = sonsPref ? '🔊 Sons' : '🔇 Sons';
 }
 
-// Navigation pure (pas de snapshot d'annulation : cf. §6, « ◀ Annuler » ne
-// concerne que les actions de jeu, jamais la simple navigation d'écran).
-function allerEcran(id){
+// Chaque changement d'écran déclenché par un geste de l'animateur (bouton
+// « Suivant », tap sur un joueur, etc.) est lui-même empilé dans la pile
+// d'annulation (§B1 brief v3) : « ◀ Annuler » doit reculer d'un cran à
+// chaque clic, en cascade, qu'il s'agisse d'une action de jeu ou d'une
+// simple navigation — sinon un clic sur Annuler après une navigation saute
+// par-dessus l'écran courant et retombe sur la dernière action de jeu, bien
+// plus loin en arrière que ce que l'animateur attend d'un filet de sécurité.
+//
+// autoRedirect=true : réservé aux redirections « auto-guérison » internes à
+// une fonction d'affichage (ex. plus aucune résolution à voter → on saute
+// vers l'écran suivant). Ces redirections ne sont PAS un geste de
+// l'animateur : les exclure de la pile évite une boucle stable où annuler
+// restaure un écran dont les données sont déjà à l'état terminal, ce qui
+// déclencherait aussitôt la même redirection en sens inverse (le clic
+// Annuler resterait bloqué indéfiniment sur ces deux écrans).
+function allerEcran(id, autoRedirect){
+  if (!autoRedirect && state.partie.ecranActuel !== id){
+    empilerSnapshot('Navigation : ' + id);
+  }
   state.partie.ecranActuel = id;
   sauvegarder();
   rafraichirJeu();
@@ -1349,7 +1646,7 @@ function dashboardSuivant(){
   if (etape === 0){
     demarrerChrono('defi', dureeDefiSecondes(state.partie.manche));
     state.partie.phase = 'travail';
-    allerEcran('travail');
+    allerEcran('travail-chrono');
   } else if (etape === 1){
     state.partie.phase = 'conseil';
     demarrerChrono('debat', DUREE_DEBAT_SECONDES);
@@ -1368,7 +1665,7 @@ function dashboardRetour(){
   if (state.partie.etapeManche <= 0) return;
   state.partie.etapeManche -= 1;
   const etape = state.partie.etapeManche;
-  if (etape === 0){ allerEcran('travail'); }
+  if (etape === 0){ allerEcran('travail-chrono'); }
   else if (etape === 1){ allerEcran('conseil-debat'); }
   else if (etape === 2){ allerEcran('nuit-fermeture'); }
   else if (etape === 3){ state.partie.etapeBilanMatin = 0; allerEcran('matin-sabotage'); }
@@ -1396,6 +1693,35 @@ function carteEcran(html){
   el('zone-scene').innerHTML = `<div class="ecran-card">${html}</div>`;
 }
 
+// Révélation de carte au clic (§C5 brief v3) : dos visible « {prenom}
+// était… » → silence jusqu'au clic → rotation 3D 600 ms → carte visible.
+// onRetournee(prenom, carte) est appelé juste après la rotation (pour jouer
+// le son dédié et enchaîner sur le reste de l'écran).
+function rendreCarteFlipHTML(idCarte, prenom){
+  return `
+    <div class="carte-flip-conteneur" id="${idCarte}-zone">
+      <div class="carte-flip" id="${idCarte}">
+        <div class="face dos">${prenom} était…</div>
+        <div class="face face-avant" id="${idCarte}-avant"></div>
+      </div>
+    </div>`;
+}
+
+function activerCarteFlip(idCarte, prenom, carte, onRetournee){
+  const zoneClic = el(idCarte + '-zone');
+  const avant = el(idCarte + '-avant');
+  const adverse = campDe({ carte }) === 'adverse';
+  avant.classList.toggle('infiltre', adverse);
+  avant.innerHTML = `${imgTag(illustrationRole(carte), 'illustration-mini')}${prenom} était...<br>${CARTE_LABELS[carte]}`;
+  let retournee = false;
+  zoneClic.addEventListener('click', () => {
+    if (retournee) return;
+    retournee = true;
+    el(idCarte).classList.add('retournee');
+    if (onRetournee) setTimeout(() => onRetournee(prenom, carte), 620);
+  });
+}
+
 // Illustration au trait, fond transparent (§7.3/§7.4) — silencieux (chaîne
 // vide) si le fichier n'a pas encore été fourni, pour ne jamais casser un écran.
 function imgTag(cle, cls){
@@ -1404,8 +1730,8 @@ function imgTag(cle, cls){
   return `<img class="illustration ${cls || ''}" src="${src}" alt="">`;
 }
 
-function illustrationRole(role){
-  return { associe: 'associe', infiltre: 'infiltre', drh: 'drh', avocat: 'avocat', daf: 'daf', juriste: 'juriste' }[role] || null;
+function illustrationRole(carte){
+  return { associe: 'associe', infiltre: 'infiltre', drh: 'drh', daf: 'daf', juriste: 'juriste' }[carte] || null;
 }
 
 function illustrationSabotageManche(manche){
@@ -1425,26 +1751,33 @@ function rendreGrilleJoueurs(containerEl, joueurs, onClick, selectedIds){
    11. ÉCRANS — MANCHE 0 : LETTRE D'INTENTION ET MISE EN PLACE (§5.2)
    ============================================================ */
 
-// Progressions locales et éphémères (non persistées : un rechargement en
-// plein milieu d'une cascade de cartes redémarre simplement cette cascade,
+// Progression locale et éphémère (non persistée : un rechargement en plein
+// milieu de la cascade de la lettre redémarre simplement cette cascade,
 // sans impact sur l'état de la partie ni fuite d'aucun secret).
 let indexParagrapheLettre = 0;
-let indexCartePreview = 0;
 
 // Textes du Règlement v3 — intégrés tels quels (lettre d'intention, scénarios
 // de sabotage, communiqués Meridian, annonces de palier, textes de fin).
-const SCENARIOS_SABOTAGE = {
-  1: { titre: "Audition par les enquêteurs", texte: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition se prolonge. Suspension immédiate, en attendant la fin de la procédure : {prenom} ne siège plus, ne vote plus, et ses titres sont placés sous séquestre." },
-  2: { titre: "Contrôle de conformité", texte: "Ce matin, les autorités lancent un contrôle de conformité sur le travail de {prenom}. Par précaution, ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin du contrôle." },
-  3: { titre: "Fuite de documents confidentiels", texte: "Cette nuit, des documents confidentiels ont fuité. Ils mettent directement en cause {prenom}. Le conseil prononce sa mise en retrait immédiate. Ses titres sont placés sous séquestre le temps de la procédure." },
-  4: { titre: "Cyberattaque ciblée", texte: "Une cyberattaque a paralysé une partie des outils de l'entreprise cette nuit. Elle a été tracée jusqu'aux accès de {prenom}. Ses accès sont coupés, ses fonctions suspendues, ses titres placés sous séquestre." },
-  5: { titre: "Perquisition au siège", texte: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves. Ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin de l'instruction." }
+// Sabotage — écran 1 « mise en cause » (§D5 brief v3), propre à la manche.
+const TEXTES_MISE_EN_CAUSE = {
+  1: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition s'est prolongée jusqu'à l'aube.",
+  2: "Les autorités ont ouvert un contrôle de conformité sur les dossiers de {prenom}.",
+  3: "Des documents confidentiels ont fuité cette nuit. Ils mettent {prenom} en cause.",
+  4: "Une cyberattaque a paralysé les systèmes. Elle a été tracée jusqu'aux accès de {prenom}.",
+  5: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves."
 };
 
-function texteScenarioSabotage(manche, prenom){
-  const s = SCENARIOS_SABOTAGE[manche];
-  if (!s) return { titre: 'Sabotage', texte: '' };
-  return { titre: s.titre, texte: s.texte.replace(/\{prenom\}/g, prenom) };
+function texteMiseEnCause(manche, prenom){
+  const t = TEXTES_MISE_EN_CAUSE[manche] || '';
+  return t.replace(/\{prenom\}/g, prenom);
+}
+
+// Sabotage/révocation — écran 3 « sortie du capital » (§D5 brief v3), même
+// traitement pour les deux motifs de sortie.
+function texteSortieCapital(motif, prenom){
+  return motif === 'sabote'
+    ? `${prenom} quitte le conseil et cède ses titres. Les associés en préemptent les trois quarts. Le solde revient à Meridian.`
+    : `${prenom} est révoqué. La clause de sortie forcée s'applique : ses parts sont rachetées en totalité par les associés restants. Meridian n'a rien pu acheter.`;
 }
 
 const COMMUNIQUES_MERIDIAN = {
@@ -1462,13 +1795,31 @@ const ANNONCES_PALIER = {
 const PARAGRAPHES_LETTRE = [
   "Mesdames, Messieurs les membres du conseil,",
   "le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle.",
-  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte ne protège que les sorties forcées.",
+  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte prévoit une préemption — mais vos associés n'ont pas les moyens de tout racheter, et le solde nous reviendra.",
   "Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition.",
   "Nous avons cinq jours. À bientôt."
 ];
 
+const TEXTE_NOTE_JURISTE = "Une précision que le conseil doit entendre. Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits.";
+
+// Ordre imposé en Console pour la séquence de nuit (§2 brief v3) : Juriste →
+// DAF → DRH. Repris ici pour le tour de reconnaissance des rôles en Manche 0.
 function ROLES_A_POUVOIR_PRESENTS(){
-  return ['avocat', 'daf', 'drh', 'juriste'].filter(r => state.joueurs.some(j => j.role === r));
+  return ['juriste', 'daf', 'drh'].filter(r => state.joueurs.some(j => j.carte === r));
+}
+
+// Ouverture (§B10 brief v3) : écran de règles puis écran de scénario avant la
+// lettre d'intention, qui reste l'ouverture immersive du jeu.
+function ecranOuvertureRegles(){
+  ecranNeutreAvecSuivant('Le principe',
+    "Un seul thermomètre : le camembert du capital. Objectif : garder la majorité, cinq manches durant. Le jour, l'entreprise travaille. La nuit, certains agissent dans l'ombre.",
+    () => allerEcran('ouverture-scenario'));
+}
+
+function ecranOuvertureScenario(){
+  ecranNeutreAvecSuivant('NOVENTIS',
+    "Une SA solide, fragilisée depuis six mois : trésorerie en baisse, conformité en question, climat social dégradé. Ce matin, une lettre est arrivée au conseil.",
+    () => allerEcran('m0-lettre'));
 }
 
 function ecranM0Lettre(){
@@ -1481,8 +1832,30 @@ function ecranM0Lettre(){
   el('zone-camembert-compact').classList.toggle('hidden', indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
   el('btn-suivant-scene').addEventListener('click', () => {
     if (!dernier){ indexParagrapheLettre++; rafraichirJeu(); }
-    else { indexParagrapheLettre = 0; allerEcran('m0-infiltres-ouvert'); }
+    else { indexParagrapheLettre = 0; allerEcran('m0-note-juriste'); }
   });
+}
+
+// Note du juriste (§D4 brief v3) : c'est ce texte qui pousse le conseil à
+// chasser dès la première manche.
+function ecranM0NoteJuriste(){
+  ecranNeutreAvecSuivant('Note du juriste', TEXTE_NOTE_JURISTE, () => allerEcran('m0-nuit-tombe'));
+}
+
+// « La nuit tombe » (§D1 brief v3) : transition avant chaque séquence de
+// nuit — manque en Manche 0 avant l'appel des Infiltrés (§B4) ; reprise pour
+// les manches 1 à 5 dans afficherNuitFermeture().
+const TEXTES_NUIT_TOMBE = {
+  0: "Le conseil se sépare. Les lumières du siège s'éteignent une à une. Cette nuit, certains ne dormiront pas.",
+  1: "Première nuit. Les couloirs sont vides. Quelque part dans l'immeuble, un dossier change de main.",
+  2: "Deuxième nuit. Le standard ne répond plus. Une réunion se tient quelque part, sans ordre du jour.",
+  3: "Troisième nuit. Meridian n'a pas besoin de forcer les portes : on les lui ouvre.",
+  4: "Quatrième nuit. Il reste peu de temps, et tout le monde le sait. Les décisions se prennent désormais dans le noir.",
+  5: "Dernière nuit. Demain, l'entreprise sera sauvée ! (ou il arrivera trop tard…)"
+};
+
+function ecranM0NuitTombe(){
+  ecranNeutreAvecSuivant('La nuit tombe', TEXTES_NUIT_TOMBE[0], () => allerEcran('m0-infiltres-ouvert'));
 }
 
 function ecranNeutreAvecSuivant(titre, texte, onSuivant, libelleBouton, illustrationKey){
@@ -1505,58 +1878,80 @@ function ecranM0Infiltres(ouvert){
   } else {
     ecranNeutreAvecSuivant('Manche 0 — Reconnaissance des Infiltrés',
       "Les Infiltrés se rendorment.",
-      () => { indexCartePreview = 0; allerEcran('m0-reponses'); });
+      () => allerEcran('m0-reponses'));
   }
 }
 
-// Cartes de réponses A/B/C/D d'une manche (§5.2 étape 3 et §5.6 étape 6) :
-// minimum 3 secondes chacune, bouton discret pour accélérer si besoin.
-function ecranReponsesPreview(mancheCible, onTermine){
+// Réponses remises aux Infiltrés (§D2 brief v3) : écran d'annonce seul, puis
+// les 3 réponses affichées ENSEMBLE dans une seule grille (plus de cascade
+// carte par carte) — un clic sur la grille les cache une fois lues.
+function ecranReponsesAnnonce(onSuivant){
+  ecranNeutreAvecSuivant('Réponses transmises',
+    "Les infiltrés reçoivent les réponses de la manche à venir.",
+    onSuivant);
+}
+
+function ecranReponsesGrille(mancheCible, onTermine){
   const defis = defisDeLaManche(mancheCible);
-  if (indexCartePreview >= defis.length){ onTermine(); return; }
-  const d = defis[indexCartePreview];
   carteEcran(`
     <h2>Réponses de la Manche ${mancheCible}</h2>
-    <div class="sous-titre">Service ${d.service} — carte réservée aux Infiltrés (yeux ouverts à cet instant)</div>
-    <div class="carte-reveal">Bonne réponse : ${d.reponseCorrecte}</div>
+    <div id="grille-reponses-infiltres" style="display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto;cursor:pointer;">
+      ${defis.map(d => `<div class="service-box"><h4>${d.service}</h4><div class="carte-reveal reponse-lettre" data-lettre="${d.reponseCorrecte}">${d.reponseCorrecte}</div></div>`).join('')}
+    </div>
+    <div class="small" style="margin-top:10px;">Cliquer pour cacher les réponses une fois lues.</div>
     <div style="margin-top:16px;"><button id="btn-suivant-scene" disabled>Suivant</button></div>
   `);
+  let cachees = false;
+  el('grille-reponses-infiltres').addEventListener('click', () => {
+    cachees = !cachees;
+    document.querySelectorAll('#grille-reponses-infiltres .reponse-lettre').forEach(c => {
+      c.textContent = cachees ? '?' : c.dataset.lettre;
+    });
+  });
   setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.disabled = false; }, 3000);
-  el('btn-suivant-scene').addEventListener('click', () => { indexCartePreview++; onTermine._continuer ? onTermine._continuer() : onTermine(); });
+  el('btn-suivant-scene').addEventListener('click', onTermine);
 }
 
 function afficherM0Reponses(){
-  ecranReponsesPreview(1, () => {
-    if (indexCartePreview >= defisDeLaManche(1).length){
-      allerEcran('m0-role-ouvert');
-    } else {
-      rafraichirJeu();
-    }
-  });
+  ecranReponsesAnnonce(() => allerEcran('m0-reponses-grille'));
+}
+
+function afficherM0ReponsesGrille(){
+  ecranReponsesGrille(1, () => allerEcran('m0-role-ouvert'));
 }
 
 function afficherNuitReponses(){
-  const mancheCible = state.partie.manche + 1;
-  ecranReponsesPreview(mancheCible, () => {
-    if (indexCartePreview >= defisDeLaManche(mancheCible).length){
-      allerEcran('nuit-reveil');
-    } else {
-      rafraichirJeu();
-    }
+  ecranReponsesAnnonce(() => allerEcran('nuit-reponses-grille'));
+}
+
+function afficherNuitReponsesGrille(){
+  ecranReponsesGrille(state.partie.manche + 1, () => allerEcran('nuit-reveil'));
+}
+
+function afficherNuitReveil(){
+  jouerSonEcranUneFois('nuit-reveil-' + state.partie.manche, () => {
+    arreterNappeNuit();
+    jouerSonReveil();
+    const f = el('flash-reveil');
+    f.classList.remove('actif'); void f.offsetWidth; f.classList.add('actif');
   });
+  ecranNeutreAvecSuivant('Séquence de nuit', 'NOVENTIS se réveille ! Ouvrez les yeux.', () => {
+    state.partie.etapeManche = 3;
+    allerEcran('dashboard');
+  }, 'Ouvrir le Bilan du matin');
 }
 
 function afficherM0RoleTour(ouvert){
   const roles = ROLES_A_POUVOIR_PRESENTS();
   if (state.partie.sousEtapeIndex >= roles.length){
-    allerEcran('m0-reveil');
+    allerEcran('m0-reveil', true);
     return;
   }
   const role = roles[state.partie.sousEtapeIndex];
-  const label = ROLE_LABELS[role];
+  const label = CARTE_LABELS[role];
   if (ouvert){
     ecranNeutreAvecSuivant(`Manche 0 — Reconnaissance des rôles à pouvoir`,
-      `${label} ouvre les yeux. Prenez connaissance de votre rôle.`,
+      `${label} ouvre les yeux.`,
       () => allerEcran('m0-role-ferme'), null, illustrationRole(role));
   } else {
     ecranNeutreAvecSuivant(`Manche 0 — Reconnaissance des rôles à pouvoir`,
@@ -1580,9 +1975,20 @@ function afficherM0Reveil(){
    12. ÉCRANS — TABLEAU DE BORD ET CYCLE DE MANCHE (§5.3 à §5.8)
    ============================================================ */
 
+// Phrase de scénario par manche (§D3 brief v3) : un événement réel, quand il
+// a lieu, la remplace — jamais l'inverse.
+const PHRASES_SCENARIO_DASHBOARD = {
+  1: "Le conseil se réunit. Officiellement, tout va bien.",
+  2: "Les rumeurs circulent dans les étages. Personne ne les dément.",
+  3: "Le comité d'audit demande des explications. Le conseil n'en a pas.",
+  4: "Les banques appellent. Elles veulent savoir qui dirige vraiment NOVENTIS.",
+  5: "Dernier jour. Le chevalier blanc a confirmé sa venue pour demain matin."
+};
+
 function dernierEvenementPublicTexte(){
   const arr = state.partie.chroniquePublique;
-  return arr.length ? arr[arr.length - 1].texte : 'Aucun événement pour le moment.';
+  if (arr.length) return arr[arr.length - 1].texte;
+  return PHRASES_SCENARIO_DASHBOARD[state.partie.manche] || '';
 }
 
 const LIBELLES_SUIVANT_DASHBOARD = [
@@ -1606,25 +2012,53 @@ function afficherDashboard(){
   el('btn-retour-scene').addEventListener('click', dashboardRetour);
 }
 
-// --- Étape 1 : Phase de travail (§5.4) ---
+// --- Étape 1 : Phase de travail, en 4 temps (§5.4 CDC v2, refonte §E brief v3) ---
 
+// Saisie en cours, non encore validée : { [defiId]: lettre }. Local et
+// éphémère (non persisté) — remis à zéro à l'entrée du chrono.
+let travailSelectionTemp = {};
+
+// Temps 1 — Chronomètre seul (§C6/§E) : aucune saisie possible, l'animateur
+// avance quand l'équipe a rendu sa copie papier.
+function afficherTravailChrono(){
+  const misAPied = state.joueurs.filter(j => j.miseAPiedManche === state.partie.manche);
+  const restant = state.partie.chrono ? Math.round((state.partie.chrono.finAt - Date.now())/1000) : 0;
+  carteEcran(`
+    <h2>Manche ${state.partie.manche} — Phase de travail</h2>
+    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied, ne participe pas au défi de son service.</div>` : ''}
+    <div class="chrono-geant ${classeChronoGeant(restant)}" id="chrono-affichage">${formatChrono(restant)}</div>
+    <button id="btn-suivant-scene">Suivant : saisie des réponses</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    travailSelectionTemp = {};
+    allerEcran('travail');
+  });
+}
+
+function classeChronoGeant(secondesRestantes){
+  if (secondesRestantes <= 10) return 'rouge';
+  if (secondesRestantes < 60) return 'orange';
+  return '';
+}
+
+// Temps 2 — Saisie (§E) : sélection seule, aucun retour juste/faux tant que
+// les 3 services ne sont pas renseignés et que « Révéler » n'a pas été cliqué.
 function afficherTravail(){
   const defis = defisDeLaManche(state.partie.manche);
-  const tousRepondus = defis.every(d => d.reponseEquipe !== null);
   const misAPied = state.joueurs.filter(j => j.miseAPiedManche === state.partie.manche);
+  const tousSelectionnes = defis.every(d => travailSelectionTemp[d.id]);
   carteEcran(`
     <h2>Manche ${state.partie.manche} — Phase de travail</h2>
     <div class="sous-titre">RH · Commercial · Finance — chaque service relève son défi.</div>
-    <div class="chrono-affichage" id="chrono-affichage">${state.partie.chrono ? formatChrono(Math.round((state.partie.chrono.finAt - Date.now())/1000)) : ''}</div>
-    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied conservatoire, ne participe pas au défi de son service ce tour-ci (conserve son droit de vote).</div>` : ''}
+    ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied, ne participe pas au défi de son service.</div>` : ''}
     <div id="grille-defis" style="text-align:left;"></div>
-    <button id="btn-valider-defis" ${tousRepondus ? '' : 'disabled'}>Valider les résultats</button>
+    <button id="btn-valider-defis" ${tousSelectionnes ? '' : 'disabled'}>Révéler les résultats</button>
   `);
   afficherGrilleDefis();
   el('btn-valider-defis').addEventListener('click', () => {
     arreterChrono();
-    if (state.partie.propositionsIndices){ allerEcran('indice'); }
-    else { state.partie.etapeManche = 1; allerEcran('dashboard'); }
+    defis.forEach(d => { saisirReponseDefi(d.id, travailSelectionTemp[d.id]); });
+    allerEcran('travail-revelation');
   });
 }
 
@@ -1634,21 +2068,84 @@ function afficherGrilleDefis(){
   zone.innerHTML = defis.map(d => {
     const lettres = Array.from({ length: d.nbChoix }, (_, i) => String.fromCharCode(65 + i));
     const boutons = lettres.map(l => {
-      let cls = 'qcm';
-      if (d.reponseEquipe === l){ cls += d.reussi ? ' correct' : ' incorrect'; }
-      const disabled = d.reponseEquipe !== null ? 'disabled' : '';
-      return `<button class="${cls}" data-defi="${d.id}" data-lettre="${l}" ${disabled}>${l}</button>`;
+      const cls = 'qcm' + (travailSelectionTemp[d.id] === l ? ' selectionne' : '');
+      return `<button class="${cls}" data-defi="${d.id}" data-lettre="${l}">${l}</button>`;
     }).join('');
-    const statut = d.reponseEquipe === null
-      ? '<span class="small">En attente de la réponse de l\'équipe</span>'
-      : `<span class="small">${d.reussi ? '✅ Juste' : '❌ Faux'} — bonne réponse : ${d.reponseCorrecte}</span>`;
-    return `<div class="service-box"><h4>${d.service}</h4><div class="qcm-choix">${boutons}</div><div style="margin-top:6px;">${statut}</div></div>`;
+    return `<div class="service-box"><h4>${d.service}</h4><div class="qcm-choix">${boutons}</div></div>`;
   }).join('');
-  zone.querySelectorAll('button.qcm:not(:disabled)').forEach(b => {
+  zone.querySelectorAll('button.qcm').forEach(b => {
     b.addEventListener('click', () => {
-      try { saisirReponseDefi(b.dataset.defi, b.dataset.lettre); rafraichirJeu(); }
-      catch(e){ afficherErreur(e.message); }
+      const { defi, lettre } = b.dataset;
+      // Un second clic sur le choix déjà sélectionné désélectionne (§E).
+      travailSelectionTemp[defi] = (travailSelectionTemp[defi] === lettre) ? undefined : lettre;
+      afficherGrilleDefis();
+      el('btn-valider-defis').disabled = !defisDeLaManche(state.partie.manche).every(d => travailSelectionTemp[d.id]);
     });
+  });
+}
+
+// Temps 3 — Révélation séquencée (§E) : RH → Finance → Commercial, 900 ms
+// d'intervalle ; par service : surbrillance → pause 400 ms → couleur + son →
+// si faux, la bonne réponse s'illumine ensuite plus discrètement.
+const ORDRE_REVELATION_DEFIS = ['RH', 'Finance', 'Commercial'];
+
+function afficherTravailRevelation(){
+  const defis = defisDeLaManche(state.partie.manche);
+  carteEcran(`
+    <h2>Manche ${state.partie.manche} — Révélation des résultats</h2>
+    <div id="grille-revelation" style="text-align:left;"></div>
+  `);
+  const zone = el('grille-revelation');
+  zone.innerHTML = ORDRE_REVELATION_DEFIS.map(service => {
+    const d = defis.find(x => x.service === service);
+    const lettres = Array.from({ length: d.nbChoix }, (_, i) => String.fromCharCode(65 + i));
+    const boutons = lettres.map(l => `<button class="qcm" data-lettre="${l}" disabled>${l}</button>`).join('');
+    return `<div class="service-box" id="revelation-${service}"><h4>${service}</h4><div class="qcm-choix">${boutons}</div><div class="statut-differe small"></div></div>`;
+  }).join('');
+
+  ORDRE_REVELATION_DEFIS.forEach((service, idx) => {
+    const d = defis.find(x => x.service === service);
+    setTimeout(() => {
+      const box = document.getElementById('revelation-' + service);
+      if (!box) return;
+      box.classList.add('en-surbrillance');
+      setTimeout(() => {
+        box.classList.remove('en-surbrillance');
+        const boutonChoisi = box.querySelector(`button[data-lettre="${d.reponseEquipe}"]`);
+        if (boutonChoisi) boutonChoisi.classList.add(d.reussi ? 'correct' : 'incorrect');
+        jouerSonDefi(d.reussi);
+        if (!d.reussi){
+          const boutonCorrect = box.querySelector(`button[data-lettre="${d.reponseCorrecte}"]`);
+          if (boutonCorrect) boutonCorrect.classList.add('correct-discret');
+        }
+        box.querySelector('.statut-differe').textContent = d.reussi ? '✅ Juste' : `❌ Faux — bonne réponse : ${d.reponseCorrecte}`;
+      }, 400);
+    }, idx * 900);
+  });
+
+  setTimeout(() => { allerEcran('travail-bilan', true); }, ORDRE_REVELATION_DEFIS.length * 900 + 700);
+}
+
+// Temps 4 — Bilan agrégé (§E) : chiffre énorme + libellé coloré et sonorisé.
+// Alerte/Panique amorcent l'animation du camembert (le transfert réel reste
+// différé au Bilan du matin, §5.7/§G5 — voir traiterConsequenceMatin).
+const LIBELLES_BILAN_DEFIS = { 3: 'INDICE', 2: 'STATU QUO', 1: 'ALERTE', 0: 'PANIQUE' };
+const CLASSES_BILAN_DEFIS = { 3: 'indice', 2: 'statuquo', 1: 'alerte', 0: 'panique' };
+
+function afficherTravailBilan(){
+  const defis = defisDeLaManche(state.partie.manche);
+  const nbReussis = defis.filter(d => d.reussi).length;
+  jouerSonEcranUneFois('travail-bilan-' + state.partie.manche, () => jouerSonBilanDefis(nbReussis));
+  if (nbReussis <= 1) pulserMeridianGainDeTerrain();
+  carteEcran(`
+    <h2>Bilan des défis</h2>
+    <div class="bilan-chiffre">${nbReussis} / 3</div>
+    <div class="bilan-libelle ${CLASSES_BILAN_DEFIS[nbReussis]}">${LIBELLES_BILAN_DEFIS[nbReussis]}</div>
+    <div style="margin-top:20px;"><button id="btn-suivant-scene">Suivant</button></div>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (state.partie.propositionsIndices){ allerEcran('indice'); }
+    else { state.partie.etapeManche = 1; allerEcran('dashboard'); }
   });
 }
 
@@ -1693,6 +2190,7 @@ function afficherConseilDebat(){
   }, inscrits);
   el('btn-suivant-scene').addEventListener('click', () => {
     arreterChrono();
+    jouerClocheDebatFin();
     if (state.partie.resolutionsEnCours.length === 0){
       ajouterChroniquePublique("Aucune résolution n'a été adoptée. Le conseil reste inchangé.");
       state.partie.etapeManche = 2;
@@ -1708,14 +2206,9 @@ let voteResolutionTemp = {}; // { [joueurId]: 'pour'|'contre'|'abstention' }, re
 function afficherConseilVote(){
   const idx = state.partie.resolutionCouranteIndex;
   const resolution = state.partie.resolutionsEnCours[idx];
-  if (!resolution){ allerEcran('conseil-resultat'); return; }
+  if (!resolution){ allerEcran('conseil-resultat', true); return; }
   const cible = getJoueur(resolution.joueurId);
-  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
-  // Le mandataire du Juriste saboté vote à sa place (parts comptées normalement) :
-  // pas de bouton propre pour le Juriste révélé, sa part suit le tap du mandataire.
-  const juristeSaboteMandate = actifs.find(j => j.role === 'juriste' && j.revele && j.mandataireDe == null &&
-    state.joueurs.some(m => m.mandataireDe === j.id));
-  const votants = actifs.filter(j => !(j.role === 'juriste' && j.revele));
+  const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
   voteResolutionTemp = {};
   votants.forEach(j => { voteResolutionTemp[j.id] = 'abstention'; });
 
@@ -1730,28 +2223,30 @@ function afficherConseilVote(){
   `);
 
   const grille = el('grille-vote');
-  grille.innerHTML = votants.map(j => {
-    const suffix = (state.joueurs.find(m => m.mandataireDe === j.id)) ? ` (+ procuration)` : '';
-    return `<button type="button" class="joueur-tap vote-abstention" data-id="${j.id}">${j.prenom}${j.id === resolution.joueurId ? ' (visé)' : ''}${suffix}</button>`;
-  }).join('');
+  grille.innerHTML = votants.map(j =>
+    `<button type="button" class="joueur-tap vote-abstention" data-id="${j.id}">${j.prenom}${j.id === resolution.joueurId ? ' (visé)' : ''}</button>`
+  ).join('');
 
+  // Barre de vote (§C7 brief v3) : trait à 50 %, vire au vert et vibre
+  // 300 ms au moment précis où la majorité est franchie.
+  let majoriteFranchie = false;
   function majBarre(){
-    const total = votants.reduce((a, j) => a + getJoueur(j.id).part, 0) +
-      (juristeSaboteMandate ? 0 : (getJoueur(resolution.joueurId) ? 0 : 0)); // total réel = actions votantes (déjà tous les actifs, juriste inclus via son mandataire)
-    const totalVotante = actifs.reduce((a, j) => a + j.part, 0);
+    const totalVotante = votants.reduce((a, j) => a + j.part, 0);
     let pour = 0;
     votants.forEach(j => {
       if (voteResolutionTemp[j.id] === 'pour') pour += getJoueur(j.id).part;
     });
-    // Les parts du Juriste saboté suivent le vote de son mandataire.
-    const juriste = state.joueurs.find(j => j.role === 'juriste' && j.revele);
-    if (juriste){
-      const mandataire = state.joueurs.find(m => m.mandataireDe === juriste.id);
-      if (mandataire && voteResolutionTemp[mandataire.id] === 'pour') pour += juriste.part;
-    }
     const pct = totalVotante > 0 ? Math.round((pour / totalVotante) * 100) : 0;
-    el('barre-vote-fill').style.width = Math.min(100, pct) + '%';
+    const majoriteAcquise = totalVotante > 0 && (pour * 2) > totalVotante;
+    const fill = el('barre-vote-fill');
+    fill.style.width = Math.min(100, pct) + '%';
+    fill.classList.toggle('majorite', majoriteAcquise);
     el('lbl-vote-pct').textContent = `${pct} % pour (${formatPct(pour)} sur ${formatPct(totalVotante)}), seuil 50 %`;
+    if (majoriteAcquise && !majoriteFranchie){
+      const barre = fill.closest('.barre-progression');
+      barre.classList.remove('vibre'); void barre.offsetWidth; barre.classList.add('vibre');
+    }
+    majoriteFranchie = majoriteAcquise;
   }
 
   grille.querySelectorAll('button.joueur-tap').forEach(b => {
@@ -1766,14 +2261,8 @@ function afficherConseilVote(){
   majBarre();
 
   el('btn-valider-vote-scene').addEventListener('click', () => {
-    const votes = Object.assign({}, voteResolutionTemp);
-    const juriste = state.joueurs.find(j => j.role === 'juriste' && j.revele);
-    if (juriste){
-      const mandataire = state.joueurs.find(m => m.mandataireDe === juriste.id);
-      if (mandataire) votes[juriste.id] = votes[mandataire.id];
-    }
     try {
-      voterResolutionCourante(resolution.joueurId, votes);
+      voterResolutionCourante(resolution.joueurId, voteResolutionTemp);
       allerEcran('conseil-resultat');
     } catch(e){ afficherErreur(e.message); }
   });
@@ -1787,49 +2276,71 @@ function derniereResolutionDecidee(){
   return null;
 }
 
+function afficherConseilResultatPresidentVacant(resolution){
+  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
+  carteEcran(`
+    <h2>${resolution.prenom} était Président du conseil</h2>
+    <div class="sous-titre">Désignez son successeur.</div>
+    <select id="select-nouveau-president-scene"></select>
+    <button id="btn-suivant-scene" style="margin-left:8px;">Désigner et continuer</button>
+  `);
+  remplirSelect(el('select-nouveau-president-scene'), actifs, false);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    try { assignerPresident(el('select-nouveau-president-scene').value); } catch(e){ afficherErreur(e.message); return; }
+    avancerApresConseilResultat();
+  });
+}
+
+// Révélation de carte au clic (§C5 brief v3), même traitement qu'au Bilan
+// du matin : dos visible, silence jusqu'au clic, rotation 3D.
 function afficherConseilResultat(){
   const resolution = derniereResolutionDecidee();
-  if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard'); return; }
+  if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard', true); return; }
   const cible = getJoueur(resolution.joueurId);
   const adoptee = resolution.statut === 'adoptee';
   const titre = adoptee
     ? `Résolution adoptée — ${resolution.prenom} est révoqué(e).`
     : `Résolution rejetée — ${resolution.prenom} reste en fonction.`;
-  const reveal = adoptee ? `
-    ${imgTag('revocation', 'illustration-small')}
-    <div class="carte-reveal ${campDe(cible) === 'infiltre' ? 'infiltre' : ''}" style="margin-top:14px;">
-      ${imgTag(illustrationRole(cible.role), 'illustration-mini')}
-      ${resolution.prenom} était... ${ROLE_LABELS[cible.role]}
-    </div>` : '';
 
-  if (adoptee && state.partie.presidentVacant){
-    const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
-    carteEcran(`
-      <h2>${titre}</h2>
-      ${reveal}
-      <div class="sous-titre" style="margin-top:14px;">${resolution.prenom} était Président du conseil : désignez son successeur.</div>
-      <select id="select-nouveau-president-scene"></select>
-      <button id="btn-suivant-scene" style="margin-left:8px;">Désigner et continuer</button>
-    `);
-    remplirSelect(el('select-nouveau-president-scene'), actifs, false);
-    el('btn-suivant-scene').addEventListener('click', () => {
-      try { assignerPresident(el('select-nouveau-president-scene').value); } catch(e){ afficherErreur(e.message); return; }
-      avancerApresConseilResultat();
-    });
+  if (!adoptee){
+    carteEcran(`<h2>${titre}</h2><button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>`);
+    el('btn-suivant-scene').addEventListener('click', avancerApresConseilResultat);
     return;
   }
 
+  const idCarte = 'carte-revocation';
   carteEcran(`
     <h2>${titre}</h2>
-    ${reveal}
+    ${rendreCarteFlipHTML(idCarte, resolution.prenom)}
+    <button id="btn-suivant-scene" style="margin-top:14px;display:none;">Suivant</button>
+  `);
+  jouerSonEcranUneFois('conseil-resultat-son-' + resolution.joueurId, jouerSonResolutionAdoptee);
+  activerCarteFlip(idCarte, resolution.prenom, cible.carte, (prenom, carte) => {
+    campDe({ carte }) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete();
+    setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.style.display = ''; }, 1400);
+  });
+  el('btn-suivant-scene').addEventListener('click', () => {
+    afficherConseilResultatSortieCapital(resolution, cible);
+  });
+}
+
+// Sortie du capital (§D5/§C5 brief v3) : même traitement qu'au sabotage —
+// une révocation cède aussi 100 % des titres, ça mérite le même temps fort.
+function afficherConseilResultatSortieCapital(resolution, cible){
+  carteEcran(`
+    <h2>Sortie du capital</h2>
+    <div class="texte-narratif" style="text-align:center;">${texteSortieCapital('revoque', resolution.prenom)}</div>
     <button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>
   `);
-  el('btn-suivant-scene').addEventListener('click', avancerApresConseilResultat);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (state.partie.presidentVacant) afficherConseilResultatPresidentVacant(resolution);
+    else avancerApresConseilResultat();
+  });
 }
 
 function avancerApresConseilResultat(){
   const idx = state.partie.resolutionCouranteIndex;
-  const verrouillee = !!state.partie.revocationVerrouilleeParManche[state.partie.manche];
+  const verrouillee = (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) >= 2;
   if (!verrouillee && state.partie.resolutionsEnCours[idx] && state.partie.resolutionsEnCours[idx].statut === 'en_attente'){
     allerEcran('conseil-vote');
   } else {
@@ -1848,14 +2359,15 @@ function avancerApresConseilResultat(){
 // et mémorisée dans state.partie.etapesNuitSnapshot : l'exercice d'un pouvoir
 // optionnel (DAF, DRH) au fil de la nuit ne doit jamais recalculer — et donc
 // décaler — les positions des étapes restantes de CETTE même nuit.
+// Ordre imposé Console (§2 brief v3) : Juriste → DAF → DRH → Infiltrés.
 function etapesNuitDisponibles(){
-  const avocat = state.joueurs.find(j => j.role === 'avocat' && j.statutCapital === 'actif');
-  const daf = state.joueurs.find(j => j.role === 'daf' && j.statutCapital === 'actif');
-  const drh = state.joueurs.find(j => j.role === 'drh' && j.statutCapital === 'actif');
+  const juriste = state.joueurs.find(j => j.carte === 'juriste' && j.statutCapital === 'actif');
+  const daf = state.joueurs.find(j => j.carte === 'daf' && j.statutCapital === 'actif');
+  const drh = state.joueurs.find(j => j.carte === 'drh' && j.statutCapital === 'actif');
   const etapes = [];
-  if (avocat) etapes.push('nuit-avocat');
+  if (juriste) etapes.push('nuit-juriste');
   if (daf && !state.partie.enqueteDafParManche[state.partie.manche]) etapes.push('nuit-daf-question');
-  if (drh && !state.partie.miseAPiedDrhUtilisee) etapes.push('nuit-drh');
+  if (drh && !state.partie.miseAPiedDrhParManche[state.partie.manche]) etapes.push('nuit-drh');
   etapes.push('nuit-infiltres');
   if (state.partie.manche < 5) etapes.push('nuit-reponses');
   etapes.push('nuit-reveil');
@@ -1867,34 +2379,43 @@ function avancerNuit(){
   const etapes = state.partie.etapesNuitSnapshot || etapesNuitDisponibles();
   const id = etapes[state.partie.sousEtapeIndex];
   if (!id){ allerEcran('nuit-reveil'); return; }
-  if (id === 'nuit-reponses') indexCartePreview = 0;
   allerEcran(id);
 }
 
+// La nuit (§C4 brief v3) : assombrissement, camembert désaturé, aucun
+// bouton visible — l'animateur avance à la barre d'espace (handlerBarreEspace).
 function afficherNuitFermeture(){
-  jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerGongNuit);
+  jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerSonEntreeNuit);
+  demarrerNappeNuit();
+  document.body.classList.add('nuit-active');
   state.partie.sousEtapeIndex = 0;
   state.partie.etapesNuitSnapshot = etapesNuitDisponibles();
   sauvegarder();
-  ecranNeutreAvecSuivant('Séquence de nuit', 'Fin de journée chez NOVENTIS. Tout le monde ferme les yeux.', () => {
-    const id = state.partie.etapesNuitSnapshot[0];
-    if (id === 'nuit-reponses') indexCartePreview = 0;
-    allerEcran(id);
-  });
+  carteEcran(`
+    <div class="ecran-nuit-sombre">
+      <div class="texte-nuit">${TEXTES_NUIT_TOMBE[state.partie.manche] || 'NOVENTIS DORT'}</div>
+    </div>
+  `);
+  handlerBarreEspace = () => {
+    handlerBarreEspace = null;
+    document.body.classList.remove('nuit-active');
+    allerEcran(state.partie.etapesNuitSnapshot[0]);
+  };
 }
 
-function afficherNuitAvocat(){
-  const avocat = state.joueurs.find(j => j.role === 'avocat' && j.statutCapital === 'actif');
-  const candidats = state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== avocat.id && !j.protegeNuitPrecedente);
+function afficherNuitJuriste(){
+  // Auto-protection autorisée (§2 brief v3) : seule exclusion, la cible
+  // protégée la nuit précédente (interdit de protéger 2 nuits de suite).
+  const candidats = state.joueurs.filter(j => j.statutCapital === 'actif' && !j.protegeNuitPrecedente);
   carteEcran(`
-    <h2>L'Avocat(e) se réveille.</h2>
+    <h2>Le Juriste se réveille.</h2>
     <div class="sous-titre">Qui protège-t-il/elle cette nuit ?</div>
-    <div class="grille-joueurs-tap" id="grille-avocat"></div>
+    <div class="grille-joueurs-tap" id="grille-juriste"></div>
   `);
-  rendreGrilleJoueurs(el('grille-avocat'), candidats, (id) => {
+  rendreGrilleJoueurs(el('grille-juriste'), candidats, (id) => {
     try {
-      definirProtectionAvocat(id);
-      ecranNeutreAvecSuivant('Phase nocturne', "L'Avocat(e) se rendort.", avancerNuit);
+      definirProtectionJuriste(id);
+      ecranNeutreAvecSuivant('Phase nocturne', "Le Juriste se rendort.", avancerNuit);
     } catch(e){ afficherErreur(e.message); }
   });
 }
@@ -1912,7 +2433,7 @@ function afficherNuitDafQuestion(){
       const res = enqueteDaf(id);
       carteEcran(`
         <h2>Droit à l'information</h2>
-        <div class="carte-reveal">${res.prenom} — Rôle : ${ROLE_LABELS[res.role]}</div>
+        <div class="carte-reveal">${res.prenom} — Carte : ${CARTE_LABELS[res.carte]}</div>
         <button id="btn-fermer-daf" style="margin-top:16px;">Fermer</button>
       `);
       el('btn-fermer-daf').addEventListener('click', () => ecranNeutreAvecSuivant('Phase nocturne', 'Le DAF se rendort.', avancerNuit));
@@ -1950,51 +2471,27 @@ function afficherNuitInfiltres(){
     const estProtege = !!cible.protegeCetteNuit;
     try {
       actionSabotage(id, estProtege);
-      afficherBandeauJoueurs(); // le statut (gelé) est public immédiatement, sans attendre le prochain écran
-      const apres = getJoueur(id);
-      if (!estProtege && apres.role === 'juriste'){
-        const mandataires = state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== id);
-        carteEcran(`
-          <h2>Les Infiltrés se rendorment.</h2>
-          <div class="sous-titre">Le Juriste ciblé conserve ses titres votants : désigner un mandataire.</div>
-          <select id="select-mandataire-scene"></select>
-          <button id="btn-suivant-scene" style="margin-left:8px;">Assigner et continuer</button>
-        `);
-        remplirSelect(el('select-mandataire-scene'), mandataires, false);
-        el('btn-suivant-scene').addEventListener('click', () => {
-          try { assignerMandataireJuriste(id, el('select-mandataire-scene').value); avancerNuit(); }
-          catch(e){ afficherErreur(e.message); }
-        });
-      } else {
-        ecranNeutreAvecSuivant('Phase nocturne', 'Les Infiltrés se rendorment.', avancerNuit);
-      }
+      afficherBandeauJoueurs(); // la sortie du capital est publique immédiatement, sans attendre le prochain écran
+      dessinerCamembert();
+      ecranNeutreAvecSuivant('Phase nocturne', 'Les Infiltrés se rendorment.', avancerNuit);
     } catch(e){ afficherErreur(e.message); }
   });
 }
 
 // --- Étape 4 : Bilan du matin (§5.8) ---
 
+// Bilan du matin — sabotage en 3 écrans séparés (§D5 brief v3) : mise en
+// cause (texte seul) → la carte (dos visible, retournement au clic, §C5) →
+// sortie du capital (enchaînée sur l'animation du camembert). La nuit calme
+// reste un écran unique, rien à dramatiser.
 function afficherMatinSabotage(){
   const evt = state.partie.dernierEvenementNuitPublic;
-  // Révélation officielle : traitement one-shot, gardé par idsEnAttenteAnnonce
-  // pour rester idempotent (un ré-affichage, ex. après « ◀ Annuler » resté sur
-  // cet écran, ne doit ni dupliquer la chronique ni re-masquer/démasquer).
-  // Le camembert et le bandeau doivent refléter le démasquage IMMÉDIATEMENT,
-  // donc avant la construction de la carte — jamais au prochain rafraîchissement.
-  if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
-    if (!evt || evt.type === 'nuit_calme'){
-      ajouterChroniquePublique("Nuit calme. Aucune procédure n'a abouti cette nuit.");
-    } else {
-      const c = getJoueur(evt.joueurId);
-      ajouterChroniquePublique(`${c.prenom} était... ${ROLE_LABELS[c.role]}.`);
-    }
-    state.partie.idsEnAttenteAnnonce = [];
-    sauvegarder();
-    dessinerCamembert();
-    afficherBandeauJoueurs();
-  }
-
   if (!evt || evt.type === 'nuit_calme'){
+    if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
+      ajouterChroniquePublique("Nuit calme. Aucune procédure n'a abouti cette nuit.");
+      state.partie.idsEnAttenteAnnonce = [];
+      sauvegarder();
+    }
     carteEcran(`
       <h2>Bilan du matin</h2>
       <div class="texte-narratif" style="text-align:center;">Nuit calme. Aucune procédure n'a abouti cette nuit — l'entreprise tourne normalement.</div>
@@ -2003,33 +2500,98 @@ function afficherMatinSabotage(){
     el('btn-suivant-scene').addEventListener('click', avancerApresMatinSabotage);
     return;
   }
-  const cible = getJoueur(evt.joueurId);
-  const scenario = texteScenarioSabotage(state.partie.manche, cible.prenom);
+  allerEcran('matin-mise-en-cause', true);
+}
+
+// Écran 1 — mise en cause.
+function afficherMatinMiseEnCause(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
   carteEcran(`
-    <h2>Bilan du matin — ${scenario.titre}</h2>
+    <h2>Bilan du matin</h2>
     ${imgTag(illustrationSabotageManche(state.partie.manche), 'illustration-small')}
-    <div class="texte-narratif" style="text-align:center;">${scenario.texte}</div>
-    <div class="carte-reveal ${campDe(cible) === 'infiltre' ? 'infiltre' : ''}">
-      ${imgTag(illustrationRole(cible.role), 'illustration-mini')}
-      ${cible.prenom} était... ${ROLE_LABELS[cible.role]}
-    </div>
+    <div class="texte-narratif" style="text-align:center;">${texteMiseEnCause(state.partie.manche, cible.prenom)}</div>
+    <button id="btn-suivant-scene" style="margin-top:16px;">Suivant</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => allerEcran('matin-carte-sabotage'));
+}
+
+// Écran 2 — la carte (§C5) : dos visible, silence jusqu'au clic. La
+// révélation officielle (chronique publique + son) n'a lieu qu'ici, jamais
+// avant (§5.8) — idempotent via idsEnAttenteAnnonce.
+function afficherMatinCarteSabotage(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
+  const idCarte = 'carte-sabotage';
+  carteEcran(`
+    <h2>Bilan du matin</h2>
+    ${rendreCarteFlipHTML(idCarte, cible.prenom)}
+    <button id="btn-suivant-scene" style="margin-top:16px;display:none;">Suivant</button>
+  `);
+  activerCarteFlip(idCarte, cible.prenom, cible.carte, (prenom, carte) => {
+    if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
+      ajouterChroniquePublique(`${prenom} était... ${CARTE_LABELS[carte]}.`);
+      state.partie.idsEnAttenteAnnonce = [];
+      sauvegarder();
+    }
+    campDe({ carte }) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete();
+    setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.style.display = ''; }, 1400);
+  });
+  el('btn-suivant-scene').addEventListener('click', () => allerEcran('matin-sortie-capital'));
+}
+
+// Écran 3 — sortie du capital, enchaînée sur l'animation du camembert (dégel
+// de camembertGeleJusquaReveal, qui rejoue la transition existante).
+function afficherMatinSortieCapital(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
+  if (state.partie.camembertGeleJusquaReveal){
+    state.partie.camembertGeleJusquaReveal = null;
+    sauvegarder();
+    dessinerCamembert();
+    afficherBandeauJoueurs();
+  }
+  carteEcran(`
+    <h2>Sortie du capital</h2>
+    <div class="texte-narratif" style="text-align:center;">${texteSortieCapital(cible.motifSortie, cible.prenom)}</div>
     <button id="btn-suivant-scene" style="margin-top:16px;">Suivant</button>
   `);
   el('btn-suivant-scene').addEventListener('click', avancerApresMatinSabotage);
 }
 
-function avancerApresMatinSabotage(){
-  state.partie.etapeBilanMatin = 1;
+// Mise à pied DRH (§D5 brief v3) : écran sobre entre le sabotage et le
+// communiqué Meridian, sans jamais nommer l'auteur de la décision.
+function afficherMatinMiseAPied(){
+  const misAPied = state.joueurs.find(j => j.miseAPiedManche === state.partie.manche + 1 && !j.miseAPiedAnnoncee);
+  if (!misAPied){ avancerApresMatinMiseAPied(); return; }
+  misAPied.miseAPiedAnnoncee = true;
+  ajouterChroniquePublique(`${misAPied.prenom} est mis(e) à pied conservatoire : absent(e) du défi de son service à la prochaine manche.`);
   sauvegarder();
-  if (state.partie.consequenceDefisEnAttente){
+  carteEcran(`
+    <h2>Mise à pied conservatoire</h2>
+    <div class="texte-narratif" style="text-align:center;">${misAPied.prenom} est mis(e) à pied conservatoire. Absent(e) du défi de son service à la prochaine manche.</div>
+    <button id="btn-suivant-scene">Suivant</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', avancerApresMatinMiseAPied);
+}
+
+function avancerApresMatinMiseAPied(){
+  if (state.partie.consequenceDefisEnAttente || (state.partie.palierVenantDetreFranchis || []).length){
     allerEcran('matin-communique');
   } else {
     finBilanMatin();
   }
 }
 
+function avancerApresMatinSabotage(){
+  state.partie.etapeBilanMatin = 1;
+  sauvegarder();
+  const misAPiedEnAttente = state.joueurs.some(j => j.miseAPiedManche === state.partie.manche + 1 && !j.miseAPiedAnnoncee);
+  if (misAPiedEnAttente){
+    allerEcran('matin-mise-a-pied');
+  } else {
+    avancerApresMatinMiseAPied();
+  }
+}
+
 function afficherMatinCommunique(){
-  jouerSonEcranUneFois('matin-communique-' + state.partie.manche, jouerNotificationCommunique);
   // Traité une seule fois à l'entrée de cet écran (le rendu peut être rappelé
   // sans effet de bord grâce à ce garde d'idempotence sur etapeBilanMatin).
   if (state.partie.etapeBilanMatin === 1){
@@ -2040,13 +2602,35 @@ function afficherMatinCommunique(){
   }
   const type = state.partie.derniereAnnonceMatin ? state.partie.derniereAnnonceMatin.type : null;
   const paliers = state.partie.palierVenantDetreFranchis || [];
+  jouerSonEcranUneFois('matin-communique-' + state.partie.manche, () => {
+    if (type === 'alerte') jouerSonAlerteMeridian();
+    else if (type === 'panique') jouerSonPaniqueMeridian();
+    else jouerNotificationCommunique();
+  });
   carteEcran(`
     <h2>Communiqué Meridian</h2>
     <div class="texte-narratif" style="text-align:center;">${COMMUNIQUES_MERIDIAN[type] || ''}</div>
-    ${paliers.length ? `<div class="banner info">${paliers.map(s => ANNONCES_PALIER[s]).join('<br><br>')}</div>` : ''}
     <button id="btn-suivant-scene">Suivant</button>
   `);
-  el('btn-suivant-scene').addEventListener('click', () => { state.partie.palierVenantDetreFranchis = []; finBilanMatin(); });
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (paliers.length) afficherPalierPleinEcran(paliers);
+    else { state.partie.palierVenantDetreFranchis = []; finBilanMatin(); }
+  });
+}
+
+// Franchissement de palier Meridian (§C8 brief v3) : plein écran rouge très
+// sombre, texte blanc, entrée en zoom avec tremblement (CSS) — clic pour
+// continuer.
+function afficherPalierPleinEcran(paliers){
+  jouerSonPalier();
+  const overlay = el('palier-overlay');
+  el('palier-overlay-texte').innerHTML = paliers.map(s => ANNONCES_PALIER[s]).join('<br><br>');
+  overlay.classList.remove('hidden');
+  overlay.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    state.partie.palierVenantDetreFranchis = [];
+    finBilanMatin();
+  }, { once: true });
 }
 
 function finBilanMatin(){
@@ -2073,7 +2657,11 @@ const TITRES_FIN = {
 
 function afficherFin(){
   const v = state.partie.victoire;
-  if (!v){ allerEcran('dashboard'); return; }
+  if (!v){ allerEcran('dashboard', true); return; }
+  jouerSonEcranUneFois('fin-' + v.type, () => {
+    if (v.type === 'meridian') jouerSonVictoireMeridian();
+    else jouerSonVictoireHonnete();
+  });
   carteEcran(`
     <h2>${TITRES_FIN[v.type] || 'Fin de partie'}</h2>
     ${imgTag('victoire')}
@@ -2145,36 +2733,50 @@ function afficherRecap(){
    14bis. DISPATCH DES ÉCRANS
    ============================================================ */
 
-const ECRANS_SANS_CAMEMBERT = new Set(['m0-lettre']); // avant l'apparition animée de Meridian
+const ECRANS_SANS_CAMEMBERT = new Set(['ouverture-regles', 'ouverture-scenario', 'm0-lettre']); // avant l'apparition animée de Meridian
 
 function renderEcranActuel(){
   const id = state.partie.ecranActuel;
   el('zone-camembert-compact').classList.toggle('hidden', ECRANS_SANS_CAMEMBERT.has(id) && indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
+  // Filet de sécurité (§C4) : ces deux états n'ont de sens que sur leur
+  // propre écran, jamais laissés « collés » après une navigation par un
+  // autre chemin que leur bouton/barre d'espace dédiés (ex. « ◀ Annuler »).
+  if (id !== 'nuit-fermeture'){ document.body.classList.remove('nuit-active'); handlerBarreEspace = null; }
+  if (id === 'ouverture-regles') return ecranOuvertureRegles();
+  if (id === 'ouverture-scenario') return ecranOuvertureScenario();
   if (id === 'm0-lettre') return ecranM0Lettre();
+  if (id === 'm0-note-juriste') return ecranM0NoteJuriste();
+  if (id === 'm0-nuit-tombe') return ecranM0NuitTombe();
   if (id === 'm0-infiltres-ouvert') return ecranM0Infiltres(true);
   if (id === 'm0-infiltres-ferme') return ecranM0Infiltres(false);
   if (id === 'm0-reponses') return afficherM0Reponses();
+  if (id === 'm0-reponses-grille') return afficherM0ReponsesGrille();
   if (id === 'm0-role-ouvert') return afficherM0RoleTour(true);
   if (id === 'm0-role-ferme') return afficherM0RoleTour(false);
   if (id === 'm0-reveil') return afficherM0Reveil();
 
   if (id === 'dashboard') return afficherDashboard();
+  if (id === 'travail-chrono') return afficherTravailChrono();
   if (id === 'travail') return afficherTravail();
+  if (id === 'travail-revelation') return afficherTravailRevelation();
+  if (id === 'travail-bilan') return afficherTravailBilan();
   if (id === 'indice') return afficherIndice();
   if (id === 'conseil-debat') return afficherConseilDebat();
   if (id === 'conseil-vote') return afficherConseilVote();
   if (id === 'conseil-resultat') return afficherConseilResultat();
   if (id === 'nuit-fermeture') return afficherNuitFermeture();
-  if (id === 'nuit-avocat') return afficherNuitAvocat();
+  if (id === 'nuit-juriste') return afficherNuitJuriste();
   if (id === 'nuit-daf-question') return afficherNuitDafQuestion();
   if (id === 'nuit-drh') return afficherNuitDrh();
   if (id === 'nuit-infiltres') return afficherNuitInfiltres();
   if (id === 'nuit-reponses') return afficherNuitReponses();
-  if (id === 'nuit-reveil') return ecranNeutreAvecSuivant('Séquence de nuit', 'NOVENTIS se réveille ! Ouvrez les yeux.', () => {
-    state.partie.etapeManche = 3;
-    allerEcran('dashboard');
-  }, 'Ouvrir le Bilan du matin');
+  if (id === 'nuit-reponses-grille') return afficherNuitReponsesGrille();
+  if (id === 'nuit-reveil') return afficherNuitReveil();
   if (id === 'matin-sabotage') return afficherMatinSabotage();
+  if (id === 'matin-mise-en-cause') return afficherMatinMiseEnCause();
+  if (id === 'matin-carte-sabotage') return afficherMatinCarteSabotage();
+  if (id === 'matin-sortie-capital') return afficherMatinSortieCapital();
+  if (id === 'matin-mise-a-pied') return afficherMatinMiseAPied();
   if (id === 'matin-communique') return afficherMatinCommunique();
   if (id === 'fin') return afficherFin();
   if (id === 'recap') return afficherRecap();
@@ -2200,10 +2802,10 @@ function afficherMasque(){
 
 function remplirPanneauCorrections(){
   remplirSelect(el('corr-select-joueur'), state.joueurs, false);
-  el('corr-select-role').innerHTML = ROLES.map(r => `<option value="${r}">${ROLE_LABELS[r]}</option>`).join('');
-  el('corr-select-ecran').innerHTML = ['dashboard','travail','indice','conseil-debat','conseil-vote','conseil-resultat',
-    'nuit-fermeture','nuit-avocat','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reveil',
-    'matin-sabotage','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
+  el('corr-select-role').innerHTML = CARTES.map(r => `<option value="${r}">${CARTE_LABELS[r]}</option>`).join('');
+  el('corr-select-ecran').innerHTML = ['dashboard','travail-chrono','travail','travail-revelation','travail-bilan','indice','conseil-debat','conseil-vote','conseil-resultat',
+    'nuit-fermeture','nuit-juriste','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reponses-grille','nuit-reveil',
+    'matin-sabotage','matin-mise-en-cause','matin-carte-sabotage','matin-sortie-capital','matin-mise-a-pied','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
 }
 
 /* ============================================================
@@ -2216,7 +2818,7 @@ function genererLignesJoueurs(){
   const n = parseInt(el('input-nb-joueurs').value, 10) || 15;
   joueursSetup = [];
   for (let i = 0; i < n; i++){
-    joueursSetup.push({ prenom: '', service: SERVICES[i % SERVICES.length], part: 0, role: 'associe' });
+    joueursSetup.push({ prenom: '', service: SERVICES[i % SERVICES.length], part: 0, carte: 'associe' });
   }
   el('lbl-nb-infiltres-reco').textContent = Math.floor(n / 3);
   el('lbl-nb-joueurs-phrase').textContent = n;
@@ -2260,28 +2862,30 @@ function rafraichirTableRoles(){
   joueursSetup.forEach((j, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${j.prenom || ('Joueur ' + (i+1))}</td>
-      <td><select data-idx="${i}" class="input-role">${ROLES.map(r => `<option value="${r}" ${j.role===r?'selected':''}>${ROLE_LABELS[r]}</option>`).join('')}</select></td>`;
+      <td><select data-idx="${i}" class="input-role">${CARTES.map(r => `<option value="${r}" ${j.carte===r?'selected':''}>${CARTE_LABELS[r]}</option>`).join('')}</select></td>`;
     tbody.appendChild(tr);
   });
   tbody.querySelectorAll('.input-role').forEach(sel => {
     sel.addEventListener('change', e => {
-      joueursSetup[+e.target.dataset.idx].role = e.target.value;
+      joueursSetup[+e.target.dataset.idx].carte = e.target.value;
       rafraichirTableRoles();
       verifierCoherenceSetup();
     });
   });
 }
 
-// Retire un rôle unique des menus dès qu'il est pris ailleurs (§5.1 CDC v2) —
-// implémenté ici comme un contrôle de cohérence bloquant plutôt qu'un filtrage
-// des options, pour rester lisible dans la console technique.
+// Retire une carte unique des menus dès qu'elle est prise ailleurs (§5.1 CDC
+// v2) — implémenté ici comme un contrôle de cohérence bloquant plutôt qu'un
+// filtrage des options, pour rester lisible dans la console technique.
+// Les 3 cartes à pouvoir sont structurellement toujours honnêtes : un joueur
+// ne peut porter qu'une seule carte à la fois (§2 brief v3).
 function verifierCoherenceSetup(){
   const problemes = [];
-  ROLES_UNIQUES.forEach(r => {
-    const n = joueursSetup.filter(j => j.role === r).length;
-    if (n > 1) problemes.push(`Le rôle "${ROLE_LABELS[r]}" est attribué à ${n} joueurs (maximum 1).`);
+  CARTES_UNIQUES.forEach(r => {
+    const n = joueursSetup.filter(j => j.carte === r).length;
+    if (n > 1) problemes.push(`La carte "${CARTE_LABELS[r]}" est attribuée à ${n} joueurs (maximum 1).`);
   });
-  const nbInfiltres = joueursSetup.filter(j => j.role === 'infiltre').length;
+  const nbInfiltres = joueursSetup.filter(j => j.carte === 'infiltre').length;
   const reco = Math.floor(joueursSetup.length / 3);
   const compteurOk = joueursSetup.length > 0 && nbInfiltres === reco;
   el('lbl-compteur-infiltres').textContent = `Infiltrés désignés : ${nbInfiltres} / ${reco}`;
@@ -2311,7 +2915,7 @@ function demarrerPartie(){
   state.joueurs.forEach((j, i) => {
     j.service = joueursSetup[i].service;
     j.part = joueursSetup[i].part;
-    j.role = joueursSetup[i].role;
+    j.carte = joueursSetup[i].carte;
   });
   // Le Président n'est plus désigné en Préparation (§3/§5.1 CDC v2) : il sera
   // assigné en cours de partie (première fois via le contrôle « Corrections »,
@@ -2319,7 +2923,7 @@ function demarrerPartie(){
   state.partie.enCours = true;
   state.partie.manche = 0;
   state.partie.phase = 'mise_en_place';
-  state.partie.ecranActuel = 'm0-lettre';
+  state.partie.ecranActuel = 'ouverture-regles';
   indexParagrapheLettre = 0;
   ajouterJournal('debut_partie', `La partie démarre avec ${state.joueurs.length} joueurs. Meridian détient 1,0 % du capital.`);
   verifierInvariant();
@@ -2349,28 +2953,46 @@ function rafraichirJeu(){
   const president = getJoueur(state.partie.presidentActuelId);
   el('bc-president').textContent = president ? president.prenom : '—';
   remplirSelect(el('bc-select-president'), state.joueurs.filter(j => j.statutCapital === 'actif'), false);
+  declencherFonduNoirSiChangementDePhase();
   dessinerCamembert();
   afficherBandeauJoueurs();
   afficherJournal();
   renderEcranActuel();
 }
 
+// Le noir comme ponctuation (§C3 brief v3) : seul effet de transition, à
+// chaque changement de phase (mise_en_place → travail → conseil → nuit →
+// matin), jamais sur une simple ré-affichage du même écran.
+let dernierePhaseAffichee = null;
+function declencherFonduNoirSiChangementDePhase(){
+  const phase = state.partie.phase;
+  if (dernierePhaseAffichee !== null && dernierePhaseAffichee !== phase){
+    const f = el('fondu-noir');
+    f.classList.remove('actif'); void f.offsetWidth; f.classList.add('actif');
+  }
+  dernierePhaseAffichee = phase;
+}
+
 /* ============================================================
    14. TESTS DE RECETTE T1 – T6 (§8 cahier des charges)
    ============================================================ */
 
-function construireEtatTest(defsJoueurs, meridianPart, config){
+// manche par défaut = 3 : la plupart des tests de jeu veulent être au-delà du
+// plancher de victoire (§A1, aucune victoire avant le bilan du matin de la
+// manche 3) ; les tests qui veulent explicitement tester le plancher (T8)
+// passent leur propre manche.
+function construireEtatTest(defsJoueurs, meridianPart, config, manche){
   const partie = etatInitial().partie;
-  Object.assign(partie, { enCours: true, manche: 1, phase: 'nuit', ecranActuel: 'travail' });
+  Object.assign(partie, { enCours: true, manche: manche == null ? 3 : manche, phase: 'nuit', ecranActuel: 'travail' });
   return {
-    version: 2,
+    version: 3,
     config: config || { alerteMontant: 4000, paniqueMontant: 8000 },
     partie,
     joueurs: defsJoueurs.map((d, i) => ({
       id: 't' + i, prenom: d.prenom || ('T' + i), service: d.service || 'RH',
-      part: d.part, statutCapital: d.statutCapital || 'actif',
-      role: d.role || (d.camp === 'infiltre' ? 'infiltre' : 'associe'),
-      revele: false, mandataireDe: null, protegeCetteNuit: false, protegeNuitPrecedente: false, miseAPiedManche: null
+      part: d.part, statutCapital: d.statutCapital || 'actif', motifSortie: d.motifSortie || null,
+      carte: d.carte || (d.camp === 'infiltre' ? 'infiltre' : 'associe'),
+      revele: false, protegeCetteNuit: false, protegeNuitPrecedente: !!d.protegeNuitPrecedente, miseAPiedManche: null
     })),
     meridian: { part: meridianPart },
     banqueDefis: clonerBanqueDefis(),
@@ -2379,7 +3001,7 @@ function construireEtatTest(defsJoueurs, meridianPart, config){
 }
 
 function sommeCapital(s){
-  return s.joueurs.filter(j => j.statutCapital !== 'revoque').reduce((a, j) => a + j.part, 0) + s.meridian.part;
+  return s.joueurs.filter(j => j.statutCapital === 'actif').reduce((a, j) => a + j.part, 0) + s.meridian.part;
 }
 
 function runAcceptanceTests(){
@@ -2397,15 +3019,12 @@ function runAcceptanceTests(){
     detail: `joueurs=${[...new Set(s1.joueurs.map(j=>j.part))].join(',')} (attendu 9100), meridian=${s1.meridian.part} (attendu 9000), total=${sommeCapital(s1)}`
   });
 
-  // --- T2 : Révocation par résolutions successives — 3 noms inscrits, le
-  // premier échoue, le deuxième (même cible que l'ancien T2) est adopté, le
-  // troisième n'est jamais voté (verrouillage automatique après adoption).
+  // --- T2 : Révocation par résolutions successives — 2 noms inscrits, le
+  // premier échoue, le second est adopté (100 % redistribué, 0 % à Meridian).
   const cibleEchec = s1.joueurs[1].id;
   const cibleAdoptee = s1.joueurs[0].id;
-  const cibleNonVotee = s1.joueurs[2].id;
   inscrireResolution(cibleEchec);
   inscrireResolution(cibleAdoptee);
-  inscrireResolution(cibleNonVotee);
 
   const votesEchec = {};
   s1.joueurs.forEach(j => { votesEchec[j.id] = (j.id === cibleEchec) ? 'pour' : 'contre'; });
@@ -2415,34 +3034,28 @@ function runAcceptanceTests(){
   s1.joueurs.forEach(j => { votesAdoption[j.id] = (j.id === cibleAdoptee) ? 'contre' : 'pour'; });
   const acquiseAdoption = voterResolutionCourante(cibleAdoptee, votesAdoption);
 
-  let troisiemeBloquee = false;
-  try {
-    voterResolutionCourante(cibleNonVotee, Object.fromEntries(s1.joueurs.map(j => [j.id, 'pour'])));
-  } catch(e){ troisiemeBloquee = true; }
-
-  const restants = s1.joueurs.filter(j => j.statutCapital !== 'revoque');
+  const restants = s1.joueurs.filter(j => j.statutCapital === 'actif');
   const attendu1011 = restants.filter(j => j.part === 10111).length;
   const attendu1012 = restants.filter(j => j.part === 10112).length;
-  const statutTroisieme = s1.partie.resolutionsEnCours[2] && s1.partie.resolutionsEnCours[2].statut;
-  const t2ok = !acquiseEchec && acquiseAdoption && troisiemeBloquee && statutTroisieme === 'non_votee'
+  const t2ok = !acquiseEchec && acquiseAdoption
     && restants.length === 9 && (attendu1011 + attendu1012) === 9 && attendu1012 === 1
     && s1.meridian.part === 9000 && sommeCapital(s1) === 100000;
   resultats.push({
     nom: 'T2 — Révocation par résolutions successives',
     pass: t2ok,
-    detail: `résolution 1 (${s1.joueurs[1].prenom}) → ${acquiseEchec?'adoptée':'rejetée'} (attendu rejetée) ; résolution 2 (${s1.joueurs[0].prenom}) → ${acquiseAdoption?'adoptée':'rejetée'} (attendu adoptée) ; résolution 3 bloquée=${troisiemeBloquee} statut=${statutTroisieme} (attendu non_votee) ; ${attendu1011}×10111‰ + ${attendu1012}×10112‰ (attendu 8×10111 + 1×10112), meridian=${s1.meridian.part}, total=${sommeCapital(s1)}`
+    detail: `résolution 1 (${s1.joueurs[1].prenom}) → ${acquiseEchec?'adoptée':'rejetée'} (attendu rejetée) ; résolution 2 (${s1.joueurs[0].prenom}) → ${acquiseAdoption?'adoptée':'rejetée'} (attendu adoptée) ; ${attendu1011}×10111‰ + ${attendu1012}×10112‰ (attendu 8×10111 + 1×10112), meridian=${s1.meridian.part} (attendu 9000, révocation ne lui donne rien), total=${sommeCapital(s1)}`
   });
 
-  // --- T3 : Victoire — infiltrés + Meridian à 50,2% puis 49,9% ---
+  // --- T3 : Victoire — infiltrés + Meridian à 50,2 % puis 49,9 %, au bilan du matin de la manche 3 ---
   const s3a = construireEtatTest([
-    { part: 49200, role: 'infiltre' }, { part: 50800, role: 'associe' }
+    { part: 49200, carte: 'infiltre' }, { part: 50800, carte: 'associe' }
   ], 1000);
   state = s3a;
   const victoire502 = verifierVictoireBilanMatin(false);
   const t3a = !!(victoire502 && victoire502.type === 'meridian');
 
   const s3b = construireEtatTest([
-    { part: 48900, role: 'infiltre' }, { part: 51100, role: 'associe' }
+    { part: 48900, carte: 'infiltre' }, { part: 51100, carte: 'associe' }
   ], 1000);
   state = s3b;
   const victoire499 = verifierVictoireBilanMatin(false);
@@ -2453,22 +3066,46 @@ function runAcceptanceTests(){
     detail: `à 50,2% → ${victoire502 ? victoire502.type : 'aucune'} (attendu meridian) ; à 49,9% → ${victoire499 ? victoire499.type : 'aucune'} (attendu aucune, partie continue)`
   });
 
-  // --- T4 : Séquestre — état de T1 initial, un joueur gelé (non-Juriste), Alerte(4000) ---
-  const s4 = construireEtatTest(Array.from({ length: 10 }, (_, i) => ({ part: 9900, statutCapital: i === 0 ? 'gele' : 'actif', role: i === 0 ? 'infiltre' : 'associe' })), 1000);
+  // --- T4 : Sortie par sabotage — un joueur à 8 % est saboté (§A1) ---
+  const s4 = construireEtatTest([
+    { part: 8000, carte: 'associe' }, { part: 46000, carte: 'associe' }, { part: 45000, carte: 'infiltre' }
+  ], 1000);
   state = s4;
-  const geleAvant = s4.joueurs[0].part;
-  actionPrelevement('alerte');
-  const geleApres = s4.joueurs[0].part;
-  const t4ok = geleApres === geleAvant && s4.meridian.part === 5000 && sommeCapital(s4) === 100000;
+  actionSabotage(s4.joueurs[0].id, false);
+  const t4Sorti = s4.joueurs[0];
+  const t4Restants = s4.joueurs.filter(j => j.statutCapital === 'actif');
+  const t4ok = t4Sorti.statutCapital === 'sorti' && t4Sorti.motifSortie === 'sabote' && t4Sorti.part === 0
+    && s4.meridian.part === 3000 // 1000 initial + 2000 (25 % de 8000)
+    && t4Restants.reduce((a,j)=>a+j.part,0) === 97000 // 46000+45000+6000 (75 % de 8000) redistribués au prorata
+    && sommeCapital(s4) === 100000;
   resultats.push({
-    nom: 'T4 — Séquestre',
+    nom: 'T4 — Sortie par sabotage',
     pass: t4ok,
-    detail: `part du gelé inchangée : ${geleAvant}→${geleApres} (attendu identique), meridian=${s4.meridian.part} (attendu 5000), total=${sommeCapital(s4)}`
+    detail: `sorti=${t4Sorti.statutCapital}/${t4Sorti.motifSortie} part=${t4Sorti.part} (attendu sorti/sabote/0), meridian=${s4.meridian.part} (attendu 3000 = 1000+2000), restants=${t4Restants.reduce((a,j)=>a+j.part,0)} (attendu 97000), total=${sommeCapital(s4)}`
+  });
+
+  // --- T4 bis : Sortie par révocation — même joueur, révoqué au lieu de saboté ---
+  const s4b = construireEtatTest([
+    { part: 8000, carte: 'associe' }, { part: 46000, carte: 'associe' }, { part: 45000, carte: 'infiltre' }
+  ], 1000);
+  state = s4b;
+  inscrireResolution(s4b.joueurs[0].id);
+  voterResolutionCourante(s4b.joueurs[0].id, { [s4b.joueurs[0].id]: 'abstention', [s4b.joueurs[1].id]: 'pour', [s4b.joueurs[2].id]: 'pour' });
+  const t4bSorti = s4b.joueurs[0];
+  const t4bRestants = s4b.joueurs.filter(j => j.statutCapital === 'actif');
+  const t4bok = t4bSorti.statutCapital === 'sorti' && t4bSorti.motifSortie === 'revoque' && t4bSorti.part === 0
+    && s4b.meridian.part === 1000 // inchangé : Meridian ne gagne rien sur une révocation
+    && t4bRestants.reduce((a,j)=>a+j.part,0) === 99000 // 46000+45000+8000 intégralement redistribués
+    && sommeCapital(s4b) === 100000;
+  resultats.push({
+    nom: 'T4 bis — Sortie par révocation',
+    pass: t4bok,
+    detail: `sorti=${t4bSorti.statutCapital}/${t4bSorti.motifSortie} part=${t4bSorti.part} (attendu sorti/revoque/0), meridian=${s4b.meridian.part} (attendu 1000, inchangé), restants=${t4bRestants.reduce((a,j)=>a+j.part,0)} (attendu 99000), total=${sommeCapital(s4b)}`
   });
 
   // --- T5 : Invariant + garde-fous, sur une mini-simulation ---
   const s5 = construireEtatTest(Array.from({ length: 9 }, (_, i) => ({
-    part: 11000, role: i < 3 ? 'infiltre' : 'associe'
+    part: 11000, carte: i < 3 ? 'infiltre' : 'associe'
   })), 1000);
   state = s5;
   let t5ok = true;
@@ -2478,18 +3115,13 @@ function runAcceptanceTests(){
   if (!verifierInvariant()) { t5ok = false; violations.push('invariant après sabotage'); }
   try {
     actionSabotage(s5.joueurs[3].id, false);
-    t5ok = false; violations.push("cible déjà gelée acceptée à tort");
+    t5ok = false; violations.push('cible déjà sortie acceptée à tort');
   } catch(e){ /* attendu */ }
   actionPrelevement('alerte');
   if (!verifierInvariant()) { t5ok = false; violations.push('invariant après alerte'); }
   inscrireResolution(s5.joueurs[5].id);
   voterResolutionCourante(s5.joueurs[5].id, Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, j.id===s5.joueurs[5].id?'contre':'pour'])));
   if (!verifierInvariant()) { t5ok = false; violations.push('invariant après révocation'); }
-  try {
-    inscrireResolution(s5.joueurs[6].id);
-    voterResolutionCourante(s5.joueurs[6].id, Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, 'pour'])));
-    t5ok = false; violations.push('2e révocation dans la manche acceptée à tort');
-  } catch(e){ /* attendu : manche verrouillée dès la 1re résolution adoptée */ }
   s5.meridian.part = 15500;
   verifierPaliersMeridian();
   const annoncesAvant = state.partie.journal.filter(e => e.type === 'palier').length;
@@ -2500,13 +3132,116 @@ function runAcceptanceTests(){
   resultats.push({
     nom: 'T5 — Invariant & garde-fous',
     pass: t5ok,
-    detail: t5ok ? 'Invariant respecté après chaque action ; cible déjà gelée refusée ; 2e résolution refusée après adoption dans la même manche ; palier annoncé une seule fois.' : ('Échecs : ' + violations.join(' / '))
+    detail: t5ok ? 'Invariant respecté après chaque action ; cible déjà sortie refusée ; palier annoncé une seule fois.' : ('Échecs : ' + violations.join(' / '))
   });
 
-  // --- T6 (bonus) : QCM déclenche automatiquement le bilan + transfert différé au bilan du matin ---
-  const s6 = construireEtatTest(Array.from({ length: 9 }, () => ({ part: 11000 })), 1000);
+  // --- T6 : plafond de 2 adoptions par manche (§G1) — 3 noms retenus, 3
+  // résolutions adoptées à l'unanimité : la 1re et la 2e passent, la 3e est
+  // refusée par le plafond. Compteur remis à 0 à la manche suivante.
+  const s6 = construireEtatTest(Array.from({ length: 6 }, () => ({ part: 16500 })), 1000);
   state = s6;
-  s6.partie.manche = 1;
+  const [c1, c2, c3] = s6.joueurs;
+  inscrireResolution(c1.id); inscrireResolution(c2.id); inscrireResolution(c3.id);
+  const tousVotent = (joueurs, cibleId, choix) => Object.fromEntries(joueurs.map(j => [j.id, j.id === cibleId ? 'abstention' : choix]));
+  const a1 = voterResolutionCourante(c1.id, tousVotent(s6.joueurs, c1.id, 'pour'));
+  const a2 = voterResolutionCourante(c2.id, tousVotent(s6.joueurs, c2.id, 'pour'));
+  let troisiemeBloquee = false;
+  try { voterResolutionCourante(c3.id, tousVotent(s6.joueurs, c3.id, 'pour')); } catch(e){ troisiemeBloquee = true; }
+  const compteurAvant = state.partie.revocationsAdopteesParManche[state.partie.manche];
+  terminerManche();
+  let quatriemeRelanceOk = false;
+  try { inscrireResolution(c3.id); quatriemeRelanceOk = true; } catch(e){ /* ne devrait pas être bloqué */ }
+  const t6ok = a1 && a2 && troisiemeBloquee && compteurAvant === 2 && quatriemeRelanceOk
+    && (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) === 0;
+  resultats.push({
+    nom: 'T6 — Plafond de 2 adoptions par manche',
+    pass: t6ok,
+    detail: `1re=${a1?'adoptée':'rejetée'}, 2e=${a2?'adoptée':'rejetée'} (attendu adoptées), 3e bloquée=${troisiemeBloquee} (attendu true), compteur=${compteurAvant} (attendu 2), inscription relancée manche suivante=${quatriemeRelanceOk} avec compteur remis à ${state.partie.revocationsAdopteesParManche[state.partie.manche] || 0} (attendu 0)`
+  });
+
+  // --- T7 : les rejets ne décrémentent pas le compteur — 2 rejetées puis 1
+  // adoptée dans la même manche, la seconde adoption reste possible.
+  const s7 = construireEtatTest(Array.from({ length: 6 }, () => ({ part: 16500 })), 1000);
+  state = s7;
+  const [d1, d2, d3] = s7.joueurs;
+  inscrireResolution(d1.id); inscrireResolution(d2.id); inscrireResolution(d3.id);
+  const r1 = voterResolutionCourante(d1.id, tousVotent(s7.joueurs, d1.id, 'contre'));
+  const r2 = voterResolutionCourante(d2.id, tousVotent(s7.joueurs, d2.id, 'contre'));
+  const r3 = voterResolutionCourante(d3.id, tousVotent(s7.joueurs, d3.id, 'pour'));
+  const t7ok = !r1 && !r2 && r3 && (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) === 1;
+  resultats.push({
+    nom: 'T7 — Les rejets ne consomment pas le plafond',
+    pass: t7ok,
+    detail: `1re=${r1?'adoptée':'rejetée'}, 2e=${r2?'adoptée':'rejetée'} (attendu rejetées), 3e=${r3?'adoptée':'rejetée'} (attendu adoptée malgré 2 tentatives précédentes), compteur=${state.partie.revocationsAdopteesParManche[state.partie.manche]} (attendu 1)`
+  });
+
+  // --- T8 : plancher — seuil de 50 % franchi au bilan du matin de la manche 2 ---
+  const s8 = construireEtatTest([
+    { part: 49200, carte: 'infiltre' }, { part: 50800, carte: 'associe' }
+  ], 1000, null, 2);
+  state = s8;
+  const victoireM2 = verifierVictoireBilanMatin(false);
+  const t8ok = victoireM2 === null && state.partie.victoire === null;
+  resultats.push({
+    nom: 'T8 — Plancher (aucune victoire avant la manche 3)',
+    pass: t8ok,
+    detail: `seuil franchi (50,2 %) au bilan du matin de la manche 2 → ${victoireM2 ? victoireM2.type : 'aucune victoire'} (attendu aucune, la partie continue jusqu\'au contrôle de la manche 3)`
+  });
+
+  // --- T9 : le Juriste se protège lui-même deux nuits de suite ---
+  const s9 = construireEtatTest([
+    { part: 33000, carte: 'juriste' }, { part: 33000, carte: 'associe' }, { part: 33000, carte: 'infiltre' }
+  ], 1000);
+  state = s9;
+  const juristeS9 = s9.joueurs[0];
+  demarrerPhaseNocturne();
+  definirProtectionJuriste(juristeS9.id); // nuit 1 : auto-protection acceptée
+  const t9premiereOk = juristeS9.protegeCetteNuit === true;
+  demarrerPhaseNocturne(); // ouverture de la nuit suivante : protegeNuitPrecedente ← protegeCetteNuit
+  let t9deuxiemeBloquee = false;
+  try { definirProtectionJuriste(juristeS9.id); } catch(e){ t9deuxiemeBloquee = true; }
+  const t9ok = t9premiereOk && t9deuxiemeBloquee;
+  resultats.push({
+    nom: 'T9 — Juriste : pas deux nuits de suite sur la même cible',
+    pass: t9ok,
+    detail: `nuit 1 auto-protection acceptée=${t9premiereOk} (attendu true), nuit 2 même cible bloquée=${t9deuxiemeBloquee} (attendu true)`
+  });
+
+  // --- T10 : simulation à 15 joueurs / 5 infiltrés, aucune révocation, un
+  // honnête saboté chaque nuit, défis neutres (statu quo, aucun mouvement de
+  // capital hors sabotage). Note : la trajectoire précise 34→37,4→41,2→47,6→
+  // 54,2 donnée à titre d'exemple dans le brief v3 n'a pas pu être reproduite
+  // exactement à partir de la formule explicite du §A1 (75 %/25 %, plus fort
+  // reste) — la simulation ci-dessous vérifie donc le comportement général
+  // attendu (progression monotone, plancher respecté, victoire Meridian
+  // atteinte en 5 manches maximum) plutôt que ces valeurs précises.
+  const defsT10 = Array.from({ length: 15 }, (_, i) => ({ part: 6600, carte: i < 5 ? 'infiltre' : 'associe' }));
+  const s10 = construireEtatTest(defsT10, 1000, null, 1);
+  state = s10;
+  const pctAdverseT10 = () => (s10.joueurs.filter(j => campDe(j) === 'adverse' && j.statutCapital === 'actif').reduce((a,j)=>a+j.part,0) + s10.meridian.part) / 1000;
+  const trajectoire = [pctAdverseT10()];
+  let victoireT10 = null;
+  let mancheVictoire = null;
+  const honnetesT10 = s10.joueurs.filter(j => j.carte !== 'infiltre');
+  for (let i = 0; i < honnetesT10.length && !victoireT10 && i < 5; i++){
+    s10.partie.manche = i + 1;
+    actionSabotage(honnetesT10[i].id, false);
+    trajectoire.push(pctAdverseT10());
+    victoireT10 = verifierVictoireBilanMatin(false);
+    if (victoireT10) mancheVictoire = s10.partie.manche;
+  }
+  const t10Monotone = trajectoire.every((v, i) => i === 0 || v >= trajectoire[i-1]);
+  const t10PlancherOk = !victoireT10 || mancheVictoire >= 3;
+  const t10ok = t10Monotone && t10PlancherOk && !!victoireT10 && victoireT10.type === 'meridian' && sommeCapital(s10) === 100000;
+  resultats.push({
+    nom: 'T10 — Simulation 15 joueurs / 5 infiltrés (comportement général)',
+    pass: t10ok,
+    detail: `trajectoire=${trajectoire.map(v=>v.toFixed(1)).join(' → ')} % (monotone=${t10Monotone}), victoire=${victoireT10?victoireT10.type:'aucune'} à la manche ${mancheVictoire} (attendu meridian, manche ≥ 3), total=${sommeCapital(s10)}`
+  });
+
+  // --- T11 (bonus) : QCM déclenche automatiquement le bilan + transfert différé au bilan du matin ---
+  const s11 = construireEtatTest(Array.from({ length: 9 }, () => ({ part: 11000 })), 1000, null, 1);
+  state = s11;
   const defisM1 = defisDeLaManche(1);
   // 0 réussi sur 3 : on répond volontairement une lettre fausse partout.
   defisM1.forEach(d => {
@@ -2516,15 +3251,15 @@ function runAcceptanceTests(){
   const enAttenteAvantMatin = state.partie.consequenceDefisEnAttente === 'panique';
   const meridianAvantMatin = state.meridian.part;
   const typeTraite = traiterConsequenceMatin();
-  const t6ok = enAttenteAvantMatin && typeTraite === 'panique'
+  const t11ok = enAttenteAvantMatin && typeTraite === 'panique'
     && meridianAvantMatin === 1000 // pas de transfert avant le bilan du matin
     && state.meridian.part === 9000 // transfert appliqué exactement au bilan du matin (8000 pts)
     && state.partie.consequenceDefisEnAttente === null
-    && sommeCapital(s6) === 100000;
+    && sommeCapital(s11) === 100000;
   resultats.push({
-    nom: 'T6 — QCM auto + transfert différé (bonus)',
-    pass: t6ok,
-    detail: `en attente avant matin=${enAttenteAvantMatin}, meridian avant matin=${meridianAvantMatin} (attendu 1000), après traitement=${state.meridian.part} (attendu 9000), total=${sommeCapital(s6)}`
+    nom: 'T11 — QCM auto + transfert différé (bonus)',
+    pass: t11ok,
+    detail: `en attente avant matin=${enAttenteAvantMatin}, meridian avant matin=${meridianAvantMatin} (attendu 1000), après traitement=${state.meridian.part} (attendu 9000), total=${sommeCapital(s11)}`
   });
 
   state = originalState;
@@ -2547,14 +3282,15 @@ function simulerPartieFictive(){
   const n = 8 + Math.floor(Math.random() * 11); // 8 à 18
   const nbInfiltres = Math.floor(n / 3);
   const prenoms = [...PRENOMS_FICTIFS].sort(() => Math.random() - 0.5).slice(0, n);
-  const defs = prenoms.map((p, i) => ({ prenom: p, part: 0, role: i < nbInfiltres ? 'infiltre' : 'associe', service: SERVICES[i % 3] }));
-  const s = construireEtatTest(defs, 1000);
+  const defs = prenoms.map((p, i) => ({ prenom: p, part: 0, carte: i < nbInfiltres ? 'infiltre' : 'associe', service: SERVICES[i % 3] }));
+  const s = construireEtatTest(defs, 1000, null, 0);
   const parts = tirerPartsInitiales(n);
   s.joueurs.forEach((j, i) => { j.part = parts[i]; });
-  // Répartition simplifiée des rôles à pouvoir parmi les honnêtes restants.
-  const honnetes = s.joueurs.filter(j => j.role !== 'infiltre');
-  if (honnetes[0]) honnetes[0].role = 'juriste';
-  if (honnetes[1]) honnetes[1].role = 'avocat';
+  // Répartition simplifiée des cartes à pouvoir parmi les honnêtes restants.
+  const honnetes = s.joueurs.filter(j => j.carte !== 'infiltre');
+  if (honnetes[0]) honnetes[0].carte = 'juriste';
+  if (honnetes[1]) honnetes[1].carte = 'daf';
+  if (honnetes[2]) honnetes[2].carte = 'drh';
   s.partie.presidentActuelId = s.joueurs[0].id;
 
   state = s;
@@ -2586,9 +3322,9 @@ function simulerPartieFictive(){
     const actifsDebat = state.joueurs.filter(j => j.statutCapital === 'actif');
     const nbNoms = Math.min(actifsDebat.length, Math.floor(Math.random() * 4)); // 0 à 3
     const noms = [...actifsDebat].sort(() => Math.random() - 0.5).slice(0, nbNoms);
-    noms.forEach(j => { try { inscrireResolution(j.id); } catch(e){ /* déjà verrouillée */ } });
+    noms.forEach(j => { try { inscrireResolution(j.id); } catch(e){ /* plafond déjà atteint */ } });
     for (const cible of noms){
-      if (state.partie.revocationVerrouilleeParManche[manche]) break;
+      if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= 2) break;
       const idx = state.partie.resolutionCouranteIndex;
       const resolutionCourante = state.partie.resolutionsEnCours[idx];
       if (!resolutionCourante || resolutionCourante.joueurId !== cible.id) continue;
@@ -2602,14 +3338,14 @@ function simulerPartieFictive(){
       controle();
     }
 
-    // Étape 3 : phase nocturne (Avocat, DAF, DRH aléatoires + sabotage).
+    // Étape 3 : phase nocturne (Juriste, DAF, DRH aléatoires + sabotage).
     demarrerPhaseNocturne();
-    const avocat = state.joueurs.find(j => j.role === 'avocat' && j.statutCapital === 'actif');
-    if (avocat){
-      const candidats = state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== avocat.id && !j.protegeNuitPrecedente);
+    const juriste = state.joueurs.find(j => j.carte === 'juriste' && j.statutCapital === 'actif');
+    if (juriste){
+      const candidats = state.joueurs.filter(j => j.statutCapital === 'actif' && !j.protegeNuitPrecedente);
       if (candidats.length){
         const protege = candidats[Math.floor(Math.random() * candidats.length)];
-        try { definirProtectionAvocat(protege.id); } catch(e){ /* contrainte non satisfaite, ignorer */ }
+        try { definirProtectionJuriste(protege.id); } catch(e){ /* contrainte non satisfaite, ignorer */ }
       }
     }
     if (Math.random() < 0.5){
@@ -2631,11 +3367,6 @@ function simulerPartieFictive(){
       try {
         actionSabotage(cible.id, protege);
         log.push(`Manche ${manche} — sabotage ciblant ${cible.prenom}${protege ? ' (protégé — nuit calme)' : ''}`);
-        const cibleApres = getJoueur(cible.id);
-        if (!protege && cibleApres.revele && cibleApres.role === 'juriste'){
-          const mandataires = state.joueurs.filter(j => j.statutCapital === 'actif' && j.id !== cible.id);
-          if (mandataires.length) assignerMandataireJuriste(cible.id, mandataires[0].id);
-        }
       } catch(e){ /* cible invalide, ignorer */ }
       controle();
     }
@@ -2727,9 +3458,9 @@ function initEvenements(){
     const role = el('corr-select-role').value;
     const j = getJoueur(joueurId);
     if (!j) return;
-    empilerSnapshot('Correction — rôle de ' + j.prenom);
-    j.role = role;
-    ajouterJournal('correction_role', `[Correction animateur] Rôle de ${j.prenom} modifié en ${ROLE_LABELS[role]}.`);
+    empilerSnapshot('Correction — carte de ' + j.prenom);
+    j.carte = role;
+    ajouterJournal('correction_role', `[Correction animateur] Carte de ${j.prenom} modifiée en ${CARTE_LABELS[role]}.`);
     sauvegarder();
     rafraichirJeu();
   });
@@ -2751,13 +3482,28 @@ function initEvenements(){
 }
 
 // Rafraîchissement du chrono affiché (simple repère visuel, §5.4/§5.5) :
-// une seule minuterie globale, indépendante de l'écran courant.
+// une seule minuterie globale, indépendante de l'écran courant. Sur l'écran
+// géant du chronomètre de défi (§C6), colore blanc/orange/rouge+pulsation et
+// joue le gong une seule fois au passage à zéro.
+let dernierChronoGongId = null;
 setInterval(() => {
   if (!state || !state.partie || !state.partie.chrono) return;
   const zone = document.getElementById('chrono-affichage');
   if (!zone) return;
   const restant = Math.round((state.partie.chrono.finAt - Date.now()) / 1000);
   zone.textContent = formatChrono(restant);
+  if (zone.classList.contains('chrono-geant')){
+    zone.classList.remove('orange', 'rouge');
+    if (restant <= 10 && restant > 0) zone.classList.add('rouge');
+    else if (restant < 60 && restant > 0) zone.classList.add('orange');
+  }
+  if (state.partie.chrono.type === 'defi' && restant <= 0){
+    const chronoId = state.partie.chrono.finAt;
+    if (dernierChronoGongId !== chronoId){
+      dernierChronoGongId = chronoId;
+      jouerGongDefiFin();
+    }
+  }
 }, 250);
 
 /* ============================================================
@@ -2777,6 +3523,18 @@ function init(){
     el('resume-card').classList.remove('hidden');
   }
 }
+
+// Avance à la barre d'espace (§C4 brief v3) : réservé aux écrans « la nuit »
+// sans bouton visible. Ignoré dans les champs de saisie (aucun sur ces
+// écrans en pratique, mais on reste prudent) et si aucun écran ne l'attend.
+let handlerBarreEspace = null;
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || !handlerBarreEspace) return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  e.preventDefault();
+  handlerBarreEspace();
+});
 
 document.addEventListener('DOMContentLoaded', init);
 

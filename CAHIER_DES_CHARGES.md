@@ -1,8 +1,8 @@
 # INFILTRÉS — Diaporama interactif pour l'animateur
 
-**Cahier des charges — Version 2**
+**Cahier des charges — Version 2** *(architecture inchangée par le brief v3.0 ; modèle de données, règles et interface mis à jour ponctuellement ci-dessous pour rester alignés avec le Règlement v3.0 et le brief de mise à jour du diaporama v3.0 — séquestre supprimé, carte unique par joueur, plafond de révocations à 2/manche, refonte de la phase de défi en 4 temps.)*
 
-À remettre à Claude Code, lot par lot, avec le Règlement v2. Cette version 2 remplace l'architecture double fenêtre (Scène/Console) par une **fenêtre unique**, et actualise l'habillage visuel sur la base des cartes physiques du jeu. Le modèle de données, l'arithmétique et les tests d'acceptation (§3, §4, §8) restent inchangés sauf mention contraire ci-dessous. Le document de référence des règles reste le Règlement v2 ; en cas de contradiction, le règlement prime.
+À remettre à Claude Code, lot par lot, avec le Règlement v3.0. Cette version 2 remplace l'architecture double fenêtre (Scène/Console) par une **fenêtre unique**, et actualise l'habillage visuel sur la base des cartes physiques du jeu. L'arithmétique et les tests d'acceptation (§3, §4, §8) restent inchangés dans leur principe (millièmes entiers, plus fort reste) sauf mention contraire ci-dessous. Le document de référence des règles est le Règlement v3.0 ; en cas de contradiction, le règlement prime.
 
 ---
 
@@ -28,9 +28,9 @@ Application web pilotant une partie complète d'INFILTRÉS : attribution et affi
 Une seule page HTML, un seul état de jeu, un déroulé linéaire d'écrans que l'animateur fait avancer par ses clics. La structure visuelle commune à la quasi-totalité des écrans :
 
 - **Bandeau haut** : numéro de manche, phase en cours, nombre de joueurs actifs.
-- **Camembert du capital**, affiché en permanence (compact, toujours visible), qui s'anime (transition 800 ms) à chaque mouvement de capital.
+- **Camembert du capital**, ~40 % de la hauteur, centré en permanence (v3.0 : agrandi depuis le petit widget compact), qui s'anime (transition 1200 ms, cubic-bezier) à chaque mouvement de capital.
 - **Carte centrale** : le contenu propre à l'écran courant (question, choix, résultat...).
-- **Bandeau « Joueurs »** en bas : un bouton par joueur, visuellement grisé + icône si gelé/révoqué.
+- **Bandeau « Joueurs »** en bas : un bouton par joueur, visuellement grisé + icône si sorti (sabotage ou révocation — v3.0 : plus d'état « gelé » intermédiaire, cf. § Modèle de données).
 - **Historique** dépliable, journal horodaté de tous les événements.
 - **Contrôles animateur**, discrets et toujours accessibles : ◀ Annuler · Masquer.
 
@@ -57,8 +57,8 @@ Le règlement impose qu'aucune information secrète (camps, rôles, cibles noctu
 
 | Entité | Champs | Notes |
 | --- | --- | --- |
-| Partie | manche (0–5), phase, tentativeRévocationUtilisée (bool, par manche), résolutionsEnCours (liste de 0 à 3 noms), paliers Meridian Annoncés [15, 25, 35, 45], journal des événements, pile d'annulation | Sérialisable en JSON (sauvegarde, export, simulation). |
-| Joueur | prénom, service (RH / Commercial / Finance), part (en millièmes de %, **non éditable manuellement**), statut (actif / gelé / révoqué), **rôle** (associé / DRH / Avocat(e) / DAF / Juriste / infiltré — SECRET), révélé (bool), flags : protégéCetteNuit, protégéNuitPrécédente, miseÀPiedManche, mandataireDuJuriste (bool) | **Le camp n'est plus un champ séparé : il se déduit du rôle** (rôle = « infiltré » → camp infiltré, tout autre rôle → camp honnête). Le Président est un attribut de Partie (`présidentActuel`), assigné en cours de partie et non plus à la Préparation. |
+| Partie | manche (0–5), phase, revocationsAdopteesParManche (compteur 0–2, par manche — v3.0 : plafond porté à 2), résolutionsEnCours (liste de 0 à 3 noms), paliers Meridian Annoncés [15, 25, 35, 45], journal des événements, pile d'annulation | Sérialisable en JSON (sauvegarde, export, simulation). |
+| Joueur | prénom, service (RH / Commercial / Finance), part (en millièmes de %, **non éditable manuellement**), statutCapital (actif / sorti — v3.0 : plus d'état « gelé », deux états seulement), motifSortie (sabote / revoque, renseigné à la sortie), **carte** (associé / DRH / DAF / Juriste / infiltré — SECRET, champ unique v3.0, l'Avocat(e) a disparu et son pouvoir est repris par le Juriste), révélé (bool), flags : protégéCetteNuit, protégéNuitPrécédente, miseÀPiedManche, miseAPiedAnnoncee (bool) | **Un seul champ d'identité : le camp se déduit entièrement de la carte** (carte = « infiltré » → camp adverse, toute autre carte → camp honnête) — plus de champ camp séparé, plus de flag mandataireDuJuriste (la procuration disparaît avec le séquestre). Le Président est un attribut de Partie (`présidentActuel`), assigné en cours de partie et non plus à la Préparation. |
 | Meridian | part (en millièmes de %) | Démarre à 1,000 % exactement. |
 | Défi | manche, service, choix (A/B/C/D préchargés), réponseCorrecte (secrète, préchargée), réponseÉquipe (saisie par tap animateur), réussi (dérivé automatiquement) | Les 15 défis et leur clé de réponse sont préchargés dans le fichier (annexe corrigé, à fusionner depuis la version existante du cahier des charges v1.1). |
 
@@ -98,9 +98,9 @@ Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme
 
 - Pendant le **débat** (5:00), l'animateur peut inscrire **jusqu'à 3 noms** à l'ordre du jour, dans l'ordre où les accusations émergent — sans exigence de soutien formalisé.
 - Chaque nom devient une **résolution** (« Révocation de [Nom] »), votée **une à la fois, dans l'ordre d'inscription**, par la grille pondérée Pour / Contre / Abstention (abstention = compte comme contre, cf. règle des 50 % des actions votantes totales).
-- Dès qu'une résolution dépasse strictement 50 % des actions votantes, elle est adoptée : révocation immédiate, révélation du **rôle** du révoqué, redistribution au prorata entre les joueurs non révoqués (actifs et gelés) — jamais à Meridian — et les résolutions suivantes ne sont pas votées.
+- Dès qu'une résolution dépasse strictement 50 % des actions votantes, elle est adoptée : révocation immédiate (sortie du capital en 100 % / 0 %, cf. § Règle de sortie unique), révélation de la **carte** du révoqué, redistribution intégrale au prorata entre les joueurs actifs restants — jamais à Meridian.
 - Si une résolution échoue, on passe à la suivante. Si les 3 échouent (ou s'il y a eu moins de 3 noms), la manche se termine sans révocation.
-- Une seule révocation possible par manche (verrouillage automatique dès qu'une résolution est adoptée).
+- **Jusqu'à 2 révocations par manche** (v3.0 : plafond porté de 1 à 2 — un rejet ne consomme pas ce plafond, seule une adoption le fait ; verrouillage dès que la 2ᵉ résolution de la manche est adoptée).
 - Si le révoqué est le Président : succession désignée immédiatement après (parmi les joueurs restants), annoncée à l'écran.
 - **Vérification de palier** (voir §4.5) effectuée immédiatement après toute redistribution consécutive à une révocation.
 
@@ -133,7 +133,7 @@ Ajout des prénoms, affectation automatique aux 3 services (RH / Commercial / Fi
 Tableau des parts (résultat du tirage) + ligne Meridian (1,000 %). Bouton « Retirer au sort ». Total affiché (toujours 100,000 %, aucune édition manuelle possible). Bouton « Suivant ».
 
 **Étape 3 — Rôles**
-Phrase calculée automatiquement : *« Pour [N] joueurs, vous devez désigner [⌊N/3⌋] infiltrés parmi eux. »* Un menu déroulant par joueur : Associé (par défaut) · DRH · Avocat(e) · DAF · Juriste · Infiltré. Chaque rôle à pouvoir ne peut être attribué qu'une fois (retiré des menus dès qu'il est pris). Compteur en direct *« Infiltrés désignés : X / [⌊N/3⌋] »*. Bouton **« Lancer la partie »** inactif tant que le compte n'est pas exact, activé automatiquement à l'égalité, regrisé si on redescend en dessous.
+Phrase calculée automatiquement : *« Pour [N] joueurs, vous devez désigner [⌊N/3⌋] infiltrés parmi eux. »* Un menu déroulant par joueur : Associé (par défaut) · DRH · DAF · Juriste · Infiltré (v3.0 : l'Avocat(e) a disparu, son pouvoir de protection est repris par le Juriste). Chaque carte à pouvoir ne peut être attribuée qu'une fois (retirée des menus dès qu'elle est prise). Compteur en direct *« Infiltrés désignés : X / [⌊N/3⌋] »*. Bouton **« Lancer la partie »** inactif tant que le compte n'est pas exact, activé automatiquement à l'égalité, regrisé si on redescend en dessous.
 
 Pas de saisie du Président à cette étape (voir §5.4).
 
@@ -142,7 +142,7 @@ Pas de saisie du Président à cette étape (voir §5.4).
 1. **Lettre d'intention** : mise en scène « courrier », texte intégral (Règlement v2) affiché progressivement via « Suivant ». Au dernier paragraphe, apparition animée de la tranche Meridian (1 %) sur le camembert.
 2. **Reconnaissance des Infiltrés** : *« Les Infiltrés ouvrent les yeux. C'est le moment de se rassembler pour préparer le plan de sabotage de la semaine. »* Écran neutre, sans aucun nom affiché — les infiltrés se reconnaissent physiquement entre eux. Bouton « Suivant » quand l'animateur juge que c'est fait. *« Les Infiltrés se rendorment. »*
 3. **Réponses de la Manche 1** : 3 cartes A/B/C/D (une par service), minimum 3 secondes chacune, avec bouton « Suivant » discret pour accélérer si besoin.
-4. **Reconnaissance des rôles à pouvoir**, un par un, ordre fixe : Avocat(e) → DAF → DRH → Juriste. Pour chacun : *« [Rôle] ouvre les yeux. Prenez connaissance de votre rôle. »* → Suivant → *« [Rôle] se rendort. »* Écran neutre, sans nom affiché. (Le Président n'est pas concerné : rôle de jour, sans carte à connaître en secret.)
+4. **Reconnaissance des cartes à pouvoir**, un par un, ordre fixe : Juriste → DAF → DRH. Pour chacun : *« [Carte] ouvre les yeux. »* (v3.0 : sous-titre « Prenez connaissance de votre rôle » supprimé) → Suivant → *« [Carte] se rendort. »* Écran neutre, sans nom affiché. (Le Président n'est pas concerné : rôle de jour, sans carte à connaître en secret.)
 5. **Réveil général** : *« NOVENTIS se réveille ! Ouvrez les yeux. »* → enchaîne vers la Manche 1 (Phase de travail).
 
 ### 5.3 Tableau de bord (écran par défaut)
@@ -173,13 +173,13 @@ Titre : *« Résolution [n] — Révocation de [Nom] »*. Sous-titre : *« Chaqu
 
 Écran neutre entre chaque appel, aucun nom jamais affiché pour les appels eux-mêmes.
 
-1. *« Fin de journée chez NOVENTIS. Tout le monde ferme les yeux. »* → Suivant
-2. *« L'Avocat(e) se réveille. Qui protège-t-il/elle cette nuit ? »* → grille des joueurs actifs (exclusion automatique de lui-même et de la cible protégée la nuit précédente) → tap + Confirmer → *« L'Avocat(e) se rendort. »*
-3. *(si applicable)* *« Le DAF se réveille. Sur qui exerce-t-il son droit à l'information ? »* → tap sur un joueur → encart avec le rôle exact révélé à l'animateur seul → « Fermer » → *« Le DAF se rendort. »*
-4. *(si pas encore utilisée)* *« La DRH se réveille. Qui met-elle à pied ? »* → tap → Confirmer → *« La DRH se rendort. »*
+1. **« La nuit tombe »** (v3.0) : écran assombri, camembert désaturé, texte de scénario propre à la manche, aucun bouton visible — l'animateur avance à la barre d'espace.
+2. *« Le Juriste se réveille. Qui protège-t-il/elle cette nuit ? »* → grille des joueurs actifs (auto-protection autorisée depuis la v3.0 ; exclusion uniquement de la cible protégée la nuit précédente) → tap + Confirmer → *« Le Juriste se rendort. »*
+3. *(si applicable)* *« Le DAF se réveille. Sur qui exerce-t-il son droit à l'information ? »* → tap sur un joueur → encart avec la carte exacte révélée à l'animateur seul → « Fermer » → *« Le DAF se rendort. »*
+4. *(v3.0 : chaque nuit, plus 1×/partie)* *« La DRH se réveille. Qui met-elle à pied ? »* → tap → Confirmer → *« La DRH se rendort. »*
 5. *« Les Infiltrés se réveillent. Qui sabotent-ils ? »* → grille des actifs → tap + Confirmer → *« Les Infiltrés se rendorment. »*
-6. **Réponses de la manche suivante** *(dès la Manche 1, avant chaque nouvelle phase de travail)* : 3 cartes A/B/C/D, minimum 3 secondes chacune + bouton Suivant discret.
-7. *« NOVENTIS se réveille ! Ouvrez les yeux. »* → enchaîne vers le Bilan du matin.
+6. **Réponses de la manche suivante** *(dès la Manche 1, avant chaque nouvelle phase de travail)* : écran d'annonce seul, puis les 3 réponses affichées **ensemble** dans une grille (v3.0 : plus de cascade carte par carte), clic pour les cacher une fois lues.
+7. **« NOVENTIS se réveille ! »** — flash blanc 120 ms puis retour sur 600 ms (v3.0) → enchaîne vers le Bilan du matin.
 
 ### 5.7 Vote pondéré — mode de saisie
 
@@ -227,7 +227,7 @@ Grasse, arrondie, capitales pour les titres — type Poppins ExtraBold ou Nunito
 
 - Cartes de contenu : fond blanc, bordure bleue épaisse, coins arrondis.
 - Boutons d'action : bleu plein, texte blanc gras, coins arrondis.
-- Camembert : bleu (actifs) / rouge (infiltrés révélés) / noir (Meridian), transitions 800 ms.
+- Camembert : bleu (actifs) / rouge (infiltrés révélés) / rouge très sombre (Meridian, v3.0 — remplace le noir), transitions 1200 ms cubic-bezier(.4,0,.2,1) (v3.0, remplace 800 ms easeInOutQuad).
 - Illustrations : dessin au trait noir façon bâtonnet, fond transparent, style des cartes physiques (fichiers fournis, à intégrer en base64).
 
 ### 7.4 Illustrations — table de correspondance
@@ -238,9 +238,8 @@ Grasse, arrondie, capitales pour les titres — type Poppins ExtraBold ou Nunito
 | Associé honnête | Bonhomme + gratte-ciel |
 | Infiltré | Bonhomme lunettes + cartes/jetons |
 | DRH | Bonhomme au bureau, piles de dossiers |
-| Avocat(e) | Bonhomme au porte-documents, jambe sur l'interrupteur |
 | DAF | Bonhomme + écran, courbe qui chute |
-| Juriste | Bonhomme au contrat + stylo, grand sourire |
+| Juriste | Bonhomme au contrat + stylo, grand sourire (reprend désormais aussi le pouvoir de protection par référé, v3.0) |
 | Président | Pas d'illustration dédiée (badge de statut uniquement) |
 | Reconnaissance des Infiltrés (Manche 0) | Groupe en lunettes noires |
 | Débat (Conseil) | Deux mégaphones face à face |
