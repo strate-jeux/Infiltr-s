@@ -1336,9 +1336,25 @@ function basculerSons(){
   el('btn-sons').textContent = sonsPref ? '🔊 Sons' : '🔇 Sons';
 }
 
-// Navigation pure (pas de snapshot d'annulation : cf. §6, « ◀ Annuler » ne
-// concerne que les actions de jeu, jamais la simple navigation d'écran).
-function allerEcran(id){
+// Chaque changement d'écran déclenché par un geste de l'animateur (bouton
+// « Suivant », tap sur un joueur, etc.) est lui-même empilé dans la pile
+// d'annulation (§B1 brief v3) : « ◀ Annuler » doit reculer d'un cran à
+// chaque clic, en cascade, qu'il s'agisse d'une action de jeu ou d'une
+// simple navigation — sinon un clic sur Annuler après une navigation saute
+// par-dessus l'écran courant et retombe sur la dernière action de jeu, bien
+// plus loin en arrière que ce que l'animateur attend d'un filet de sécurité.
+//
+// autoRedirect=true : réservé aux redirections « auto-guérison » internes à
+// une fonction d'affichage (ex. plus aucune résolution à voter → on saute
+// vers l'écran suivant). Ces redirections ne sont PAS un geste de
+// l'animateur : les exclure de la pile évite une boucle stable où annuler
+// restaure un écran dont les données sont déjà à l'état terminal, ce qui
+// déclencherait aussitôt la même redirection en sens inverse (le clic
+// Annuler resterait bloqué indéfiniment sur ces deux écrans).
+function allerEcran(id, autoRedirect){
+  if (!autoRedirect && state.partie.ecranActuel !== id){
+    empilerSnapshot('Navigation : ' + id);
+  }
   state.partie.ecranActuel = id;
   sauvegarder();
   rafraichirJeu();
@@ -1528,7 +1544,7 @@ function ecranReponsesPreview(mancheCible, onTermine){
 function afficherM0Reponses(){
   ecranReponsesPreview(1, () => {
     if (indexCartePreview >= defisDeLaManche(1).length){
-      allerEcran('m0-role-ouvert');
+      allerEcran('m0-role-ouvert', true);
     } else {
       rafraichirJeu();
     }
@@ -1539,7 +1555,7 @@ function afficherNuitReponses(){
   const mancheCible = state.partie.manche + 1;
   ecranReponsesPreview(mancheCible, () => {
     if (indexCartePreview >= defisDeLaManche(mancheCible).length){
-      allerEcran('nuit-reveil');
+      allerEcran('nuit-reveil', true);
     } else {
       rafraichirJeu();
     }
@@ -1549,7 +1565,7 @@ function afficherNuitReponses(){
 function afficherM0RoleTour(ouvert){
   const roles = ROLES_A_POUVOIR_PRESENTS();
   if (state.partie.sousEtapeIndex >= roles.length){
-    allerEcran('m0-reveil');
+    allerEcran('m0-reveil', true);
     return;
   }
   const role = roles[state.partie.sousEtapeIndex];
@@ -1708,7 +1724,7 @@ let voteResolutionTemp = {}; // { [joueurId]: 'pour'|'contre'|'abstention' }, re
 function afficherConseilVote(){
   const idx = state.partie.resolutionCouranteIndex;
   const resolution = state.partie.resolutionsEnCours[idx];
-  if (!resolution){ allerEcran('conseil-resultat'); return; }
+  if (!resolution){ allerEcran('conseil-resultat', true); return; }
   const cible = getJoueur(resolution.joueurId);
   const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
   // Le mandataire du Juriste saboté vote à sa place (parts comptées normalement) :
@@ -1789,7 +1805,7 @@ function derniereResolutionDecidee(){
 
 function afficherConseilResultat(){
   const resolution = derniereResolutionDecidee();
-  if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard'); return; }
+  if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard', true); return; }
   const cible = getJoueur(resolution.joueurId);
   const adoptee = resolution.statut === 'adoptee';
   const titre = adoptee
@@ -2073,7 +2089,7 @@ const TITRES_FIN = {
 
 function afficherFin(){
   const v = state.partie.victoire;
-  if (!v){ allerEcran('dashboard'); return; }
+  if (!v){ allerEcran('dashboard', true); return; }
   carteEcran(`
     <h2>${TITRES_FIN[v.type] || 'Fin de partie'}</h2>
     ${imgTag('victoire')}
