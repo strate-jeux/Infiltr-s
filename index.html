@@ -43,8 +43,9 @@
     --carte-fond-2: #efe9d8;
     --carte-bordure-2: #d9d0b8;
 
-    --font-titre: 'Arial Rounded MT Bold', 'Nunito', Nunito, 'Segoe UI', system-ui, -apple-system, sans-serif;
   }
+  /* Une seule police, deux tailles — titre et corps (§C1 brief v3) : jamais
+     de seconde famille de caractères, seuls le poids et la taille varient. */
   *{box-sizing:border-box;}
   body{
     margin:0;
@@ -53,7 +54,7 @@
     color: var(--text);
     line-height:1.4;
   }
-  h1, h2, h3, .titre-jeu{ font-family: var(--font-titre); font-weight:900; letter-spacing:0.02em; }
+  h1, h2, h3, .titre-jeu{ font-weight:900; letter-spacing:0.02em; }
   header{
     padding: 14px 20px;
     background: var(--panel);
@@ -193,10 +194,40 @@
   @keyframes halo-meridian{ 0%{ opacity:0; } 15%{ opacity:1; } 100%{ opacity:0; } }
   #halo-meridian{ position:fixed; inset:0; z-index:90; pointer-events:none; background: radial-gradient(ellipse at center, rgba(179,38,30,0.35) 0%, rgba(179,38,30,0) 70%); opacity:0; }
   #halo-meridian.actif{ animation: halo-meridian 900ms ease-out; }
+
+  /* Le noir comme ponctuation (§C3 brief v3) : seul effet de transition,
+     400 ms, à chaque changement de phase de la manche. */
+  @keyframes fondu-noir{ 0%{ opacity:0; } 50%{ opacity:1; } 100%{ opacity:0; } }
+  #fondu-noir{ position:fixed; inset:0; z-index:98; background:#000; opacity:0; pointer-events:none; }
+  #fondu-noir.actif{ animation: fondu-noir 400ms ease; }
+
+  /* La nuit (§C4 brief v3) : assombrissement, camembert désaturé à 60 %,
+     pas de bouton visible (avance à la barre d'espace). */
+  .ecran-nuit-sombre{ min-height:220px; display:flex; align-items:center; justify-content:center; }
+  .ecran-nuit-sombre .texte-nuit{ font-size:1.3rem; color:var(--text-dim); text-align:center; opacity:0; animation: nuit-assombrir 2s ease forwards; }
+  @keyframes nuit-assombrir{ from{ opacity:0; } to{ opacity:1; } }
+  body.nuit-active #zone-camembert-compact svg{ filter: saturate(0.4); transition: filter 2s ease; }
+  /* Réveil (§C4 brief v3) : flash blanc 120 ms puis retour sur 600 ms. */
+  @keyframes reveil-flash{ 0%{ opacity:0; } 16%{ opacity:1; } 100%{ opacity:0; } }
+  #flash-reveil{ position:fixed; inset:0; z-index:99; pointer-events:none; background:#fff; opacity:0; }
+  #flash-reveil.actif{ animation: reveil-flash 720ms ease-out; }
+
+  /* Franchissement de palier Meridian (§C8 brief v3) : plein écran rouge
+     très sombre, entrée en zoom 104 %→100 % avec tremblement. */
+  @keyframes palier-entree{ 0%{ transform: scale(1.04); } 60%{ transform: scale(0.995); } 100%{ transform: scale(1); } }
+  @keyframes palier-tremble{ 0%,100%{ margin-left:0; } 20%{ margin-left:-3px; } 40%{ margin-left:3px; } 60%{ margin-left:-2px; } 80%{ margin-left:2px; } }
+  #palier-overlay{ position:fixed; inset:0; z-index:97; background:#2b0808; color:#fff; display:flex; align-items:center; justify-content:center; text-align:center; padding:32px; }
+  #palier-overlay.hidden{ display:none; }
+  #palier-overlay .palier-texte{ max-width:640px; font-size:1.3rem; line-height:1.6; animation: palier-entree 500ms ease, palier-tremble 500ms ease; }
   #zone-bandeau-joueurs{ max-width:900px; margin:0 auto; padding:0 16px; }
   .bandeau-joueurs{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; padding:10px; background:var(--panel); border:1px solid var(--border); border-radius:10px; }
-  .joueur-pill{ padding:5px 10px; border-radius:16px; font-size:0.75rem; background:var(--panel-2); border:1px solid var(--border); color:var(--text); transition: opacity 400ms, text-decoration-color 400ms; }
-  .joueur-pill.sorti{ opacity:0.35; text-decoration: line-through; }
+  .joueur-pill{ position:relative; padding:5px 10px; border-radius:16px; font-size:0.75rem; background:var(--panel-2); border:1px solid var(--border); color:var(--text); }
+  /* Révocation : simple fondu (§C9 brief v3). */
+  .joueur-pill.sorti-revoque{ opacity:0.35; text-decoration: line-through; transition: opacity 400ms ease; }
+  /* Sabotage : animation de barrement — le trait se dessine en 400 ms (§C9). */
+  .joueur-pill.sorti-sabote{ opacity:0.6; }
+  .joueur-pill.sorti-sabote::after{ content:''; position:absolute; left:8px; right:8px; top:50%; height:2px; background:currentColor; transform:translateY(-50%) scaleX(0); transform-origin:left; animation: barrement 400ms ease forwards; }
+  @keyframes barrement{ to{ transform:translateY(-50%) scaleX(1); } }
   .joueur-pill .president-icone{ margin-right:2px; }
   .grille-joueurs-tap{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:12px 0; }
   button.joueur-tap{ background:var(--panel-2); color:var(--text); border:1px solid var(--border); padding:10px 16px; border-radius:8px; }
@@ -226,8 +257,11 @@
   .bilan-libelle.alerte{ background:#3d341c; color:var(--warn); }
   .bilan-libelle.panique{ background:#3d1c1c; color:var(--bad); }
   .barre-progression{ width:100%; max-width:420px; height:22px; background:var(--panel-2); border:1px solid var(--border); border-radius:11px; margin:10px auto; overflow:hidden; position:relative; }
-  .barre-progression .fill{ height:100%; background: var(--accent); transition: width 400ms ease; }
+  .barre-progression .fill{ height:100%; background: var(--accent); transition: width 400ms ease, background 400ms ease; }
+  .barre-progression .fill.majorite{ background: var(--ok); }
   .barre-progression .seuil{ position:absolute; top:0; bottom:0; width:2px; background:#fff; left:50%; }
+  @keyframes barre-vibration{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-4px); } 40%{ transform:translateX(4px); } 60%{ transform:translateX(-3px); } 80%{ transform:translateX(3px); } }
+  .barre-progression.vibre{ animation: barre-vibration 300ms; }
   .carte-reveal{ background:#fff; color:#111; border:6px solid var(--bleu-infiltres); border-radius:14px; padding:24px; max-width:420px; margin:0 auto; font-weight:700; font-size:1.2rem; }
   .carte-reveal.infiltre{ border-color: var(--rouge-infiltre); }
   /* Révélation de carte au clic (§C5 brief v3) : dos visible, rotation 3D
@@ -256,6 +290,8 @@
 </style>
 </head>
 <body>
+
+<div id="fondu-noir"></div>
 
 <!-- ===================== VOILE « MASQUER » (§2.2 / §6 CDC v2) ===================== -->
 <div id="masque-overlay" class="hidden">
@@ -314,6 +350,8 @@
 </div>
 
 <div id="halo-meridian"></div>
+<div id="flash-reveil"></div>
+<div id="palier-overlay" class="hidden"><div class="palier-texte" id="palier-overlay-texte"></div></div>
 
 <div id="zone-camembert-compact" class="camembert-compact hidden">
   <svg id="camembert" viewBox="0 0 300 300"></svg>
@@ -1896,7 +1934,12 @@ function afficherNuitReponsesGrille(){
 }
 
 function afficherNuitReveil(){
-  jouerSonEcranUneFois('nuit-reveil-' + state.partie.manche, () => { arreterNappeNuit(); jouerSonReveil(); });
+  jouerSonEcranUneFois('nuit-reveil-' + state.partie.manche, () => {
+    arreterNappeNuit();
+    jouerSonReveil();
+    const f = el('flash-reveil');
+    f.classList.remove('actif'); void f.offsetWidth; f.classList.add('actif');
+  });
   ecranNeutreAvecSuivant('Séquence de nuit', 'NOVENTIS se réveille ! Ouvrez les yeux.', () => {
     state.partie.etapeManche = 3;
     allerEcran('dashboard');
@@ -2189,6 +2232,9 @@ function afficherConseilVote(){
     `<button type="button" class="joueur-tap vote-abstention" data-id="${j.id}">${j.prenom}${j.id === resolution.joueurId ? ' (visé)' : ''}</button>`
   ).join('');
 
+  // Barre de vote (§C7 brief v3) : trait à 50 %, vire au vert et vibre
+  // 300 ms au moment précis où la majorité est franchie.
+  let majoriteFranchie = false;
   function majBarre(){
     const totalVotante = votants.reduce((a, j) => a + j.part, 0);
     let pour = 0;
@@ -2196,8 +2242,16 @@ function afficherConseilVote(){
       if (voteResolutionTemp[j.id] === 'pour') pour += getJoueur(j.id).part;
     });
     const pct = totalVotante > 0 ? Math.round((pour / totalVotante) * 100) : 0;
-    el('barre-vote-fill').style.width = Math.min(100, pct) + '%';
+    const majoriteAcquise = totalVotante > 0 && (pour * 2) > totalVotante;
+    const fill = el('barre-vote-fill');
+    fill.style.width = Math.min(100, pct) + '%';
+    fill.classList.toggle('majorite', majoriteAcquise);
     el('lbl-vote-pct').textContent = `${pct} % pour (${formatPct(pour)} sur ${formatPct(totalVotante)}), seuil 50 %`;
+    if (majoriteAcquise && !majoriteFranchie){
+      const barre = fill.closest('.barre-progression');
+      barre.classList.remove('vibre'); void barre.offsetWidth; barre.classList.add('vibre');
+    }
+    majoriteFranchie = majoriteAcquise;
   }
 
   grille.querySelectorAll('button.joueur-tap').forEach(b => {
@@ -2333,15 +2387,25 @@ function avancerNuit(){
   allerEcran(id);
 }
 
+// La nuit (§C4 brief v3) : assombrissement, camembert désaturé, aucun
+// bouton visible — l'animateur avance à la barre d'espace (handlerBarreEspace).
 function afficherNuitFermeture(){
   jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerSonEntreeNuit);
   demarrerNappeNuit();
+  document.body.classList.add('nuit-active');
   state.partie.sousEtapeIndex = 0;
   state.partie.etapesNuitSnapshot = etapesNuitDisponibles();
   sauvegarder();
-  ecranNeutreAvecSuivant('La nuit tombe', TEXTES_NUIT_TOMBE[state.partie.manche] || 'Tout le monde ferme les yeux.', () => {
+  carteEcran(`
+    <div class="ecran-nuit-sombre">
+      <div class="texte-nuit">${TEXTES_NUIT_TOMBE[state.partie.manche] || 'NOVENTIS DORT'}</div>
+    </div>
+  `);
+  handlerBarreEspace = () => {
+    handlerBarreEspace = null;
+    document.body.classList.remove('nuit-active');
     allerEcran(state.partie.etapesNuitSnapshot[0]);
-  });
+  };
 }
 
 function afficherNuitJuriste(){
@@ -2547,15 +2611,31 @@ function afficherMatinCommunique(){
     if (type === 'alerte') jouerSonAlerteMeridian();
     else if (type === 'panique') jouerSonPaniqueMeridian();
     else jouerNotificationCommunique();
-    if (paliers.length) setTimeout(jouerSonPalier, 900);
   });
   carteEcran(`
     <h2>Communiqué Meridian</h2>
     <div class="texte-narratif" style="text-align:center;">${COMMUNIQUES_MERIDIAN[type] || ''}</div>
-    ${paliers.length ? `<div class="banner info">${paliers.map(s => ANNONCES_PALIER[s]).join('<br><br>')}</div>` : ''}
     <button id="btn-suivant-scene">Suivant</button>
   `);
-  el('btn-suivant-scene').addEventListener('click', () => { state.partie.palierVenantDetreFranchis = []; finBilanMatin(); });
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (paliers.length) afficherPalierPleinEcran(paliers);
+    else { state.partie.palierVenantDetreFranchis = []; finBilanMatin(); }
+  });
+}
+
+// Franchissement de palier Meridian (§C8 brief v3) : plein écran rouge très
+// sombre, texte blanc, entrée en zoom avec tremblement (CSS) — clic pour
+// continuer.
+function afficherPalierPleinEcran(paliers){
+  jouerSonPalier();
+  const overlay = el('palier-overlay');
+  el('palier-overlay-texte').innerHTML = paliers.map(s => ANNONCES_PALIER[s]).join('<br><br>');
+  overlay.classList.remove('hidden');
+  overlay.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    state.partie.palierVenantDetreFranchis = [];
+    finBilanMatin();
+  }, { once: true });
 }
 
 function finBilanMatin(){
@@ -2663,6 +2743,10 @@ const ECRANS_SANS_CAMEMBERT = new Set(['ouverture-regles', 'ouverture-scenario',
 function renderEcranActuel(){
   const id = state.partie.ecranActuel;
   el('zone-camembert-compact').classList.toggle('hidden', ECRANS_SANS_CAMEMBERT.has(id) && indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
+  // Filet de sécurité (§C4) : ces deux états n'ont de sens que sur leur
+  // propre écran, jamais laissés « collés » après une navigation par un
+  // autre chemin que leur bouton/barre d'espace dédiés (ex. « ◀ Annuler »).
+  if (id !== 'nuit-fermeture'){ document.body.classList.remove('nuit-active'); handlerBarreEspace = null; }
   if (id === 'ouverture-regles') return ecranOuvertureRegles();
   if (id === 'ouverture-scenario') return ecranOuvertureScenario();
   if (id === 'm0-lettre') return ecranM0Lettre();
@@ -2874,10 +2958,24 @@ function rafraichirJeu(){
   const president = getJoueur(state.partie.presidentActuelId);
   el('bc-president').textContent = president ? president.prenom : '—';
   remplirSelect(el('bc-select-president'), state.joueurs.filter(j => j.statutCapital === 'actif'), false);
+  declencherFonduNoirSiChangementDePhase();
   dessinerCamembert();
   afficherBandeauJoueurs();
   afficherJournal();
   renderEcranActuel();
+}
+
+// Le noir comme ponctuation (§C3 brief v3) : seul effet de transition, à
+// chaque changement de phase (mise_en_place → travail → conseil → nuit →
+// matin), jamais sur une simple ré-affichage du même écran.
+let dernierePhaseAffichee = null;
+function declencherFonduNoirSiChangementDePhase(){
+  const phase = state.partie.phase;
+  if (dernierePhaseAffichee !== null && dernierePhaseAffichee !== phase){
+    const f = el('fondu-noir');
+    f.classList.remove('actif'); void f.offsetWidth; f.classList.add('actif');
+  }
+  dernierePhaseAffichee = phase;
 }
 
 /* ============================================================
@@ -3430,6 +3528,18 @@ function init(){
     el('resume-card').classList.remove('hidden');
   }
 }
+
+// Avance à la barre d'espace (§C4 brief v3) : réservé aux écrans « la nuit »
+// sans bouton visible. Ignoré dans les champs de saisie (aucun sur ces
+// écrans en pratique, mais on reste prudent) et si aucun écran ne l'attend.
+let handlerBarreEspace = null;
+document.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || !handlerBarreEspace) return;
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  e.preventDefault();
+  handlerBarreEspace();
+});
 
 document.addEventListener('DOMContentLoaded', init);
 
