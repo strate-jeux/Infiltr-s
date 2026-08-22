@@ -230,6 +230,15 @@
   .barre-progression .seuil{ position:absolute; top:0; bottom:0; width:2px; background:#fff; left:50%; }
   .carte-reveal{ background:#fff; color:#111; border:6px solid var(--bleu-infiltres); border-radius:14px; padding:24px; max-width:420px; margin:0 auto; font-weight:700; font-size:1.2rem; }
   .carte-reveal.infiltre{ border-color: var(--rouge-infiltre); }
+  /* Révélation de carte au clic (§C5 brief v3) : dos visible, rotation 3D
+     600 ms au clic. Réutilisé pour le sabotage et la révocation en AG. */
+  .carte-flip-conteneur{ perspective:1000px; max-width:280px; margin:20px auto; cursor:pointer; }
+  .carte-flip{ position:relative; width:100%; aspect-ratio:3/4; transition: transform 600ms; transform-style:preserve-3d; }
+  .carte-flip.retournee{ transform: rotateY(180deg); }
+  .carte-flip .face{ position:absolute; inset:0; backface-visibility:hidden; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; text-align:center; }
+  .carte-flip .dos{ background:var(--panel-2); border:4px solid var(--bleu-infiltres); color:#fff; font-weight:700; font-size:1.15rem; }
+  .carte-flip .face-avant{ background:#fff; color:#111; border:6px solid var(--bleu-infiltres); transform: rotateY(180deg); font-weight:700; font-size:1.1rem; }
+  .carte-flip .face-avant.infiltre{ border-color: var(--rouge-infiltre); }
   #masque-overlay{
     position:fixed; inset:0; z-index:100; background:#05070a; color:#8892a0;
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
@@ -271,7 +280,6 @@
   <img id="header-logo" alt="" class="hidden">
   <div>
     <h1>INFILTRÉS</h1>
-    <div class="sub">Diaporama interactif pour l'animateur — fenêtre unique, projetée directement.</div>
   </div>
 </header>
 
@@ -1100,7 +1108,8 @@ function creerJoueurs(nbJoueurs, prenoms){
       revele: false,
       protegeCetteNuit: false,
       protegeNuitPrecedente: false,
-      miseAPiedManche: null
+      miseAPiedManche: null,
+      miseAPiedAnnoncee: false
     });
   }
   return joueurs;
@@ -1651,6 +1660,35 @@ function carteEcran(html){
   el('zone-scene').innerHTML = `<div class="ecran-card">${html}</div>`;
 }
 
+// Révélation de carte au clic (§C5 brief v3) : dos visible « {prenom}
+// était… » → silence jusqu'au clic → rotation 3D 600 ms → carte visible.
+// onRetournee(prenom, carte) est appelé juste après la rotation (pour jouer
+// le son dédié et enchaîner sur le reste de l'écran).
+function rendreCarteFlipHTML(idCarte, prenom){
+  return `
+    <div class="carte-flip-conteneur" id="${idCarte}-zone">
+      <div class="carte-flip" id="${idCarte}">
+        <div class="face dos">${prenom} était…</div>
+        <div class="face face-avant" id="${idCarte}-avant"></div>
+      </div>
+    </div>`;
+}
+
+function activerCarteFlip(idCarte, prenom, carte, onRetournee){
+  const zoneClic = el(idCarte + '-zone');
+  const avant = el(idCarte + '-avant');
+  const adverse = campDe({ carte }) === 'adverse';
+  avant.classList.toggle('infiltre', adverse);
+  avant.innerHTML = `${imgTag(illustrationRole(carte), 'illustration-mini')}${prenom} était...<br>${CARTE_LABELS[carte]}`;
+  let retournee = false;
+  zoneClic.addEventListener('click', () => {
+    if (retournee) return;
+    retournee = true;
+    el(idCarte).classList.add('retournee');
+    if (onRetournee) setTimeout(() => onRetournee(prenom, carte), 620);
+  });
+}
+
 // Illustration au trait, fond transparent (§7.3/§7.4) — silencieux (chaîne
 // vide) si le fichier n'a pas encore été fourni, pour ne jamais casser un écran.
 function imgTag(cle, cls){
@@ -1680,26 +1718,33 @@ function rendreGrilleJoueurs(containerEl, joueurs, onClick, selectedIds){
    11. ÉCRANS — MANCHE 0 : LETTRE D'INTENTION ET MISE EN PLACE (§5.2)
    ============================================================ */
 
-// Progressions locales et éphémères (non persistées : un rechargement en
-// plein milieu d'une cascade de cartes redémarre simplement cette cascade,
+// Progression locale et éphémère (non persistée : un rechargement en plein
+// milieu de la cascade de la lettre redémarre simplement cette cascade,
 // sans impact sur l'état de la partie ni fuite d'aucun secret).
 let indexParagrapheLettre = 0;
-let indexCartePreview = 0;
 
 // Textes du Règlement v3 — intégrés tels quels (lettre d'intention, scénarios
 // de sabotage, communiqués Meridian, annonces de palier, textes de fin).
-const SCENARIOS_SABOTAGE = {
-  1: { titre: "Audition par les enquêteurs", texte: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition se prolonge. Suspension immédiate, en attendant la fin de la procédure : {prenom} ne siège plus, ne vote plus, et ses titres sont placés sous séquestre." },
-  2: { titre: "Contrôle de conformité", texte: "Ce matin, les autorités lancent un contrôle de conformité sur le travail de {prenom}. Par précaution, ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin du contrôle." },
-  3: { titre: "Fuite de documents confidentiels", texte: "Cette nuit, des documents confidentiels ont fuité. Ils mettent directement en cause {prenom}. Le conseil prononce sa mise en retrait immédiate. Ses titres sont placés sous séquestre le temps de la procédure." },
-  4: { titre: "Cyberattaque ciblée", texte: "Une cyberattaque a paralysé une partie des outils de l'entreprise cette nuit. Elle a été tracée jusqu'aux accès de {prenom}. Ses accès sont coupés, ses fonctions suspendues, ses titres placés sous séquestre." },
-  5: { titre: "Perquisition au siège", texte: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves. Ses fonctions sont suspendues et ses titres placés sous séquestre jusqu'à la fin de l'instruction." }
+// Sabotage — écran 1 « mise en cause » (§D5 brief v3), propre à la manche.
+const TEXTES_MISE_EN_CAUSE = {
+  1: "Cette nuit, les enquêteurs ont convoqué {prenom}. L'audition s'est prolongée jusqu'à l'aube.",
+  2: "Les autorités ont ouvert un contrôle de conformité sur les dossiers de {prenom}.",
+  3: "Des documents confidentiels ont fuité cette nuit. Ils mettent {prenom} en cause.",
+  4: "Une cyberattaque a paralysé les systèmes. Elle a été tracée jusqu'aux accès de {prenom}.",
+  5: "À l'aube, une perquisition a eu lieu dans le bureau de {prenom}. Les éléments saisis sont graves."
 };
 
-function texteScenarioSabotage(manche, prenom){
-  const s = SCENARIOS_SABOTAGE[manche];
-  if (!s) return { titre: 'Sabotage', texte: '' };
-  return { titre: s.titre, texte: s.texte.replace(/\{prenom\}/g, prenom) };
+function texteMiseEnCause(manche, prenom){
+  const t = TEXTES_MISE_EN_CAUSE[manche] || '';
+  return t.replace(/\{prenom\}/g, prenom);
+}
+
+// Sabotage/révocation — écran 3 « sortie du capital » (§D5 brief v3), même
+// traitement pour les deux motifs de sortie.
+function texteSortieCapital(motif, prenom){
+  return motif === 'sabote'
+    ? `${prenom} quitte le conseil et cède ses titres. Les associés en préemptent les trois quarts. Le solde revient à Meridian.`
+    : `${prenom} est révoqué. La clause de sortie forcée s'applique : ses parts sont rachetées en totalité par les associés restants. Meridian n'a rien pu acheter.`;
 }
 
 const COMMUNIQUES_MERIDIAN = {
@@ -1717,15 +1762,31 @@ const ANNONCES_PALIER = {
 const PARAGRAPHES_LETTRE = [
   "Mesdames, Messieurs les membres du conseil,",
   "le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle.",
-  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte ne protège que les sorties forcées.",
+  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte prévoit une préemption — mais vos associés n'ont pas les moyens de tout racheter, et le solde nous reviendra.",
   "Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition.",
   "Nous avons cinq jours. À bientôt."
 ];
+
+const TEXTE_NOTE_JURISTE = "Une précision que le conseil doit entendre. Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits.";
 
 // Ordre imposé en Console pour la séquence de nuit (§2 brief v3) : Juriste →
 // DAF → DRH. Repris ici pour le tour de reconnaissance des rôles en Manche 0.
 function ROLES_A_POUVOIR_PRESENTS(){
   return ['juriste', 'daf', 'drh'].filter(r => state.joueurs.some(j => j.carte === r));
+}
+
+// Ouverture (§B10 brief v3) : écran de règles puis écran de scénario avant la
+// lettre d'intention, qui reste l'ouverture immersive du jeu.
+function ecranOuvertureRegles(){
+  ecranNeutreAvecSuivant('Le principe',
+    "Un seul thermomètre : le camembert du capital. Objectif : garder la majorité, cinq manches durant. Le jour, l'entreprise travaille. La nuit, certains agissent dans l'ombre.",
+    () => allerEcran('ouverture-scenario'));
+}
+
+function ecranOuvertureScenario(){
+  ecranNeutreAvecSuivant('NOVENTIS',
+    "Une SA solide, fragilisée depuis six mois : trésorerie en baisse, conformité en question, climat social dégradé. Ce matin, une lettre est arrivée au conseil.",
+    () => allerEcran('m0-lettre'));
 }
 
 function ecranM0Lettre(){
@@ -1738,8 +1799,30 @@ function ecranM0Lettre(){
   el('zone-camembert-compact').classList.toggle('hidden', indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
   el('btn-suivant-scene').addEventListener('click', () => {
     if (!dernier){ indexParagrapheLettre++; rafraichirJeu(); }
-    else { indexParagrapheLettre = 0; allerEcran('m0-infiltres-ouvert'); }
+    else { indexParagrapheLettre = 0; allerEcran('m0-note-juriste'); }
   });
+}
+
+// Note du juriste (§D4 brief v3) : c'est ce texte qui pousse le conseil à
+// chasser dès la première manche.
+function ecranM0NoteJuriste(){
+  ecranNeutreAvecSuivant('Note du juriste', TEXTE_NOTE_JURISTE, () => allerEcran('m0-nuit-tombe'));
+}
+
+// « La nuit tombe » (§D1 brief v3) : transition avant chaque séquence de
+// nuit — manque en Manche 0 avant l'appel des Infiltrés (§B4) ; reprise pour
+// les manches 1 à 5 dans afficherNuitFermeture().
+const TEXTES_NUIT_TOMBE = {
+  0: "Le conseil se sépare. Les lumières du siège s'éteignent une à une. Cette nuit, certains ne dormiront pas.",
+  1: "Première nuit. Les couloirs sont vides. Quelque part dans l'immeuble, un dossier change de main.",
+  2: "Deuxième nuit. Le standard ne répond plus. Une réunion se tient quelque part, sans ordre du jour.",
+  3: "Troisième nuit. Meridian n'a pas besoin de forcer les portes : on les lui ouvre.",
+  4: "Quatrième nuit. Il reste peu de temps, et tout le monde le sait. Les décisions se prennent désormais dans le noir.",
+  5: "Dernière nuit. Demain, l'entreprise sera sauvée ! (ou il arrivera trop tard…)"
+};
+
+function ecranM0NuitTombe(){
+  ecranNeutreAvecSuivant('La nuit tombe', TEXTES_NUIT_TOMBE[0], () => allerEcran('m0-infiltres-ouvert'));
 }
 
 function ecranNeutreAvecSuivant(titre, texte, onSuivant, libelleBouton, illustrationKey){
@@ -1762,45 +1845,54 @@ function ecranM0Infiltres(ouvert){
   } else {
     ecranNeutreAvecSuivant('Manche 0 — Reconnaissance des Infiltrés',
       "Les Infiltrés se rendorment.",
-      () => { indexCartePreview = 0; allerEcran('m0-reponses'); });
+      () => allerEcran('m0-reponses'));
   }
 }
 
-// Cartes de réponses A/B/C/D d'une manche (§5.2 étape 3 et §5.6 étape 6) :
-// minimum 3 secondes chacune, bouton discret pour accélérer si besoin.
-function ecranReponsesPreview(mancheCible, onTermine){
+// Réponses remises aux Infiltrés (§D2 brief v3) : écran d'annonce seul, puis
+// les 3 réponses affichées ENSEMBLE dans une seule grille (plus de cascade
+// carte par carte) — un clic sur la grille les cache une fois lues.
+function ecranReponsesAnnonce(onSuivant){
+  ecranNeutreAvecSuivant('Réponses transmises',
+    "Les infiltrés reçoivent les réponses de la manche à venir.",
+    onSuivant);
+}
+
+function ecranReponsesGrille(mancheCible, onTermine){
   const defis = defisDeLaManche(mancheCible);
-  if (indexCartePreview >= defis.length){ onTermine(); return; }
-  const d = defis[indexCartePreview];
   carteEcran(`
     <h2>Réponses de la Manche ${mancheCible}</h2>
-    <div class="sous-titre">Service ${d.service} — carte réservée aux Infiltrés (yeux ouverts à cet instant)</div>
-    <div class="carte-reveal">Bonne réponse : ${d.reponseCorrecte}</div>
+    <div id="grille-reponses-infiltres" style="display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto;cursor:pointer;">
+      ${defis.map(d => `<div class="service-box"><h4>${d.service}</h4><div class="carte-reveal reponse-lettre" data-lettre="${d.reponseCorrecte}">${d.reponseCorrecte}</div></div>`).join('')}
+    </div>
+    <div class="small" style="margin-top:10px;">Cliquer pour cacher les réponses une fois lues.</div>
     <div style="margin-top:16px;"><button id="btn-suivant-scene" disabled>Suivant</button></div>
   `);
+  let cachees = false;
+  el('grille-reponses-infiltres').addEventListener('click', () => {
+    cachees = !cachees;
+    document.querySelectorAll('#grille-reponses-infiltres .reponse-lettre').forEach(c => {
+      c.textContent = cachees ? '?' : c.dataset.lettre;
+    });
+  });
   setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.disabled = false; }, 3000);
-  el('btn-suivant-scene').addEventListener('click', () => { indexCartePreview++; onTermine._continuer ? onTermine._continuer() : onTermine(); });
+  el('btn-suivant-scene').addEventListener('click', onTermine);
 }
 
 function afficherM0Reponses(){
-  ecranReponsesPreview(1, () => {
-    if (indexCartePreview >= defisDeLaManche(1).length){
-      allerEcran('m0-role-ouvert', true);
-    } else {
-      rafraichirJeu();
-    }
-  });
+  ecranReponsesAnnonce(() => allerEcran('m0-reponses-grille'));
+}
+
+function afficherM0ReponsesGrille(){
+  ecranReponsesGrille(1, () => allerEcran('m0-role-ouvert'));
 }
 
 function afficherNuitReponses(){
-  const mancheCible = state.partie.manche + 1;
-  ecranReponsesPreview(mancheCible, () => {
-    if (indexCartePreview >= defisDeLaManche(mancheCible).length){
-      allerEcran('nuit-reveil', true);
-    } else {
-      rafraichirJeu();
-    }
-  });
+  ecranReponsesAnnonce(() => allerEcran('nuit-reponses-grille'));
+}
+
+function afficherNuitReponsesGrille(){
+  ecranReponsesGrille(state.partie.manche + 1, () => allerEcran('nuit-reveil'));
 }
 
 function afficherNuitReveil(){
@@ -1821,7 +1913,7 @@ function afficherM0RoleTour(ouvert){
   const label = CARTE_LABELS[role];
   if (ouvert){
     ecranNeutreAvecSuivant(`Manche 0 — Reconnaissance des rôles à pouvoir`,
-      `${label} ouvre les yeux. Prenez connaissance de votre rôle.`,
+      `${label} ouvre les yeux.`,
       () => allerEcran('m0-role-ferme'), null, illustrationRole(role));
   } else {
     ecranNeutreAvecSuivant(`Manche 0 — Reconnaissance des rôles à pouvoir`,
@@ -1845,9 +1937,20 @@ function afficherM0Reveil(){
    12. ÉCRANS — TABLEAU DE BORD ET CYCLE DE MANCHE (§5.3 à §5.8)
    ============================================================ */
 
+// Phrase de scénario par manche (§D3 brief v3) : un événement réel, quand il
+// a lieu, la remplace — jamais l'inverse.
+const PHRASES_SCENARIO_DASHBOARD = {
+  1: "Le conseil se réunit. Officiellement, tout va bien.",
+  2: "Les rumeurs circulent dans les étages. Personne ne les dément.",
+  3: "Le comité d'audit demande des explications. Le conseil n'en a pas.",
+  4: "Les banques appellent. Elles veulent savoir qui dirige vraiment NOVENTIS.",
+  5: "Dernier jour. Le chevalier blanc a confirmé sa venue pour demain matin."
+};
+
 function dernierEvenementPublicTexte(){
   const arr = state.partie.chroniquePublique;
-  return arr.length ? arr[arr.length - 1].texte : 'Aucun événement pour le moment.';
+  if (arr.length) return arr[arr.length - 1].texte;
+  return PHRASES_SCENARIO_DASHBOARD[state.partie.manche] || '';
 }
 
 const LIBELLES_SUIVANT_DASHBOARD = [
@@ -1874,7 +1977,7 @@ function afficherDashboard(){
 // --- Étape 1 : Phase de travail, en 4 temps (§5.4 CDC v2, refonte §E brief v3) ---
 
 // Saisie en cours, non encore validée : { [defiId]: lettre }. Local et
-// éphémère (comme indexCartePreview) — remis à zéro à l'entrée du chrono.
+// éphémère (non persisté) — remis à zéro à l'entrée du chrono.
 let travailSelectionTemp = {};
 
 // Temps 1 — Chronomètre seul (§C6/§E) : aucune saisie possible, l'animateur
@@ -2124,50 +2227,66 @@ function derniereResolutionDecidee(){
   return null;
 }
 
+function afficherConseilResultatPresidentVacant(resolution){
+  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
+  carteEcran(`
+    <h2>${resolution.prenom} était Président du conseil</h2>
+    <div class="sous-titre">Désignez son successeur.</div>
+    <select id="select-nouveau-president-scene"></select>
+    <button id="btn-suivant-scene" style="margin-left:8px;">Désigner et continuer</button>
+  `);
+  remplirSelect(el('select-nouveau-president-scene'), actifs, false);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    try { assignerPresident(el('select-nouveau-president-scene').value); } catch(e){ afficherErreur(e.message); return; }
+    avancerApresConseilResultat();
+  });
+}
+
+// Révélation de carte au clic (§C5 brief v3), même traitement qu'au Bilan
+// du matin : dos visible, silence jusqu'au clic, rotation 3D.
 function afficherConseilResultat(){
   const resolution = derniereResolutionDecidee();
   if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard', true); return; }
   const cible = getJoueur(resolution.joueurId);
   const adoptee = resolution.statut === 'adoptee';
-  jouerSonEcranUneFois('conseil-resultat-' + resolution.joueurId + '-' + resolution.statut, () => {
-    if (adoptee){
-      jouerSonResolutionAdoptee();
-      setTimeout(() => { campDe(cible) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete(); }, 900);
-    }
-  });
   const titre = adoptee
     ? `Résolution adoptée — ${resolution.prenom} est révoqué(e).`
     : `Résolution rejetée — ${resolution.prenom} reste en fonction.`;
-  const reveal = adoptee ? `
-    ${imgTag('revocation', 'illustration-small')}
-    <div class="carte-reveal ${campDe(cible) === 'adverse' ? 'infiltre' : ''}" style="margin-top:14px;">
-      ${imgTag(illustrationRole(cible.carte), 'illustration-mini')}
-      ${resolution.prenom} était... ${CARTE_LABELS[cible.carte]}
-    </div>` : '';
 
-  if (adoptee && state.partie.presidentVacant){
-    const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
-    carteEcran(`
-      <h2>${titre}</h2>
-      ${reveal}
-      <div class="sous-titre" style="margin-top:14px;">${resolution.prenom} était Président du conseil : désignez son successeur.</div>
-      <select id="select-nouveau-president-scene"></select>
-      <button id="btn-suivant-scene" style="margin-left:8px;">Désigner et continuer</button>
-    `);
-    remplirSelect(el('select-nouveau-president-scene'), actifs, false);
-    el('btn-suivant-scene').addEventListener('click', () => {
-      try { assignerPresident(el('select-nouveau-president-scene').value); } catch(e){ afficherErreur(e.message); return; }
-      avancerApresConseilResultat();
-    });
+  if (!adoptee){
+    carteEcran(`<h2>${titre}</h2><button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>`);
+    el('btn-suivant-scene').addEventListener('click', avancerApresConseilResultat);
     return;
   }
 
+  const idCarte = 'carte-revocation';
   carteEcran(`
     <h2>${titre}</h2>
-    ${reveal}
+    ${rendreCarteFlipHTML(idCarte, resolution.prenom)}
+    <button id="btn-suivant-scene" style="margin-top:14px;display:none;">Suivant</button>
+  `);
+  jouerSonEcranUneFois('conseil-resultat-son-' + resolution.joueurId, jouerSonResolutionAdoptee);
+  activerCarteFlip(idCarte, resolution.prenom, cible.carte, (prenom, carte) => {
+    campDe({ carte }) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete();
+    setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.style.display = ''; }, 1400);
+  });
+  el('btn-suivant-scene').addEventListener('click', () => {
+    afficherConseilResultatSortieCapital(resolution, cible);
+  });
+}
+
+// Sortie du capital (§D5/§C5 brief v3) : même traitement qu'au sabotage —
+// une révocation cède aussi 100 % des titres, ça mérite le même temps fort.
+function afficherConseilResultatSortieCapital(resolution, cible){
+  carteEcran(`
+    <h2>Sortie du capital</h2>
+    <div class="texte-narratif" style="text-align:center;">${texteSortieCapital('revoque', resolution.prenom)}</div>
     <button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>
   `);
-  el('btn-suivant-scene').addEventListener('click', avancerApresConseilResultat);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    if (state.partie.presidentVacant) afficherConseilResultatPresidentVacant(resolution);
+    else avancerApresConseilResultat();
+  });
 }
 
 function avancerApresConseilResultat(){
@@ -2211,7 +2330,6 @@ function avancerNuit(){
   const etapes = state.partie.etapesNuitSnapshot || etapesNuitDisponibles();
   const id = etapes[state.partie.sousEtapeIndex];
   if (!id){ allerEcran('nuit-reveil'); return; }
-  if (id === 'nuit-reponses') indexCartePreview = 0;
   allerEcran(id);
 }
 
@@ -2221,10 +2339,8 @@ function afficherNuitFermeture(){
   state.partie.sousEtapeIndex = 0;
   state.partie.etapesNuitSnapshot = etapesNuitDisponibles();
   sauvegarder();
-  ecranNeutreAvecSuivant('Séquence de nuit', 'Fin de journée chez NOVENTIS. Tout le monde ferme les yeux.', () => {
-    const id = state.partie.etapesNuitSnapshot[0];
-    if (id === 'nuit-reponses') indexCartePreview = 0;
-    allerEcran(id);
+  ecranNeutreAvecSuivant('La nuit tombe', TEXTES_NUIT_TOMBE[state.partie.manche] || 'Tout le monde ferme les yeux.', () => {
+    allerEcran(state.partie.etapesNuitSnapshot[0]);
   });
 }
 
@@ -2305,28 +2421,18 @@ function afficherNuitInfiltres(){
 
 // --- Étape 4 : Bilan du matin (§5.8) ---
 
+// Bilan du matin — sabotage en 3 écrans séparés (§D5 brief v3) : mise en
+// cause (texte seul) → la carte (dos visible, retournement au clic, §C5) →
+// sortie du capital (enchaînée sur l'animation du camembert). La nuit calme
+// reste un écran unique, rien à dramatiser.
 function afficherMatinSabotage(){
   const evt = state.partie.dernierEvenementNuitPublic;
-  // Révélation officielle : traitement one-shot, gardé par idsEnAttenteAnnonce
-  // pour rester idempotent (un ré-affichage, ex. après « ◀ Annuler » resté sur
-  // cet écran, ne doit ni dupliquer la chronique ni re-masquer/démasquer).
-  // Le camembert et le bandeau doivent refléter le démasquage IMMÉDIATEMENT,
-  // donc avant la construction de la carte — jamais au prochain rafraîchissement.
-  if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
-    if (!evt || evt.type === 'nuit_calme'){
-      ajouterChroniquePublique("Nuit calme. Aucune procédure n'a abouti cette nuit.");
-    } else {
-      const c = getJoueur(evt.joueurId);
-      ajouterChroniquePublique(`${c.prenom} était... ${CARTE_LABELS[c.carte]}.`);
-    }
-    state.partie.idsEnAttenteAnnonce = [];
-    state.partie.camembertGeleJusquaReveal = null; // dégel : l'animation de transition du camembert dramatise la sortie du capital (§D5)
-    sauvegarder();
-    dessinerCamembert();
-    afficherBandeauJoueurs();
-  }
-
   if (!evt || evt.type === 'nuit_calme'){
+    if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
+      ajouterChroniquePublique("Nuit calme. Aucune procédure n'a abouti cette nuit.");
+      state.partie.idsEnAttenteAnnonce = [];
+      sauvegarder();
+    }
     carteEcran(`
       <h2>Bilan du matin</h2>
       <div class="texte-narratif" style="text-align:center;">Nuit calme. Aucune procédure n'a abouti cette nuit — l'entreprise tourne normalement.</div>
@@ -2335,30 +2441,94 @@ function afficherMatinSabotage(){
     el('btn-suivant-scene').addEventListener('click', avancerApresMatinSabotage);
     return;
   }
-  const cible = getJoueur(evt.joueurId);
-  const scenario = texteScenarioSabotage(state.partie.manche, cible.prenom);
+  allerEcran('matin-mise-en-cause', true);
+}
+
+// Écran 1 — mise en cause.
+function afficherMatinMiseEnCause(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
   carteEcran(`
-    <h2>Bilan du matin — ${scenario.titre}</h2>
+    <h2>Bilan du matin</h2>
     ${imgTag(illustrationSabotageManche(state.partie.manche), 'illustration-small')}
-    <div class="texte-narratif" style="text-align:center;">${scenario.texte}</div>
-    <div class="carte-reveal ${campDe(cible) === 'adverse' ? 'infiltre' : ''}">
-      ${imgTag(illustrationRole(cible.carte), 'illustration-mini')}
-      ${cible.prenom} était... ${CARTE_LABELS[cible.carte]}
-    </div>
+    <div class="texte-narratif" style="text-align:center;">${texteMiseEnCause(state.partie.manche, cible.prenom)}</div>
+    <button id="btn-suivant-scene" style="margin-top:16px;">Suivant</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => allerEcran('matin-carte-sabotage'));
+}
+
+// Écran 2 — la carte (§C5) : dos visible, silence jusqu'au clic. La
+// révélation officielle (chronique publique + son) n'a lieu qu'ici, jamais
+// avant (§5.8) — idempotent via idsEnAttenteAnnonce.
+function afficherMatinCarteSabotage(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
+  const idCarte = 'carte-sabotage';
+  carteEcran(`
+    <h2>Bilan du matin</h2>
+    ${rendreCarteFlipHTML(idCarte, cible.prenom)}
+    <button id="btn-suivant-scene" style="margin-top:16px;display:none;">Suivant</button>
+  `);
+  activerCarteFlip(idCarte, cible.prenom, cible.carte, (prenom, carte) => {
+    if ((state.partie.idsEnAttenteAnnonce || []).length > 0){
+      ajouterChroniquePublique(`${prenom} était... ${CARTE_LABELS[carte]}.`);
+      state.partie.idsEnAttenteAnnonce = [];
+      sauvegarder();
+    }
+    campDe({ carte }) === 'adverse' ? jouerRevelationInfiltre() : jouerRevelationHonnete();
+    setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.style.display = ''; }, 1400);
+  });
+  el('btn-suivant-scene').addEventListener('click', () => allerEcran('matin-sortie-capital'));
+}
+
+// Écran 3 — sortie du capital, enchaînée sur l'animation du camembert (dégel
+// de camembertGeleJusquaReveal, qui rejoue la transition existante).
+function afficherMatinSortieCapital(){
+  const cible = getJoueur(state.partie.dernierEvenementNuitPublic.joueurId);
+  if (state.partie.camembertGeleJusquaReveal){
+    state.partie.camembertGeleJusquaReveal = null;
+    sauvegarder();
+    dessinerCamembert();
+    afficherBandeauJoueurs();
+  }
+  carteEcran(`
+    <h2>Sortie du capital</h2>
+    <div class="texte-narratif" style="text-align:center;">${texteSortieCapital(cible.motifSortie, cible.prenom)}</div>
     <button id="btn-suivant-scene" style="margin-top:16px;">Suivant</button>
   `);
   el('btn-suivant-scene').addEventListener('click', avancerApresMatinSabotage);
 }
 
-function avancerApresMatinSabotage(){
-  state.partie.etapeBilanMatin = 1;
+// Mise à pied DRH (§D5 brief v3) : écran sobre entre le sabotage et le
+// communiqué Meridian, sans jamais nommer l'auteur de la décision.
+function afficherMatinMiseAPied(){
+  const misAPied = state.joueurs.find(j => j.miseAPiedManche === state.partie.manche + 1 && !j.miseAPiedAnnoncee);
+  if (!misAPied){ avancerApresMatinMiseAPied(); return; }
+  misAPied.miseAPiedAnnoncee = true;
+  ajouterChroniquePublique(`${misAPied.prenom} est mis(e) à pied conservatoire : absent(e) du défi de son service à la prochaine manche.`);
   sauvegarder();
-  // Un sabotage peut à lui seul franchir un palier Meridian (§4.5) : ne
-  // jamais sauter le communiqué dans ce cas, sous peine de perdre l'annonce.
+  carteEcran(`
+    <h2>Mise à pied conservatoire</h2>
+    <div class="texte-narratif" style="text-align:center;">${misAPied.prenom} est mis(e) à pied conservatoire. Absent(e) du défi de son service à la prochaine manche.</div>
+    <button id="btn-suivant-scene">Suivant</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', avancerApresMatinMiseAPied);
+}
+
+function avancerApresMatinMiseAPied(){
   if (state.partie.consequenceDefisEnAttente || (state.partie.palierVenantDetreFranchis || []).length){
     allerEcran('matin-communique');
   } else {
     finBilanMatin();
+  }
+}
+
+function avancerApresMatinSabotage(){
+  state.partie.etapeBilanMatin = 1;
+  sauvegarder();
+  const misAPiedEnAttente = state.joueurs.some(j => j.miseAPiedManche === state.partie.manche + 1 && !j.miseAPiedAnnoncee);
+  if (misAPiedEnAttente){
+    allerEcran('matin-mise-a-pied');
+  } else {
+    avancerApresMatinMiseAPied();
   }
 }
 
@@ -2488,15 +2658,20 @@ function afficherRecap(){
    14bis. DISPATCH DES ÉCRANS
    ============================================================ */
 
-const ECRANS_SANS_CAMEMBERT = new Set(['m0-lettre']); // avant l'apparition animée de Meridian
+const ECRANS_SANS_CAMEMBERT = new Set(['ouverture-regles', 'ouverture-scenario', 'm0-lettre']); // avant l'apparition animée de Meridian
 
 function renderEcranActuel(){
   const id = state.partie.ecranActuel;
   el('zone-camembert-compact').classList.toggle('hidden', ECRANS_SANS_CAMEMBERT.has(id) && indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
+  if (id === 'ouverture-regles') return ecranOuvertureRegles();
+  if (id === 'ouverture-scenario') return ecranOuvertureScenario();
   if (id === 'm0-lettre') return ecranM0Lettre();
+  if (id === 'm0-note-juriste') return ecranM0NoteJuriste();
+  if (id === 'm0-nuit-tombe') return ecranM0NuitTombe();
   if (id === 'm0-infiltres-ouvert') return ecranM0Infiltres(true);
   if (id === 'm0-infiltres-ferme') return ecranM0Infiltres(false);
   if (id === 'm0-reponses') return afficherM0Reponses();
+  if (id === 'm0-reponses-grille') return afficherM0ReponsesGrille();
   if (id === 'm0-role-ouvert') return afficherM0RoleTour(true);
   if (id === 'm0-role-ferme') return afficherM0RoleTour(false);
   if (id === 'm0-reveil') return afficherM0Reveil();
@@ -2516,8 +2691,13 @@ function renderEcranActuel(){
   if (id === 'nuit-drh') return afficherNuitDrh();
   if (id === 'nuit-infiltres') return afficherNuitInfiltres();
   if (id === 'nuit-reponses') return afficherNuitReponses();
+  if (id === 'nuit-reponses-grille') return afficherNuitReponsesGrille();
   if (id === 'nuit-reveil') return afficherNuitReveil();
   if (id === 'matin-sabotage') return afficherMatinSabotage();
+  if (id === 'matin-mise-en-cause') return afficherMatinMiseEnCause();
+  if (id === 'matin-carte-sabotage') return afficherMatinCarteSabotage();
+  if (id === 'matin-sortie-capital') return afficherMatinSortieCapital();
+  if (id === 'matin-mise-a-pied') return afficherMatinMiseAPied();
   if (id === 'matin-communique') return afficherMatinCommunique();
   if (id === 'fin') return afficherFin();
   if (id === 'recap') return afficherRecap();
@@ -2545,8 +2725,8 @@ function remplirPanneauCorrections(){
   remplirSelect(el('corr-select-joueur'), state.joueurs, false);
   el('corr-select-role').innerHTML = CARTES.map(r => `<option value="${r}">${CARTE_LABELS[r]}</option>`).join('');
   el('corr-select-ecran').innerHTML = ['dashboard','travail-chrono','travail','travail-revelation','travail-bilan','indice','conseil-debat','conseil-vote','conseil-resultat',
-    'nuit-fermeture','nuit-juriste','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reveil',
-    'matin-sabotage','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
+    'nuit-fermeture','nuit-juriste','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reponses-grille','nuit-reveil',
+    'matin-sabotage','matin-mise-en-cause','matin-carte-sabotage','matin-sortie-capital','matin-mise-a-pied','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
 }
 
 /* ============================================================
@@ -2664,7 +2844,7 @@ function demarrerPartie(){
   state.partie.enCours = true;
   state.partie.manche = 0;
   state.partie.phase = 'mise_en_place';
-  state.partie.ecranActuel = 'm0-lettre';
+  state.partie.ecranActuel = 'ouverture-regles';
   indexParagrapheLettre = 0;
   ajouterJournal('debut_partie', `La partie démarre avec ${state.joueurs.length} joueurs. Meridian détient 1,0 % du capital.`);
   verifierInvariant();
