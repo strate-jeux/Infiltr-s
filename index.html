@@ -1467,15 +1467,10 @@ function jouerTonalite(freq, duree, type, volume){
   } catch(e){ /* Web Audio indisponible : silencieux, jamais bloquant */ }
 }
 
-function jouerGongNuit(){
-  jouerTonalite(110, 1.8, 'sine', 0.22);
-  setTimeout(() => jouerTonalite(220, 1.1, 'sine', 0.10), 90);
-}
-
-function jouerNotificationCommunique(){
+function jouerNotificationCommunique(){ enfilerSon(() => {
   jouerTonalite(880, 0.16, 'triangle', 0.16);
   setTimeout(() => jouerTonalite(660, 0.22, 'triangle', 0.14), 150);
-}
+}, 400); }
 
 /* ============================================================
    9ter. TABLE DES SONS (§F brief v3)
