@@ -79,9 +79,21 @@ Une prise de contrôle hostile n'est pas illégale — hostile signifie non soll
 
 ### La lettre d'intention (lue par l'animateur en Manche 0)
 
-*« Mesdames, Messieurs les membres du conseil, le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle. Vos statuts ne contiennent pas de clause d'agrément. Votre pacte prévoit une préemption — mais vos associés n'ont pas les moyens de tout racheter, et le solde nous reviendra. Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition. Nous avons cinq jours. À bientôt. »*
+*« Mesdames, Messieurs les membres du conseil,*
+*Nous sommes un fonds d'investissement, le Fonds Meridian. Nous détenons aujourd'hui 1 % du capital de votre société NOVENTIS, et nous voulons en prendre le contrôle.*
+*Vos statuts ne contiennent pas de clause d'agrément. Votre pacte d'associés prévoit une préemption, mais nous savons que vous n'avez pas les moyens de tout racheter — contrairement à nous.*
+*Dès que l'occasion se présentera, nous achèterons toutes les parts mises en vente, et nous n'hésiterons pas à utiliser tous les moyens nécessaires, y compris les plus agressifs.*
+*Sachez que vous êtes moins unis que vous ne le pensez. Parmi les membres de votre conseil, certains sont nos alliés : ils travaillent déjà pour nous. Nos agents infiltrés nous aideront à conquérir un maximum de parts du capital de NOVENTIS.*
+*Nous y arriverons avant la fin de la semaine, c'est-à-dire d'ici cinq jours.*
+*À bon entendeur. »*
 
-Juste après, une note du juriste explique au conseil pourquoi il faut chasser dès la première manche : *« Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits. »*
+### La note du juriste (remise dans ce livret, pas projetée)
+
+Cette note n'est plus projetée à l'écran en Manche 0 (trop dense pour un temps de jeu) : elle est remise aux joueurs dans ce livret, à lire en amont ou pendant les temps morts. Elle explique au conseil pourquoi il faut chasser dès la première manche :
+
+*« Une précision que le conseil doit entendre. Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits. »*
+
+Un rappel très court de cette idée reste affiché à l'écran au tableau de bord de la Manche 1 : *« Rappel : chaque nuit sans démasquer d'infiltré, vous cédez un peu plus de capital à Meridian. »*
 
 ### Une seule base de calcul
 
