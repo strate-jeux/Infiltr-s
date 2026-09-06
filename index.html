@@ -202,9 +202,11 @@
   #fondu-noir.actif{ animation: fondu-noir 400ms ease; }
 
   /* La nuit (§C4 brief v3) : assombrissement, camembert désaturé à 60 %,
-     pas de bouton visible (avance à la barre d'espace). */
-  .ecran-nuit-sombre{ min-height:220px; display:flex; align-items:center; justify-content:center; }
+     pas de bouton habillé — on avance en touchant l'écran (ou barre
+     d'espace au clavier) ; un indice discret le rappelle. */
+  .ecran-nuit-sombre{ min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
   .ecran-nuit-sombre .texte-nuit{ font-size:1.3rem; color:var(--text-dim); text-align:center; opacity:0; animation: nuit-assombrir 2s ease forwards; }
+  .ecran-nuit-sombre .indice-suite{ margin-top:22px; font-size:0.85rem; color:var(--text-dim); text-align:center; opacity:0; animation: nuit-assombrir 2s ease 1.2s forwards; }
   @keyframes nuit-assombrir{ from{ opacity:0; } to{ opacity:1; } }
   body.nuit-active #zone-camembert-compact svg{ filter: saturate(0.4); transition: filter 2s ease; }
   /* Réveil (§C4 brief v3) : flash blanc 120 ms puis retour sur 600 ms. */
@@ -280,7 +282,7 @@
   #masque-overlay .masque-texte{ font-size:1.4rem; letter-spacing:0.08em; text-transform:uppercase; }
   #panneau-corrections{ background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; max-width:520px; width:90%; text-align:left; }
   #panneau-corrections h3{ margin-top:0; }
-  #panneau-outils summary{ cursor:pointer; padding:10px 16px; color:var(--text-dim); }
+  #panneau-outils-dev summary{ cursor:pointer; padding:10px 16px; color:var(--text-dim); }
   .indice-2-3{ font-size:0.85rem; color:var(--text-dim); margin-top:10px; }
 
   /* Illustrations au trait, fond transparent (§7.3/§7.4) */
@@ -328,6 +330,7 @@
   </div>
   <div class="row">
     <button class="secondary" id="btn-annuler" title="Annuler la dernière action">◀ Annuler</button>
+    <button class="secondary hidden" id="btn-modifier-config" title="Retourne à la préparation (interrompt la partie en cours)">⚙ Modifier la configuration</button>
     <button class="secondary" id="btn-masquer">Masquer</button>
     <button class="secondary" id="btn-sons">🔊 Sons</button>
     <button class="secondary" id="btn-journal-toggle">Journal</button>
@@ -372,64 +375,12 @@
   <div class="journal" id="journal"></div>
 </div>
 
-<!-- ===================== OUTILS / RECETTE (§8 CDC v2) ===================== -->
-<details id="panneau-outils" style="max-width:900px;margin:0 auto 24px;">
-  <summary>🛠 Outils de recette (préparation &amp; simulation)</summary>
-  <div class="card">
-    <div id="setup-card">
-      <h2>Préparation (avant de brancher le vidéoprojecteur)</h2>
-      <div class="flex-cols">
-        <div>
-          <h3>Joueurs et services</h3>
-          <div class="row">
-            <label>Nombre de joueurs (8–18)
-              <input type="number" id="input-nb-joueurs" min="8" max="18" value="15">
-            </label>
-            <button class="secondary" id="btn-generer-joueurs">Générer les lignes</button>
-            <button class="secondary" id="btn-noms-fictifs">Prénoms fictifs</button>
-          </div>
-          <div class="small">Infiltrés requis : ⌊N/3⌋ = <b id="lbl-nb-infiltres-reco">5</b>, répartis équitablement entre les 3 services.</div>
-          <div id="joueurs-liste" class="join-input-list" style="margin-top:10px;"></div>
-        </div>
-        <div>
-          <h3>Tirage des parts</h3>
-          <div class="row">
-            <button id="btn-tirer-parts">Tirer les parts au sort</button>
-            <button class="secondary" id="btn-retirer-parts">Retirer au sort</button>
-          </div>
-          <div class="small">Tirage 0,65×–1,35× la part moyenne, normalisé à 99,000 % (Meridian démarre à 1,000 %). Aucune édition manuelle : l'invariant est garanti dès le tirage (§4.1 du cahier des charges).</div>
-          <table id="table-parts" style="margin-top:10px;">
-            <thead><tr><th>Prénom</th><th>Service</th><th>Part (%)</th></tr></thead>
-            <tbody></tbody>
-          </table>
-          <div class="small" id="lbl-somme-parts"></div>
-        </div>
-      </div>
-
-      <h3>Rôles — Pour <span id="lbl-nb-joueurs-phrase">15</span> joueurs, vous devez désigner <span id="lbl-nb-infiltres-phrase">5</span> infiltrés parmi eux</h3>
-      <div class="small" id="lbl-compteur-infiltres">Infiltrés désignés : 0 / 5</div>
-      <table id="table-roles" style="margin-top:8px;">
-        <thead><tr><th>Prénom</th><th>Rôle</th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div id="setup-problemes" class="small" style="margin-top:8px;"></div>
-
-      <div class="row" style="margin-top:14px;">
-        <button class="ok" id="btn-demarrer" disabled>Lancer la partie</button>
-      </div>
-    </div>
-
-    <hr style="border-color:var(--border);margin:20px 0;">
-
-    <h2>Mode simulation &amp; recette (§8 du cahier des charges)</h2>
-    <div class="row">
-      <button id="btn-run-tests">Lancer la recette T1 – T6</button>
-      <button class="secondary" id="btn-run-partie-fictive">Simuler une partie fictive complète (5 manches)</button>
-    </div>
-    <div id="resultats-tests" style="margin-top:12px;"></div>
-    <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
-  </div>
-</details>
+<!-- ===================== PRÉPARATION DE LA PARTIE (§1 des retours de test) =====================
+     Contenu monté/démonté dynamiquement par JS (montrerPanneauPreparation /
+     demonterPanneauPreparation) : ce panneau n'existe plus dans le DOM une
+     fois la partie lancée (§2 des retours de test), pour qu'il ne puisse
+     jamais réapparaître par accident pendant le jeu. -->
+<div id="zone-panneau-preparation" style="max-width:900px;margin:0 auto 24px;"></div>
 
 </main>
 
@@ -585,7 +536,14 @@ function genId(prefix){
 function etatInitial(){
   return {
     version: 2,
-    config: { alerteMontant: 4000, paniqueMontant: 8000 },
+    // baseVote (§8 des retours de test) : base de calcul de la majorité au
+    // conseil. 'capitalPresent' (par défaut) compte l'abstention comme une
+    // non-adoption, sur la totalité du capital des actionnaires actifs.
+    // 'voixExprimees' exclut les abstentions du dénominateur — facilite
+    // mécaniquement l'adoption des résolutions. Choix laissé configurable
+    // le temps du playtest, à ne pas figer sans reprendre la simulation
+    // d'équilibrage (le seuil de manche 3 en dépend).
+    config: { alerteMontant: 4000, paniqueMontant: 8000, baseVote: 'capitalPresent' },
     partie: {
       enCours: false,
       manche: 0,
@@ -727,6 +685,14 @@ function verifierVictoireHonneteAnticipee(){
 
 // À appeler à chaque bilan du matin (nuits 1 à 5). Aucune victoire n'est
 // vérifiée avant le bilan du matin de la manche 3 (plancher §A1).
+//
+// CALCUL INTERNE, JAMAIS AFFICHÉ TEL QUEL (§9 des retours de test) : la
+// somme ci-dessous inclut TOUS les infiltrés actifs, démasqués ou non — à ne
+// jamais confondre avec le pourcentage public du camembert (voir
+// construireSegmentsCamembert / dessinerCamembert), qui lui ne montre que le
+// capital officiellement révélé et progresse par à-coups. Ne pas modifier ce
+// calcul sans repasser par la simulation d'équilibrage (T8-T11) : le seuil
+// de victoire en dépend.
 function verifierVictoireBilanMatin(dernierBilan){
   if (state.partie.victoire) return state.partie.victoire;
   if (state.partie.manche < 3) return null;
@@ -863,6 +829,24 @@ function retirerResolution(joueurId){
   sauvegarder();
 }
 
+// Base de calcul de la majorité (§8 des retours de test, config.baseVote) :
+// 'capitalPresent' (défaut) compte l'abstention comme une part qui pèse
+// contre l'adoption ; 'voixExprimees' l'exclut du dénominateur. Fonction
+// partagée entre le calcul officiel (voterResolutionCourante) et la barre
+// de vote affichée à l'écran, pour qu'ils ne divergent jamais.
+function calculerVote(votants, votesParJoueurId){
+  let pour = 0, contre = 0, abstention = 0;
+  votants.forEach(j => {
+    const v = votesParJoueurId[j.id];
+    if (v === 'pour') pour += j.part;
+    else if (v === 'contre') contre += j.part;
+    else abstention += j.part;
+  });
+  const totalVotante = state.config.baseVote === 'voixExprimees' ? (pour + contre) : (pour + contre + abstention);
+  const acquise = totalVotante > 0 && (pour * 2) > totalVotante;
+  return { pour, contre, abstention, totalVotante, acquise };
+}
+
 // Vote la résolution actuellement en tête de file (résolutions votées une à la
 // fois, dans l'ordre d'inscription — jamais dans le désordre).
 // votesParJoueurId : { [joueurId]: 'pour' | 'contre' | 'abstention' }
@@ -881,13 +865,10 @@ function voterResolutionCourante(joueurId, votesParJoueurId){
   if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide.');
 
   const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
-  const totalVotante = votants.reduce((a, j) => a + j.part, 0);
-  let pour = 0;
-  votants.forEach(j => { if (votesParJoueurId[j.id] === 'pour') pour += j.part; });
+  const { pour, totalVotante, acquise } = calculerVote(votants, votesParJoueurId);
 
   empilerSnapshot('Résolution — révocation de ' + cible.prenom);
 
-  const acquise = (pour * 2) > totalVotante; // strictement > 50 % des actions votantes totales
   resolution.pour = pour;
   resolution.totalVotante = totalVotante;
   resolution.statut = acquise ? 'adoptee' : 'rejetee';
@@ -1215,12 +1196,23 @@ function afficherBanniere(){
   }
 }
 
-// Tant qu'un joueur n'est pas révélé — ou que sa révélation est encore en
-// attente d'annonce officielle (idsEnAttenteAnnonce, §5.6/§5.8) — sa tranche
-// reste bleue quel que soit son camp réel : le camembert ne doit jamais
-// laisser deviner un camp avant sa révélation prévue par les règles.
+// AFFICHAGE PUBLIC, distinct du calcul interne de victoire (§9 des retours
+// de test — voir verifierVictoireBilanMatin) : chaque tranche montre le
+// capital RÉEL du joueur (rien n'est caché dans les montants), mais tant
+// qu'un joueur n'est pas révélé — ou que sa révélation est encore en attente
+// d'annonce officielle (idsEnAttenteAnnonce, §5.6/§5.8) — sa tranche reste
+// bleue quel que soit son camp réel : le camembert ne doit jamais laisser
+// deviner un camp avant sa révélation prévue par les règles.
 // Un joueur sorti (sabotage ou révocation) a cédé la totalité de ses titres :
 // il disparaît simplement du camembert, aucun état intermédiaire (§A1/§A2).
+// Conséquence structurelle : un infiltré démasqué sort TOUJOURS du jeu au
+// même instant (voir actionSabotage / voterResolutionCourante), il n'existe
+// donc jamais de tranche rouge d'infiltré encore actif — la ligne « Meridian
+// et ses agents » (dessinerCamembert) ne montre donc que meridianPart, qui
+// progresse par à-coups à chaque sabotage/alerte/panique : c'est le
+// comportement voulu, pas un défaut (les 75 % redistribués aux associés lors
+// d'un sabotage, et les 100 % lors d'une révocation, ne sont jamais comptés
+// dans ce pourcentage public).
 function construireSegmentsCamembert(joueurs, meridianPart){
   const enAttente = (state.partie.idsEnAttenteAnnonce || []);
   const segments = joueurs
@@ -1332,6 +1324,10 @@ function pulserMeridianGainDeTerrain(){
 // sur la simple avance frame-par-frame de l'animation de transition.
 let dernierMeridianAffiche = null;
 
+// pctMeridian ci-dessous = meridianPart seul, PAS le total interne de
+// victoire (§9 des retours de test) : c'est le pourcentage officiellement
+// déclaré, celui que la Scène a le droit de montrer. Voir le commentaire de
+// construireSegmentsCamembert pour le détail de cette séparation.
 function dessinerCamembert(){
   const svg = el('camembert');
   if (!state){ svg.innerHTML = ''; dernierMeridianAffiche = null; return; }
@@ -1644,9 +1640,8 @@ function allerEcran(id, autoRedirect){
 function dashboardSuivant(){
   const etape = state.partie.etapeManche;
   if (etape === 0){
-    demarrerChrono('defi', dureeDefiSecondes(state.partie.manche));
     state.partie.phase = 'travail';
-    allerEcran('travail-chrono');
+    allerEcran('travail-annonce');
   } else if (etape === 1){
     state.partie.phase = 'conseil';
     demarrerChrono('debat', DUREE_DEBAT_SECONDES);
@@ -1794,13 +1789,13 @@ const ANNONCES_PALIER = {
 
 const PARAGRAPHES_LETTRE = [
   "Mesdames, Messieurs les membres du conseil,",
-  "le Fonds Meridian détient aujourd'hui 1 % du capital de NOVENTIS. Nous voulons en prendre le contrôle.",
-  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte prévoit une préemption — mais vos associés n'ont pas les moyens de tout racheter, et le solde nous reviendra.",
-  "Nous pouvons donc acheter librement toutes les parts qu'on nous vendra. Et nous les achèterons. Au comptant. Sans condition.",
-  "Nous avons cinq jours. À bientôt."
+  "Nous sommes un fonds d'investissement, le Fonds Meridian. Nous détenons aujourd'hui 1 % du capital de votre société NOVENTIS, et nous voulons en prendre le contrôle.",
+  "Vos statuts ne contiennent pas de clause d'agrément. Votre pacte d'associés prévoit une préemption, mais nous savons que vous n'avez pas les moyens de tout racheter — contrairement à nous.",
+  "Dès que l'occasion se présentera, nous achèterons toutes les parts mises en vente, et nous n'hésiterons pas à utiliser tous les moyens nécessaires, y compris les plus agressifs.",
+  "Sachez que vous êtes moins unis que vous ne le pensez. Parmi les membres de votre conseil, certains sont nos alliés : ils travaillent déjà pour nous. Nos agents infiltrés nous aideront à conquérir un maximum de parts du capital de NOVENTIS.",
+  "Nous y arriverons avant la fin de la semaine, c'est-à-dire d'ici cinq jours.",
+  "À bon entendeur."
 ];
-
-const TEXTE_NOTE_JURISTE = "Une précision que le conseil doit entendre. Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits.";
 
 // Ordre imposé en Console pour la séquence de nuit (§2 brief v3) : Juriste →
 // DAF → DRH. Repris ici pour le tour de reconnaissance des rôles en Manche 0.
@@ -1832,14 +1827,8 @@ function ecranM0Lettre(){
   el('zone-camembert-compact').classList.toggle('hidden', indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
   el('btn-suivant-scene').addEventListener('click', () => {
     if (!dernier){ indexParagrapheLettre++; rafraichirJeu(); }
-    else { indexParagrapheLettre = 0; allerEcran('m0-note-juriste'); }
+    else { indexParagrapheLettre = 0; allerEcran('m0-nuit-tombe'); }
   });
-}
-
-// Note du juriste (§D4 brief v3) : c'est ce texte qui pousse le conseil à
-// chasser dès la première manche.
-function ecranM0NoteJuriste(){
-  ecranNeutreAvecSuivant('Note du juriste', TEXTE_NOTE_JURISTE, () => allerEcran('m0-nuit-tombe'));
 }
 
 // « La nuit tombe » (§D1 brief v3) : transition avant chaque séquence de
@@ -1870,15 +1859,18 @@ function ecranNeutreAvecSuivant(titre, texte, onSuivant, libelleBouton, illustra
   el('btn-suivant-scene').addEventListener('click', onSuivant);
 }
 
+// Ordre imposé (§6 des retours de test) : reconnaissance mutuelle → réception
+// des réponses de la manche à venir (§D2) → réendormissement. La version
+// précédente rendormait les Infiltrés AVANT la réception des réponses.
 function ecranM0Infiltres(ouvert){
   if (ouvert){
     ecranNeutreAvecSuivant('Manche 0 — Reconnaissance des Infiltrés',
-      "Les Infiltrés ouvrent les yeux. C'est le moment de se rassembler pour préparer le plan de sabotage de la semaine.",
-      () => allerEcran('m0-infiltres-ferme'), null, 'groupe_infiltres');
+      "Les Infiltrés ouvrent les yeux. Regardez autour de vous : ce sont vos alliés.",
+      () => allerEcran('m0-reponses'), null, 'groupe_infiltres');
   } else {
     ecranNeutreAvecSuivant('Manche 0 — Reconnaissance des Infiltrés',
       "Les Infiltrés se rendorment.",
-      () => allerEcran('m0-reponses'));
+      () => allerEcran('m0-role-ouvert'));
   }
 }
 
@@ -1917,7 +1909,7 @@ function afficherM0Reponses(){
 }
 
 function afficherM0ReponsesGrille(){
-  ecranReponsesGrille(1, () => allerEcran('m0-role-ouvert'));
+  ecranReponsesGrille(1, () => allerEcran('m0-infiltres-ferme'));
 }
 
 function afficherNuitReponses(){
@@ -2003,6 +1995,7 @@ function afficherDashboard(){
   carteEcran(`
     <h2>Manche ${state.partie.manche} — Tableau de bord</h2>
     <div class="sous-titre">Dernier événement : ${dernierEvenementPublicTexte()}</div>
+    ${state.partie.manche === 1 ? `<div class="banner info" style="text-align:center;">Rappel : chaque nuit sans démasquer d'infiltré, vous cédez un peu plus de capital à Meridian.</div>` : ''}
     <div class="row" style="justify-content:center;">
       <button class="secondary" id="btn-retour-scene" ${etape === 0 ? 'disabled' : ''}>◀ Retour</button>
       <button id="btn-suivant-scene">${LIBELLES_SUIVANT_DASHBOARD[etape] || 'Suivant'}</button>
@@ -2017,6 +2010,22 @@ function afficherDashboard(){
 // Saisie en cours, non encore validée : { [defiId]: lettre }. Local et
 // éphémère (non persisté) — remis à zéro à l'entrée du chrono.
 let travailSelectionTemp = {};
+
+// Temps 0 — Annonce avant le chrono (§7 des retours de test) : consignes du
+// défi lues à voix haute avant de lancer le compte à rebours.
+function afficherTravailAnnonce(){
+  const minutes = Math.round(dureeDefiSecondes(state.partie.manche) / 60);
+  carteEcran(`
+    <h2>Manche ${state.partie.manche} — Avant le défi</h2>
+    <p class="texte-narratif">Il va falloir résoudre un défi par service. Regroupez-vous par service : on vous remet une fiche, à vous de trouver la bonne réponse, tous ensemble. Vous avez ${minutes} minutes.</p>
+    <p class="texte-narratif">Attention : certains parmi vous sont des infiltrés et connaissent déjà la bonne réponse. Ils feront tout pour vous induire en erreur — ne vous laissez pas berner.</p>
+    <button id="btn-suivant-scene">Lancer le chronomètre</button>
+  `);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    demarrerChrono('defi', dureeDefiSecondes(state.partie.manche));
+    allerEcran('travail-chrono');
+  });
+}
 
 // Temps 1 — Chronomètre seul (§C6/§E) : aucune saisie possible, l'animateur
 // avance quand l'équipe a rendu sa copie papier.
@@ -2215,7 +2224,8 @@ function afficherConseilVote(){
   carteEcran(`
     <h2>Résolution n°${idx + 1} — Révocation de ${cible.prenom}</h2>
     ${imgTag('accusation', 'illustration-small')}
-    <div class="sous-titre">Chaque actionnaire vote selon son nombre de parts. Un tap fait défiler Abstention → Pour → Contre.</div>
+    <div class="sous-titre">Chaque actionnaire vote selon son nombre de parts. Un tap fait défiler Abstention → Pour → Contre.
+      Majorité calculée sur ${state.config.baseVote === 'voixExprimees' ? 'les voix exprimées (abstentions exclues)' : 'le capital présent (abstention = compte comme non-adoption)'}.</div>
     <div class="grille-joueurs-tap" id="grille-vote"></div>
     <div class="barre-progression"><div class="fill" id="barre-vote-fill" style="width:0%;"></div><div class="seuil"></div></div>
     <div class="small" id="lbl-vote-pct">0 % pour, sur 50 % requis</div>
@@ -2231,13 +2241,8 @@ function afficherConseilVote(){
   // 300 ms au moment précis où la majorité est franchie.
   let majoriteFranchie = false;
   function majBarre(){
-    const totalVotante = votants.reduce((a, j) => a + j.part, 0);
-    let pour = 0;
-    votants.forEach(j => {
-      if (voteResolutionTemp[j.id] === 'pour') pour += getJoueur(j.id).part;
-    });
+    const { pour, totalVotante, acquise: majoriteAcquise } = calculerVote(votants, voteResolutionTemp);
     const pct = totalVotante > 0 ? Math.round((pour / totalVotante) * 100) : 0;
-    const majoriteAcquise = totalVotante > 0 && (pour * 2) > totalVotante;
     const fill = el('barre-vote-fill');
     fill.style.width = Math.min(100, pct) + '%';
     fill.classList.toggle('majorite', majoriteAcquise);
@@ -2382,8 +2387,11 @@ function avancerNuit(){
   allerEcran(id);
 }
 
-// La nuit (§C4 brief v3) : assombrissement, camembert désaturé, aucun
-// bouton visible — l'animateur avance à la barre d'espace (handlerBarreEspace).
+// La nuit (§C4 brief v3) : assombrissement, camembert désaturé, pas de
+// bouton habillé — l'animateur avance en touchant l'écran (essentiel sur
+// tablette/mobile, sans clavier) ou à la barre d'espace si un clavier est
+// disponible. BUG CORRIGÉ : la version précédente n'avançait qu'au clavier
+// et bloquait l'animateur sur tablette (§5 des retours de test).
 function afficherNuitFermeture(){
   jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerSonEntreeNuit);
   demarrerNappeNuit();
@@ -2392,15 +2400,18 @@ function afficherNuitFermeture(){
   state.partie.etapesNuitSnapshot = etapesNuitDisponibles();
   sauvegarder();
   carteEcran(`
-    <div class="ecran-nuit-sombre">
+    <div class="ecran-nuit-sombre" id="ecran-nuit-tap">
       <div class="texte-nuit">${TEXTES_NUIT_TOMBE[state.partie.manche] || 'NOVENTIS DORT'}</div>
+      <div class="indice-suite">(touchez l'écran pour continuer)</div>
     </div>
   `);
-  handlerBarreEspace = () => {
+  const avancer = () => {
     handlerBarreEspace = null;
     document.body.classList.remove('nuit-active');
     allerEcran(state.partie.etapesNuitSnapshot[0]);
   };
+  handlerBarreEspace = avancer;
+  el('ecran-nuit-tap').addEventListener('click', avancer, { once: true });
 }
 
 function afficherNuitJuriste(){
@@ -2745,7 +2756,6 @@ function renderEcranActuel(){
   if (id === 'ouverture-regles') return ecranOuvertureRegles();
   if (id === 'ouverture-scenario') return ecranOuvertureScenario();
   if (id === 'm0-lettre') return ecranM0Lettre();
-  if (id === 'm0-note-juriste') return ecranM0NoteJuriste();
   if (id === 'm0-nuit-tombe') return ecranM0NuitTombe();
   if (id === 'm0-infiltres-ouvert') return ecranM0Infiltres(true);
   if (id === 'm0-infiltres-ferme') return ecranM0Infiltres(false);
@@ -2756,6 +2766,7 @@ function renderEcranActuel(){
   if (id === 'm0-reveil') return afficherM0Reveil();
 
   if (id === 'dashboard') return afficherDashboard();
+  if (id === 'travail-annonce') return afficherTravailAnnonce();
   if (id === 'travail-chrono') return afficherTravailChrono();
   if (id === 'travail') return afficherTravail();
   if (id === 'travail-revelation') return afficherTravailRevelation();
@@ -2803,7 +2814,7 @@ function afficherMasque(){
 function remplirPanneauCorrections(){
   remplirSelect(el('corr-select-joueur'), state.joueurs, false);
   el('corr-select-role').innerHTML = CARTES.map(r => `<option value="${r}">${CARTE_LABELS[r]}</option>`).join('');
-  el('corr-select-ecran').innerHTML = ['dashboard','travail-chrono','travail','travail-revelation','travail-bilan','indice','conseil-debat','conseil-vote','conseil-resultat',
+  el('corr-select-ecran').innerHTML = ['dashboard','travail-annonce','travail-chrono','travail','travail-revelation','travail-bilan','indice','conseil-debat','conseil-vote','conseil-resultat',
     'nuit-fermeture','nuit-juriste','nuit-daf-question','nuit-drh','nuit-infiltres','nuit-reponses','nuit-reponses-grille','nuit-reveil',
     'matin-sabotage','matin-mise-en-cause','matin-carte-sabotage','matin-sortie-capital','matin-mise-a-pied','matin-communique','fin','recap'].map(id => `<option value="${id}">${id}</option>`).join('');
 }
@@ -2813,20 +2824,198 @@ function remplirPanneauCorrections(){
    ============================================================ */
 
 let joueursSetup = []; // liste de travail avant démarrage {prenom, service, part, role}
+let etapePreparation = 1;
 
-function genererLignesJoueurs(){
-  const n = parseInt(el('input-nb-joueurs').value, 10) || 15;
-  joueursSetup = [];
-  for (let i = 0; i < n; i++){
-    joueursSetup.push({ prenom: '', service: SERVICES[i % SERVICES.length], part: 0, carte: 'associe' });
+// Assistant de préparation en 4 étapes, pas à pas (§1 des retours de test) :
+// nombre de joueurs → prénoms → rôles → parts sociales. Remplace l'ancien
+// écran "tout visible en même temps". Monté/démonté dynamiquement (§2) —
+// voir montrerPanneauPreparation / demonterPanneauPreparation.
+function htmlPanneauPreparation(){
+  const optionsNb = Array.from({ length: 11 }, (_, i) => 8 + i)
+    .map(n => `<option value="${n}">${n}</option>`).join('');
+  return `
+    <div class="card" id="panneau-preparation">
+      <h2>Préparer la partie</h2>
+      <div class="small" id="lbl-etape-prep" style="margin-bottom:10px;">Étape 1 / 4</div>
+
+      <div id="prep-etape-1">
+        <h3>Combien de joueurs ?</h3>
+        <div class="row">
+          <label>Nombre de joueurs
+            <select id="input-nb-joueurs">${optionsNb}</select>
+          </label>
+        </div>
+        <div class="row" style="margin-top:14px;">
+          <button id="btn-prep-suivant-1">Suivant : ajouter les joueurs</button>
+        </div>
+      </div>
+
+      <div id="prep-etape-2" class="hidden">
+        <h3>Ajouter les joueurs</h3>
+        <div class="row">
+          <button class="secondary" id="btn-noms-fictifs">Remplir avec des prénoms fictifs</button>
+        </div>
+        <div class="small">Infiltrés à désigner à l'étape suivante : ⌊N/3⌋ = <b id="lbl-nb-infiltres-reco">5</b>, répartis équitablement entre les 3 services.</div>
+        <div id="joueurs-liste" class="join-input-list" style="margin-top:10px;"></div>
+        <div class="row" style="margin-top:14px;">
+          <button class="secondary" id="btn-prep-precedent-2">◀ Précédent</button>
+          <button id="btn-prep-suivant-2">Suivant : attribuer les rôles</button>
+        </div>
+      </div>
+
+      <div id="prep-etape-3" class="hidden">
+        <h3>Attribuer les rôles — Pour <span id="lbl-nb-joueurs-phrase">15</span> joueurs, désignez <span id="lbl-nb-infiltres-phrase">5</span> infiltrés</h3>
+        <div class="small" id="lbl-compteur-infiltres">Infiltrés désignés : 0 / 5</div>
+        <table id="table-roles" style="margin-top:8px;">
+          <thead><tr><th>Prénom</th><th>Rôle</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div id="setup-problemes" class="small" style="margin-top:8px;"></div>
+        <div class="row" style="margin-top:14px;">
+          <button class="secondary" id="btn-prep-precedent-3">◀ Précédent</button>
+          <button id="btn-prep-suivant-3">Suivant : tirer les parts</button>
+        </div>
+      </div>
+
+      <div id="prep-etape-4" class="hidden">
+        <h3>Parts sociales</h3>
+        <div class="row">
+          <button id="btn-tirer-parts">Tirer les parts au sort</button>
+          <button class="secondary" id="btn-retirer-parts">Retirer au sort</button>
+        </div>
+        <div class="small">Tirage 0,65×–1,35× la part moyenne, normalisé à 99,000 % (Meridian démarre à 1,000 %). Aucune édition manuelle : l'invariant est garanti dès le tirage (§4.1 du cahier des charges).</div>
+        <table id="table-parts" style="margin-top:10px;">
+          <thead><tr><th>Prénom</th><th>Service</th><th>Part (%)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="small" id="lbl-somme-parts"></div>
+        <div class="row" style="margin-top:14px;">
+          <button class="secondary" id="btn-prep-precedent-4">◀ Précédent</button>
+          <button class="ok" id="btn-demarrer" disabled>Lancer la partie</button>
+        </div>
+      </div>
+
+      <hr style="border-color:var(--border);margin:20px 0;">
+      <details id="panneau-outils-dev">
+        <summary>Outils de test (développeur)</summary>
+        <div class="row" style="margin-top:10px;">
+          <button id="btn-run-tests">Lancer la recette T1 – T6</button>
+          <button class="secondary" id="btn-run-partie-fictive">Simuler une partie fictive complète (5 manches)</button>
+        </div>
+        <div id="resultats-tests" style="margin-top:12px;"></div>
+        <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
+      </details>
+    </div>
+  `;
+}
+
+function allerEtapePrep(n){
+  etapePreparation = n;
+  for (let i = 1; i <= 4; i++){
+    const div = el('prep-etape-' + i);
+    if (div) div.classList.toggle('hidden', i !== n);
   }
+  const lbl = el('lbl-etape-prep');
+  if (lbl) lbl.textContent = `Étape ${n} / 4`;
+}
+
+function mettreAJourLabelsNbJoueurs(n){
   el('lbl-nb-infiltres-reco').textContent = Math.floor(n / 3);
   el('lbl-nb-joueurs-phrase').textContent = n;
   el('lbl-nb-infiltres-phrase').textContent = Math.floor(n / 3);
+}
+
+// Changement du nombre de joueurs (§1 des retours de test) : préserve les
+// données déjà saisies. Réduction → troncature en fin de liste avec
+// confirmation si des données seraient perdues. Augmentation → nouveaux
+// champs vides ajoutés à la fin.
+function appliquerNombreJoueurs(n){
+  const actuel = joueursSetup.length;
+  if (n === actuel) return true;
+  if (n < actuel){
+    const perte = joueursSetup.slice(n).some(j => (j.prenom && j.prenom.trim()) || j.carte !== 'associe' || j.part !== 0);
+    if (perte && !confirm(`Réduire à ${n} joueurs supprimera les données déjà saisies (prénom, rôle, parts) pour les ${actuel - n} dernier(s) joueur(s) de la liste. Continuer ?`)){
+      return false;
+    }
+    joueursSetup = joueursSetup.slice(0, n);
+  } else {
+    for (let i = actuel; i < n; i++){
+      joueursSetup.push({ prenom: '', service: SERVICES[i % SERVICES.length], part: 0, carte: 'associe' });
+    }
+  }
+  return true;
+}
+
+function attacherEcouteursPreparation(){
+  el('btn-prep-suivant-1').addEventListener('click', () => {
+    const n = parseInt(el('input-nb-joueurs').value, 10);
+    if (!appliquerNombreJoueurs(n)) return;
+    rafraichirListeJoueurs();
+    rafraichirTableParts();
+    rafraichirTableRoles();
+    mettreAJourLabelsNbJoueurs(n);
+    verifierCoherenceSetup();
+    allerEtapePrep(2);
+  });
+  el('btn-noms-fictifs').addEventListener('click', () => {
+    const noms = [...PRENOMS_FICTIFS].sort(() => Math.random() - 0.5);
+    joueursSetup.forEach((j, i) => { j.prenom = noms[i % noms.length]; });
+    rafraichirListeJoueurs();
+  });
+  el('btn-prep-precedent-2').addEventListener('click', () => allerEtapePrep(1));
+  el('btn-prep-suivant-2').addEventListener('click', () => {
+    rafraichirTableRoles();
+    verifierCoherenceSetup();
+    allerEtapePrep(3);
+  });
+  el('btn-prep-precedent-3').addEventListener('click', () => allerEtapePrep(2));
+  el('btn-prep-suivant-3').addEventListener('click', () => {
+    rafraichirTableParts();
+    allerEtapePrep(4);
+  });
+  el('btn-prep-precedent-4').addEventListener('click', () => allerEtapePrep(3));
+  el('btn-tirer-parts').addEventListener('click', () => {
+    if (joueursSetup.length < 8 || joueursSetup.length > 18){
+      afficherErreur('Le nombre de joueurs doit être compris entre 8 et 18.'); return;
+    }
+    const parts = tirerPartsInitiales(joueursSetup.length);
+    joueursSetup.forEach((j, i) => { j.part = parts[i]; });
+    rafraichirTableParts();
+    verifierCoherenceSetup();
+  });
+  el('btn-retirer-parts').addEventListener('click', () => el('btn-tirer-parts').click());
+  el('btn-demarrer').addEventListener('click', demarrerPartie);
+  el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
+  el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
+}
+
+// Montage du panneau (§2 des retours de test) : construit le DOM du panneau
+// de préparation. Appelé au chargement initial et depuis « Modifier la
+// configuration » (dépannage). joueursSetup n'est réinitialisé que s'il est
+// vide — sinon on reprend les données existantes (cas du dépannage, où
+// l'appelant l'a préalablement rempli depuis la partie en cours).
+function montrerPanneauPreparation(){
+  if (joueursSetup.length === 0){
+    appliquerNombreJoueurs(15);
+  }
+  el('zone-panneau-preparation').innerHTML = htmlPanneauPreparation();
+  el('input-nb-joueurs').value = String(joueursSetup.length);
   rafraichirListeJoueurs();
   rafraichirTableParts();
   rafraichirTableRoles();
+  mettreAJourLabelsNbJoueurs(joueursSetup.length);
   verifierCoherenceSetup();
+  allerEtapePrep(1);
+  attacherEcouteursPreparation();
+}
+
+// Démontage complet du DOM (§2 des retours de test) : pas un simple
+// display:none — le panneau de préparation n'existe plus du tout une fois
+// la partie lancée, il ne peut donc pas réapparaître par un défilement ou
+// un raccourci accidentel de l'animateur.
+function demonterPanneauPreparation(){
+  const zone = el('zone-panneau-preparation');
+  if (zone) zone.innerHTML = '';
 }
 
 function rafraichirListeJoueurs(){
@@ -2928,6 +3117,7 @@ function demarrerPartie(){
   ajouterJournal('debut_partie', `La partie démarre avec ${state.joueurs.length} joueurs. Meridian détient 1,0 % du capital.`);
   verifierInvariant();
   sauvegarder();
+  demonterPanneauPreparation();
   rafraichirJeu();
 }
 
@@ -2938,14 +3128,14 @@ function demarrerPartie(){
 function rafraichirJeu(){
   if (!state) return;
   const enPrep = !state.partie.enCours;
-  el('panneau-outils').open = enPrep;
+  el('btn-modifier-config').classList.toggle('hidden', enPrep);
   el('zone-bandeau-joueurs').classList.toggle('hidden', enPrep);
   afficherBanniere();
   afficherMasque();
 
   if (enPrep){
     el('zone-camembert-compact').classList.add('hidden');
-    el('zone-scene').innerHTML = '<div class="ecran-card"><h2>Préparation en cours</h2><div class="sous-titre">Ouvrez le panneau « Outils de recette » ci-dessous pour composer la partie, puis « Lancer la partie ».</div></div>';
+    el('zone-scene').innerHTML = '<div class="ecran-card"><h2>Préparation en cours</h2><div class="sous-titre">Composez la partie ci-dessous, puis « Lancer la partie ».</div></div>';
     return;
   }
 
@@ -3406,28 +3596,16 @@ function afficherResultatPartieFictive(res){
    ============================================================ */
 
 function initEvenements(){
-  // --- Préparation ---
-  el('btn-generer-joueurs').addEventListener('click', genererLignesJoueurs);
-  el('btn-noms-fictifs').addEventListener('click', () => {
-    const noms = [...PRENOMS_FICTIFS].sort(() => Math.random() - 0.5);
-    joueursSetup.forEach((j, i) => { j.prenom = noms[i % noms.length]; });
-    rafraichirListeJoueurs();
-  });
-  el('btn-tirer-parts').addEventListener('click', () => {
-    if (joueursSetup.length < 8 || joueursSetup.length > 18){
-      afficherErreur('Le nombre de joueurs doit être compris entre 8 et 18.'); return;
-    }
-    const parts = tirerPartsInitiales(joueursSetup.length);
-    joueursSetup.forEach((j, i) => { j.part = parts[i]; });
-    rafraichirTableParts();
-    verifierCoherenceSetup();
-  });
-  el('btn-retirer-parts').addEventListener('click', () => el('btn-tirer-parts').click());
-  el('btn-demarrer').addEventListener('click', demarrerPartie);
-
+  // --- Préparation --- (voir attacherEcouteursPreparation pour les
+  // écouteurs du panneau lui-même, réattachés à chaque montage §2)
   el('btn-resume').addEventListener('click', () => {
     const saved = chargerDepuisStorage();
-    if (saved){ state = saved; el('resume-card').classList.add('hidden'); rafraichirJeu(); }
+    if (saved){
+      state = saved;
+      el('resume-card').classList.add('hidden');
+      demonterPanneauPreparation();
+      rafraichirJeu();
+    }
   });
   el('btn-discard').addEventListener('click', () => {
     localStorage.removeItem(STORAGE_KEY);
@@ -3436,6 +3614,18 @@ function initEvenements(){
 
   // --- Contrôles persistants (§6 CDC v2) ---
   el('btn-annuler').addEventListener('click', () => { annulerDerniereAction(); rafraichirJeu(); });
+  // Dépannage (§2 des retours de test) : retour explicite et confirmé à la
+  // préparation, jamais un simple défilement ou raccourci accidentel — le
+  // panneau était démonté du DOM, il faut le remonter volontairement.
+  el('btn-modifier-config').addEventListener('click', () => {
+    if (!state || !state.partie.enCours) return;
+    if (!confirm('Modifier la configuration interrompt la partie en cours et revient à la préparation. Continuer ?')) return;
+    joueursSetup = state.joueurs.map(j => ({ prenom: j.prenom, service: j.service, part: j.part, carte: j.carte }));
+    state.partie.enCours = false;
+    sauvegarder();
+    montrerPanneauPreparation();
+    rafraichirJeu();
+  });
   el('btn-masquer').addEventListener('click', basculerMasque);
   el('btn-demasquer').addEventListener('click', basculerMasque);
   el('btn-sons').addEventListener('click', basculerSons);
@@ -3475,10 +3665,6 @@ function initEvenements(){
     if (!id) return;
     try { assignerPresident(id); rafraichirJeu(); } catch(e){ afficherErreur(e.message); }
   });
-
-  // --- Outils de recette (§8 CDC v2) ---
-  el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
-  el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
 }
 
 // Rafraîchissement du chrono affiché (simple repère visuel, §5.4/§5.5) :
@@ -3517,7 +3703,7 @@ function init(){
   }
   el('btn-sons').textContent = sonsPref ? '🔊 Sons' : '🔇 Sons';
   initEvenements();
-  genererLignesJoueurs();
+  montrerPanneauPreparation();
   const saved = chargerDepuisStorage();
   if (saved){
     el('resume-card').classList.remove('hidden');
