@@ -99,6 +99,8 @@ Un rappel très court de cette idée reste affiché à l'écran au tableau de bo
 
 Depuis la version 3.0, il n'existe plus qu'un capital total émis (toujours 100 %), composé des parts des joueurs actifs et de la tranche Meridian — un joueur sorti (sabotage ou révocation) a cédé la totalité de ses titres, il ne compte donc plus nulle part. Les actions votantes sont exactement les parts des joueurs actifs : plus de titres sous séquestre, plus de procuration à suivre. Conséquence directe : chaque sabotage rapproche mécaniquement les infiltrés des 50 % (un quart du joueur sorti va à Meridian) ; Meridian, qui ne vote pas, ne pèse toujours dans aucune AG.
 
+La ligne « Meridian et ses agents » sous le camembert affiche ce total réel en continu — tous les infiltrés encore actifs, démasqués ou non, plus Meridian — et non plus seulement le capital officiellement révélé : toute élimination révèle déjà la carte visée, ce total ne trahit donc l'identité de personne. Le bandeau des joueurs affiche par ailleurs la part individuelle de chacun, à côté de son prénom.
+
 ---
 
 ## Déroulement d'une partie

@@ -686,13 +686,12 @@ function verifierVictoireHonneteAnticipee(){
 // À appeler à chaque bilan du matin (nuits 1 à 5). Aucune victoire n'est
 // vérifiée avant le bilan du matin de la manche 3 (plancher §A1).
 //
-// CALCUL INTERNE, JAMAIS AFFICHÉ TEL QUEL (§9 des retours de test) : la
-// somme ci-dessous inclut TOUS les infiltrés actifs, démasqués ou non — à ne
-// jamais confondre avec le pourcentage public du camembert (voir
-// construireSegmentsCamembert / dessinerCamembert), qui lui ne montre que le
-// capital officiellement révélé et progresse par à-coups. Ne pas modifier ce
-// calcul sans repasser par la simulation d'équilibrage (T8-T11) : le seuil
-// de victoire en dépend.
+// La somme ci-dessous (tous les infiltrés actifs, démasqués ou non, +
+// Meridian) est désormais la MÊME base que celle affichée en continu sous
+// le camembert (dessinerCamembert, §9 addendum v4) — plus de distinction
+// interne/public sur ce total, seul le plancher de manche < 3 reste propre
+// à la vérification de victoire. Ne pas modifier ce calcul sans repasser
+// par la simulation d'équilibrage (T8-T11) : le seuil de victoire en dépend.
 function verifierVictoireBilanMatin(dernierBilan){
   if (state.partie.victoire) return state.partie.victoire;
   if (state.partie.manche < 3) return null;
@@ -1196,23 +1195,19 @@ function afficherBanniere(){
   }
 }
 
-// AFFICHAGE PUBLIC, distinct du calcul interne de victoire (§9 des retours
-// de test — voir verifierVictoireBilanMatin) : chaque tranche montre le
-// capital RÉEL du joueur (rien n'est caché dans les montants), mais tant
-// qu'un joueur n'est pas révélé — ou que sa révélation est encore en attente
-// d'annonce officielle (idsEnAttenteAnnonce, §5.6/§5.8) — sa tranche reste
-// bleue quel que soit son camp réel : le camembert ne doit jamais laisser
-// deviner un camp avant sa révélation prévue par les règles.
+// AFFICHAGE PUBLIC — chaque tranche montre le capital RÉEL du joueur (rien
+// n'est caché dans les montants ; voir aussi la part individuelle affichée
+// sur le bandeau des joueurs, afficherBandeauJoueurs). Tant qu'un joueur
+// n'est pas révélé — ou que sa révélation est encore en attente d'annonce
+// officielle (idsEnAttenteAnnonce, §5.6/§5.8) — sa tranche reste bleue quel
+// que soit son camp réel : le camembert ne doit jamais laisser DEVINER un
+// camp avant sa révélation prévue par les règles ; en revanche la ligne
+// « Meridian et ses agents » sous le camembert (dessinerCamembert) affiche
+// bien le TOTAL réel du camp adverse en continu (§9 addendum v4, décision
+// explicite) — cela ne trahit l'identité de personne puisque toute
+// élimination révèle déjà la carte visée.
 // Un joueur sorti (sabotage ou révocation) a cédé la totalité de ses titres :
 // il disparaît simplement du camembert, aucun état intermédiaire (§A1/§A2).
-// Conséquence structurelle : un infiltré démasqué sort TOUJOURS du jeu au
-// même instant (voir actionSabotage / voterResolutionCourante), il n'existe
-// donc jamais de tranche rouge d'infiltré encore actif — la ligne « Meridian
-// et ses agents » (dessinerCamembert) ne montre donc que meridianPart, qui
-// progresse par à-coups à chaque sabotage/alerte/panique : c'est le
-// comportement voulu, pas un défaut (les 75 % redistribués aux associés lors
-// d'un sabotage, et les 100 % lors d'une révocation, ne sont jamais comptés
-// dans ce pourcentage public).
 function construireSegmentsCamembert(joueurs, meridianPart){
   const enAttente = (state.partie.idsEnAttenteAnnonce || []);
   const segments = joueurs
@@ -1324,10 +1319,14 @@ function pulserMeridianGainDeTerrain(){
 // sur la simple avance frame-par-frame de l'animation de transition.
 let dernierMeridianAffiche = null;
 
-// pctMeridian ci-dessous = meridianPart seul, PAS le total interne de
-// victoire (§9 des retours de test) : c'est le pourcentage officiellement
-// déclaré, celui que la Scène a le droit de montrer. Voir le commentaire de
-// construireSegmentsCamembert pour le détail de cette séparation.
+// Décision explicite §9 addendum v4 : PLUS de distinction calcul interne /
+// affichage public sur ce point. Toute élimination (sabotage ou révocation)
+// révèle déjà la carte du joueur concerné, donc afficher le total réel du
+// camp adverse ne trahit l'identité de personne — ce n'était pas un
+// problème de confidentialité. « Meridian et ses agents » compte donc
+// maintenant TOUS les infiltrés actifs (démasqués ou non) + meridianPart, en
+// continu — le même total que verifierVictoireBilanMatin, sans le plancher
+// de manche.
 function dessinerCamembert(){
   const svg = el('camembert');
   if (!state){ svg.innerHTML = ''; dernierMeridianAffiche = null; return; }
@@ -1336,11 +1335,14 @@ function dessinerCamembert(){
   const meridianPart = gele ? gele.meridianPart : state.meridian.part;
   const segments = construireSegmentsCamembert(joueurs, meridianPart);
   dessinerCamembertSVG(svg, segments);
-  if (dernierMeridianAffiche != null && meridianPart > dernierMeridianAffiche){
+  const totalCampAdverse = joueurs
+    .filter(j => j.statutCapital === 'actif' && campDe(j) === 'adverse')
+    .reduce((a, j) => a + j.part, 0) + meridianPart;
+  if (dernierMeridianAffiche != null && totalCampAdverse > dernierMeridianAffiche){
     pulserMeridianGainDeTerrain();
   }
-  dernierMeridianAffiche = meridianPart;
-  const pctMeridian = meridianPart / 1000;
+  dernierMeridianAffiche = totalCampAdverse;
+  const pctMeridian = totalCampAdverse / 1000;
   const lblLigne = el('lbl-ligne-meridian');
   const fillLigne = el('fill-ligne-meridian');
   if (lblLigne) lblLigne.textContent = `Meridian et ses agents : ${pctMeridian.toFixed(1).replace('.', ',')} %`;
@@ -1355,6 +1357,10 @@ function libelleStatut(j){
 // Bandeau « Joueurs » persistant (§2.1) : un bouton par joueur, grisé + icône
 // si sorti. Purement informatif — les grilles de sélection propres à chaque
 // écran (sabotage, vote, débat) sont rendues séparément dans la scène.
+// Part individuelle affichée à côté du prénom (§9 addendum v4) : réaliste
+// (société non cotée, les mouvements de titres se savent) et ne trahit
+// l'identité de personne — toute élimination révèle déjà la carte visée.
+// Réutilise le style existant du bandeau, aucun nouveau bloc.
 function afficherBandeauJoueurs(){
   const zone = el('bandeau-joueurs');
   zone.innerHTML = state.joueurs.map(j => {
@@ -1362,7 +1368,8 @@ function afficherBandeauJoueurs(){
     const sorti = j.statutCapital === 'sorti';
     const icone = sorti ? '✕ ' : '';
     const motifClasse = sorti ? ' sorti-' + j.motifSortie : '';
-    return `<span class="joueur-pill ${j.statutCapital}${motifClasse}">${president}${icone}${j.prenom}</span>`;
+    const part = sorti ? '' : ` · ${formatPct(j.part)}`;
+    return `<span class="joueur-pill ${j.statutCapital}${motifClasse}">${president}${icone}${j.prenom}${part}</span>`;
   }).join('');
 }
 
