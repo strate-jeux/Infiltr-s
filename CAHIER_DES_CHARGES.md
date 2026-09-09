@@ -113,7 +113,7 @@ Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme
 - Bilan des 3 défis : 3 réussis → **Indice**, affiché immédiatement en plein écran, avant le vote de la même manche ; 2/1 → rien ; 1/2 → **Alerte** (4 000 points, constante configurable) ; 0/3 → **Panique** (8 000 points, constante configurable).
 - Transfert vers Meridian appliqué et annoncé au Bilan du matin, avec animation du camembert : chaque joueur de l'assiette (actifs + Juriste saboté) cède part_i × montant ÷ somme(assiette), au plus fort reste.
 - **Vérification de palier** (voir §4.5) effectuée immédiatement après cette animation, avant de passer à l'étape suivante du Bilan du matin.
-- Indices proposés à l'animateur (il en choisit un), inchangé par rapport à la v1.
+- Indices proposés à l'animateur (il en choisit un) : deux formulations qualitatives par service (nombre d'infiltrés dans un service désigné, service où les infiltrés sont majoritaires) — jamais de chiffre de capital, déjà public en continu sous le camembert (v5.0).
 
 ### 4.5 Paliers et vérification de la victoire
 
@@ -152,7 +152,7 @@ Pas de saisie du Président à cette étape (voir §5.4).
 
 ### 5.3 Tableau de bord (écran par défaut)
 
-Camembert permanent + dernier événement en rappel. Bandeau Joueurs en bas (statut visuel). Badge Président si désigné. Un seul bouton **« Suivant »** qui enchaîne automatiquement la séquence programmée de la manche. Un « ◀ Retour » discret à côté, pour rattraper un clic en trop.
+Camembert permanent. Bandeau Joueurs en bas (statut visuel, part individuelle par joueur). Badge Président si désigné. Un seul bouton **« Suivant »** qui enchaîne automatiquement la séquence programmée de la manche. Un « ◀ Retour » discret à côté, pour rattraper un clic en trop. (v5.0 : plus de ligne « Dernier événement » ni de rappel textuel — l'écran reste sobre, le camembert et le bandeau des joueurs portent déjà toute l'information publique.)
 
 ### 5.4 Phase de travail
 

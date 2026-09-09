@@ -93,7 +93,7 @@ Cette note n'est plus projetée à l'écran en Manche 0 (trop dense pour un temp
 
 *« Une précision que le conseil doit entendre. Chaque administrateur qui tombe vend ses parts, et Meridian en récupère une fraction à chaque fois. Notre droit de préemption ne couvre pas le solde, et rien dans nos statuts ne nous permet de refuser un acheteur. Ce n'est pas illégal, et rien ne l'arrêtera. Tant que vous n'aurez démasqué personne, vous leur cédez du capital toutes les nuits. »*
 
-Un rappel très court de cette idée reste affiché à l'écran au tableau de bord de la Manche 1 : *« Rappel : chaque nuit sans démasquer d'infiltré, vous cédez un peu plus de capital à Meridian. »*
+Le rappel court qui accompagnait cette note au tableau de bord de la Manche 1 a été retiré (v5.0) : il alourdissait l'écran et laissait croire, à tort, que le démasquage se produit la nuit — alors qu'il a toujours lieu de jour (sabotage révélé ou révocation en AG). Le contenu complet ci-dessus, dans ce livret, suffit.
 
 ### Une seule base de calcul
 
@@ -122,7 +122,7 @@ Hors comptage des 5 manches ; pose le décor :
 
 | Bilan des 3 défis | Conséquence |
 | --- | --- |
-| 3 réussis | **Indice** : une information vraie est révélée à tous (ex. : nombre d'infiltrés au sein d'un service désigné, fourchette du capital total détenu par le camp infiltré…). |
+| 3 réussis | **Indice** : une information qualitative vraie est révélée à tous (ex. : nombre d'infiltrés au sein d'un service désigné, service où les infiltrés sont majoritaires…) — jamais un chiffre de capital, déjà public en continu sous le camembert (v5.0). |
 | 2 réussis / 1 échoué | Statu quo — l'entreprise tient bon. |
 | 1 réussi / 2 échoués | **Alerte** : 4 points de capital passent au Fonds Meridian, prélevés au prorata sur les parts de tous les associés non gelés. |
 | 0 réussi / 3 échoués | **Panique** : 8 points de capital passent au Fonds Meridian, même mécanique. |
@@ -132,7 +132,7 @@ Le prélèvement au prorata est uniforme : personne n'est désigné, personne n'
 **Étape 2 — Conseil & Assemblée générale (vote de révocation).**
 
 - **a) Débat (Conseil, 5 minutes).** Assis en cercle, les administrateurs s'accusent librement. Le Président retient, au fil du débat, jusqu'à **3 noms** qui seront soumis au vote — sans qu'un second appui formel soit nécessaire.
-- **b) Vote (AG — pondéré, résolution par résolution).** Chaque nom retenu devient une résolution nommée (« révocation de [Nom] »), votée l'une après l'autre, dans l'ordre où elle a été retenue. Chaque associé vote pour, contre ou s'abstient, pondéré par ses actions votantes (s'abstenir compte comme voter contre). Une résolution est adoptée si le total « Pour » dépasse strictement 50 % des actions votantes totales. Un rejet ne bloque rien : on passe à la résolution suivante. **Jusqu'à 2 résolutions peuvent être adoptées par manche** — un rejet ne consomme pas ce plafond ; dès que la 2ᵉ est adoptée, les résolutions suivantes de la manche ne sont pas votées. Le plafond est remis à zéro à la manche suivante.
+- **b) Vote (AG — pondéré, résolution par résolution).** Chaque nom retenu devient une résolution nommée (« révocation de [Nom] »), votée l'une après l'autre, dans l'ordre où elle a été retenue. Chaque associé vote pour, contre ou s'abstient, pondéré par ses actions votantes. **L'abstention est neutre** (version 5.0) : la majorité se calcule sur les seules voix exprimées (pour + contre), l'abstention est exclue du dénominateur — elle ne compte plus comme un vote contre. Une résolution est adoptée si le total « Pour » dépasse strictement 50 % des voix exprimées. Un rejet ne bloque rien : on passe à la résolution suivante. **Le nombre de résolutions adoptées par manche est plafonné selon l'effectif** (version 5.0) : jusqu'à 3 si la partie compte plus de 15 joueurs, jusqu'à 2 sinon — un rejet ne consomme pas ce plafond ; dès qu'il est atteint, les résolutions suivantes de la manche ne sont pas votées. Le plafond est remis à zéro à la manche suivante.
 
 **Conséquence de la révocation :** le joueur révèle sa carte, perd son mandat, et la clause de sortie forcée du pacte s'applique immédiatement (bad leaver, prix fixe) : cession forcée de la totalité de ses parts, rachetées à 100 % au prorata par tous les associés restants. Meridian ne participe pas à ce rachat : le pacte est précisément conçu pour garder le capital dans le cercle des associés. Si le révoqué est le Président, il désigne son successeur immédiatement.
 
