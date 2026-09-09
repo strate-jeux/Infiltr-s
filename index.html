@@ -469,7 +469,7 @@ const CARTES = ['associe', 'drh', 'daf', 'juriste', 'infiltre'];
 const CARTES_UNIQUES = ['drh', 'daf', 'juriste']; // 1 seul titulaire possible chacune
 const CARTE_LABELS = {
   associe: 'Associé honnête', drh: 'DRH',
-  daf: 'DAF / Contrôleur de gestion', juriste: 'Juriste', infiltre: 'Infiltré'
+  daf: 'DAF', juriste: 'Juriste', infiltre: 'Infiltré'
 };
 const PRENOMS_FICTIFS = ['Alice','Baptiste','Camille','Diane','Émile','Farah','Gabin','Hana',
   'Idris','Julia','Karim','Léa','Malo','Nora','Otis','Priya','Quentin','Rania','Sacha','Théo'];
@@ -1048,7 +1048,7 @@ function definirProtectionJuriste(cibleId){
   sauvegarder();
 }
 
-// DAF / Contrôleur de gestion : droit à l'information, chaque nuit, découvre
+// DAF : droit à l'information, chaque nuit, découvre
 // en secret la carte exacte d'un joueur (lui seul en profite, via la
 // Console — jamais révélé publiquement, le joueur ciblé n'est pas marqué
 // "révélé").
@@ -2872,6 +2872,9 @@ function htmlPanneauPreparation(){
 
       <div id="prep-etape-3" class="hidden">
         <h3>Attribuer les rôles — Pour <span id="lbl-nb-joueurs-phrase">15</span> joueurs, désignez <span id="lbl-nb-infiltres-phrase">5</span> infiltrés</h3>
+        <div class="row">
+          <button id="btn-roles-hasard">Attribuer les rôles au hasard</button>
+        </div>
         <div class="small" id="lbl-compteur-infiltres">Infiltrés désignés : 0 / 5</div>
         <table id="table-roles" style="margin-top:8px;">
           <thead><tr><th>Prénom</th><th>Rôle</th></tr></thead>
@@ -2880,7 +2883,7 @@ function htmlPanneauPreparation(){
         <div id="setup-problemes" class="small" style="margin-top:8px;"></div>
         <div class="row" style="margin-top:14px;">
           <button class="secondary" id="btn-prep-precedent-3">◀ Précédent</button>
-          <button id="btn-prep-suivant-3">Suivant : tirer les parts</button>
+          <button id="btn-prep-suivant-3" disabled>Suivant : tirer les parts</button>
         </div>
       </div>
 
@@ -2888,7 +2891,6 @@ function htmlPanneauPreparation(){
         <h3>Parts sociales</h3>
         <div class="row">
           <button id="btn-tirer-parts">Tirer les parts au sort</button>
-          <button class="secondary" id="btn-retirer-parts">Retirer au sort</button>
         </div>
         <div class="small">Tirage 0,65×–1,35× la part moyenne, normalisé à 99,000 % (Meridian démarre à 1,000 %). Aucune édition manuelle : l'invariant est garanti dès le tirage (§4.1 du cahier des charges).</div>
         <table id="table-parts" style="margin-top:10px;">
@@ -2976,6 +2978,11 @@ function attacherEcouteursPreparation(){
     allerEtapePrep(3);
   });
   el('btn-prep-precedent-3').addEventListener('click', () => allerEtapePrep(2));
+  el('btn-roles-hasard').addEventListener('click', () => {
+    attribuerRolesAuHasard();
+    rafraichirTableRoles();
+    verifierRolesSetup();
+  });
   el('btn-prep-suivant-3').addEventListener('click', () => {
     rafraichirTableParts();
     allerEtapePrep(4);
@@ -2990,7 +2997,6 @@ function attacherEcouteursPreparation(){
     rafraichirTableParts();
     verifierCoherenceSetup();
   });
-  el('btn-retirer-parts').addEventListener('click', () => el('btn-tirer-parts').click());
   el('btn-demarrer').addEventListener('click', demarrerPartie);
   el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
   el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
@@ -3052,6 +3058,40 @@ function rafraichirTableParts(){
   el('lbl-somme-parts').textContent = `Somme des parts joueurs : ${(somme/1000).toFixed(1)} % + Meridian 1,0 % = ${((somme+1000)/1000).toFixed(1)} %`;
 }
 
+// Attribution des rôles au hasard (retour de test, symétrique au tirage des
+// parts) : les 3 cartes à pouvoir (DRH, DAF, Juriste) sont distribuées à 3
+// joueurs distincts tirés au hasard, puis les infiltrés (⌊N/3⌋) sont piochés
+// parmi les joueurs restants, répartis le plus équitablement possible entre
+// les 3 services (indication déjà affichée à l'étape précédente). Le reste
+// devient associé honnête.
+function attribuerRolesAuHasard(){
+  joueursSetup.forEach(j => { j.carte = 'associe'; });
+  const indices = joueursSetup.map((_, i) => i).sort(() => Math.random() - 0.5);
+  CARTES_UNIQUES.forEach(role => {
+    const idx = indices.shift();
+    if (idx !== undefined) joueursSetup[idx].carte = role;
+  });
+
+  const reco = Math.floor(joueursSetup.length / 3);
+  const parService = {};
+  SERVICES.forEach(s => { parService[s] = []; });
+  indices.forEach(idx => { parService[joueursSetup[idx].service].push(idx); });
+
+  const infiltresChoisis = [];
+  let progresse = true;
+  while (infiltresChoisis.length < reco && progresse){
+    progresse = false;
+    for (const s of SERVICES){
+      if (infiltresChoisis.length >= reco) break;
+      if (parService[s].length){
+        infiltresChoisis.push(parService[s].shift());
+        progresse = true;
+      }
+    }
+  }
+  infiltresChoisis.forEach(idx => { joueursSetup[idx].carte = 'infiltre'; });
+}
+
 function rafraichirTableRoles(){
   const tbody = el('table-roles').querySelector('tbody');
   tbody.innerHTML = '';
@@ -3075,7 +3115,11 @@ function rafraichirTableRoles(){
 // filtrage des options, pour rester lisible dans la console technique.
 // Les 3 cartes à pouvoir sont structurellement toujours honnêtes : un joueur
 // ne peut porter qu'une seule carte à la fois (§2 brief v3).
-function verifierCoherenceSetup(){
+// Isolé de verifierCoherenceSetup pour pouvoir bloquer la seule étape 3
+// (rôles) sans attendre le tirage des parts de l'étape 4 (retour de test :
+// bouton « Lancer la partie » bloqué sans explication quand le compte
+// d'infiltrés était faux — l'animateur ne le découvrait qu'à l'étape 4).
+function verifierRolesSetup(){
   const problemes = [];
   CARTES_UNIQUES.forEach(r => {
     const n = joueursSetup.filter(j => j.carte === r).length;
@@ -3084,17 +3128,36 @@ function verifierCoherenceSetup(){
   const nbInfiltres = joueursSetup.filter(j => j.carte === 'infiltre').length;
   const reco = Math.floor(joueursSetup.length / 3);
   const compteurOk = joueursSetup.length > 0 && nbInfiltres === reco;
-  el('lbl-compteur-infiltres').textContent = `Infiltrés désignés : ${nbInfiltres} / ${reco}`;
+  const lblCompteur = el('lbl-compteur-infiltres');
+  if (lblCompteur) lblCompteur.textContent = `Infiltrés désignés : ${nbInfiltres} / ${reco}`;
 
-  el('setup-problemes').innerHTML = problemes.length
-    ? problemes.map(p => `<div class="banner bad" style="margin:4px 0;">${p}</div>`).join('')
-    : '';
+  const zoneProblemes = el('setup-problemes');
+  if (zoneProblemes){
+    const messages = problemes.slice();
+    if (!compteurOk){
+      messages.push(nbInfiltres < reco
+        ? `Encore ${reco - nbInfiltres} infiltré(s) à désigner avant de continuer.`
+        : `Trop d'infiltrés désignés : ${nbInfiltres} au lieu de ${reco}, retirez-en ${nbInfiltres - reco}.`);
+    }
+    zoneProblemes.innerHTML = messages.length
+      ? messages.map(p => `<div class="banner bad" style="margin:4px 0;">${p}</div>`).join('')
+      : '';
+  }
+
+  const btnSuivant3 = el('btn-prep-suivant-3');
+  if (btnSuivant3) btnSuivant3.disabled = !(problemes.length === 0 && compteurOk);
+
+  return { ok: problemes.length === 0 && compteurOk, nbInfiltres, reco };
+}
+
+function verifierCoherenceSetup(){
+  const { ok: rolesOk } = verifierRolesSetup();
 
   const sommeParts = joueursSetup.reduce((a, j) => a + j.part, 0);
   const partsOk = joueursSetup.length > 0 && sommeParts === 99000;
 
-  el('btn-demarrer').disabled = !(problemes.length === 0 && compteurOk && partsOk);
-  return problemes.length === 0 && compteurOk && partsOk;
+  el('btn-demarrer').disabled = !(rolesOk && partsOk);
+  return rolesOk && partsOk;
 }
 
 function demarrerPartie(){
