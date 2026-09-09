@@ -84,7 +84,7 @@ Débat en AG : 5:00 fixe, toutes manches confondues.
 
 - Les joueurs se partagent 99,000 % ; Meridian détient 1,000 %.
 - Tirage aléatoire légèrement inégal (0,65× à 1,35× la moyenne), normalisé à 99,000 %.
-- Bouton **« Retirer au sort »** pour relancer le tirage. **Aucune édition manuelle des parts** : l'invariant est garanti dès le tirage, sans risque de saisie erronée.
+- Un seul bouton **« Tirer les parts au sort »**, re-cliquable pour relancer le tirage (plus de bouton « Retirer au sort » séparé, redondant). **Aucune édition manuelle des parts** : l'invariant est garanti dès le tirage, sans risque de saisie erronée.
 
 ### 4.2 Sabotage (phase nocturne)
 
@@ -126,14 +126,19 @@ Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme
 
 ### 5.1 Préparation (avant de brancher le vidéoprojecteur)
 
-**Étape 1 — Joueurs et services**
-Ajout des prénoms, affectation automatique aux 3 services (RH / Commercial / Finance), modifiable.
+Assistant pas à pas en 4 étapes (retour de test) — un seul écran de configuration visible à la fois, jargon technique purgé de l'interface animateur. Bouton **Précédent** actif dès l'étape 2, qui revient à l'étape précédente sans perdre les données déjà saisies (réduction du nombre de joueurs → troncature confirmée si des données seraient perdues ; augmentation → champs vides ajoutés en fin de liste). Le panneau entier est démonté du DOM une fois la partie lancée (voir §6, jamais un simple `display:none`).
 
-**Étape 2 — Tirage des parts**
-Tableau des parts (résultat du tirage) + ligne Meridian (1,000 %). Bouton « Retirer au sort ». Total affiché (toujours 100,000 %, aucune édition manuelle possible). Bouton « Suivant ».
+**Étape 1 — Nombre de joueurs**
+Liste déroulante uniquement (8 à 18, pas de saisie libre). Aucun autre champ visible à cette étape.
+
+**Étape 2 — Prénoms**
+Un champ prénom + un menu service (RH / Commercial / Finance, modifiable) par joueur, nombre de champs fixé par l'étape 1. Bouton « Remplir avec des prénoms fictifs ».
 
 **Étape 3 — Rôles**
-Phrase calculée automatiquement : *« Pour [N] joueurs, vous devez désigner [⌊N/3⌋] infiltrés parmi eux. »* Un menu déroulant par joueur : Associé (par défaut) · DRH · DAF · Juriste · Infiltré (v3.0 : l'Avocat(e) a disparu, son pouvoir de protection est repris par le Juriste). Chaque carte à pouvoir ne peut être attribuée qu'une fois (retirée des menus dès qu'elle est prise). Compteur en direct *« Infiltrés désignés : X / [⌊N/3⌋] »*. Bouton **« Lancer la partie »** inactif tant que le compte n'est pas exact, activé automatiquement à l'égalité, regrisé si on redescend en dessous.
+Phrase calculée automatiquement : *« Pour [N] joueurs, désignez [⌊N/3⌋] infiltrés. »* Bouton **« Attribuer les rôles au hasard »** (symétrique au tirage des parts) : distribue les 3 cartes à pouvoir à 3 joueurs distincts, puis les infiltrés parmi les joueurs restants, répartis le plus équitablement possible entre les 3 services. Sinon, un menu déroulant par joueur : Associé (par défaut) · DRH · DAF · Juriste · Infiltré (v3.0 : l'Avocat(e) a disparu, son pouvoir de protection est repris par le Juriste). Chaque carte à pouvoir ne peut être attribuée qu'une fois (retirée des menus dès qu'elle est prise). Compteur en direct *« Infiltrés désignés : X / [⌊N/3⌋] »*. Bouton **« Suivant »** inactif tant que le compte n'est pas exact (message explicite : nombre d'infiltrés manquants ou en trop), activé automatiquement à l'égalité, regrisé si on redescend en dessous.
+
+**Étape 4 — Parts sociales**
+Tableau des parts (résultat du tirage) + ligne Meridian (1,000 %). Un seul bouton **« Tirer les parts au sort »**, re-cliquable pour relancer le tirage. Total affiché (toujours 100,000 %, aucune édition manuelle possible). Bouton **« Lancer la partie »** inactif tant que les parts n'ont pas été tirées.
 
 Pas de saisie du Président à cette étape (voir §5.4).
 
@@ -204,6 +209,7 @@ Sobre et dramatique : l'annonce (une des 3 variantes — victoire Meridian, vict
 - **◀ Annuler** : annulation en cascade, disponible en permanence, discrète.
 - **Masquer** : calque plein écran neutre, disponible en permanence (voir §2.2).
 - **Corrections** : édition manuelle d'un rôle en cours de partie possible via Masquer → modification → démasquer ; changement de Président à tout moment ; bascule manuelle d'écran en cas de besoin (accès discret, non mis en avant).
+- **Modifier la configuration** (retour de test) : bouton visible uniquement en cours de partie, avec confirmation (« interrompt la partie en cours »). Remonte l'assistant de préparation (§5.1), pré-rempli depuis la partie en cours, pour un dépannage en profondeur (nombre de joueurs erroné, refonte complète des rôles…). Le panneau de préparation est démonté du DOM dès le lancement de la partie — pas un simple `display:none` — et ne peut donc pas réapparaître par un défilement ou raccourci accidentel ; ce bouton est l'unique façon d'y revenir.
 - **Journal** : chaque événement horodaté (sabotages, votes avec détail par résolution, mouvements de capital, indices révélés). Exportable en texte pour le débriefing.
 
 ---

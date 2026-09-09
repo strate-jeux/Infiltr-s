@@ -55,7 +55,7 @@ C'est l'AG, et elle seule, qui décide de la révocation d'un administrateur (ar
 | Service | Carte | Pouvoir | Fréquence | Base légale |
 | --- | --- | --- | --- | --- |
 | RH | DRH | Met un administrateur « à pied conservatoire » : il ne participe pas au défi de son service la manche suivante (il conserve son droit de vote). | Chaque nuit | Mise à pied conservatoire |
-| Finance | DAF / Contrôleur de gestion | Désigne un administrateur et exerce son droit à l'information pour découvrir en secret sa carte exacte (lui seul en profite, via la Console). | Chaque nuit | Art. L.225-35 C. com. |
+| Finance | DAF | Désigne un administrateur et exerce son droit à l'information pour découvrir en secret sa carte exacte (lui seul en profite, via la Console). | Chaque nuit | Art. L.225-35 C. com. |
 | Transversal | **Président du conseil** | Anime le débat de chaque Conseil et **retient jusqu'à 3 noms** qui seront soumis, l'un après l'autre, au vote de révocation en Assemblée générale. Il peut suivre l'avis général du conseil ou s'en écarter — à ses risques : lui aussi peut être désigné et proposé à la révocation. S'il est révoqué, il désigne son successeur. | Chaque manche | Présidence du conseil |
 | Transversal | Juriste | Désigne chaque nuit un joueur à protéger par référé — auto-protection autorisée, jamais la même personne deux nuits de suite. Si les infiltrés ciblent ce joueur, le sabotage échoue (nuit calme). | Chaque nuit | Procédure de référé |
 
