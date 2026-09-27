@@ -119,7 +119,7 @@
   .pill.en_attente{ background:#222a36; color:var(--text-dim); }
   .pill.adoptee{ background:#3d1c1c; color:var(--bad); }
   .pill.rejetee{ background:#1c3d2c; color:var(--ok); }
-  .pill.non_votee{ background:#222a36; color:var(--text-dim); }
+  .pill.non_votee, .pill.non_retenue{ background:#222a36; color:var(--text-dim); }
   .banner{ padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:0.88rem; }
   .banner.bad{ background:#3d1c1c; color:#ffb3a8; border:1px solid var(--bad); }
   .banner.ok{ background:#1c3d2c; color:#b3ffd8; border:1px solid var(--ok); }
@@ -223,6 +223,8 @@
   /* La nuit (§C4 brief v3) : assombrissement, camembert désaturé à 60 %,
      pas de bouton habillé — on avance en touchant l'écran (ou barre
      d'espace au clavier) ; un indice discret le rappelle. */
+  .ecran-card:has(.ecran-nuit-sombre){ background:#05070a; border-color:#1b2233; }
+  .ecran-nuit-sombre .icone-nuit{ color:#f7f3e9; }
   .ecran-nuit-sombre{ min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; }
   .ecran-nuit-sombre .icone-nuit{ font-size:2.4rem; opacity:0; animation: nuit-assombrir 2s ease forwards; margin-bottom:6px; }
   .ecran-nuit-sombre .texte-nuit{ font-size:1.3rem; color:var(--text-dim); text-align:center; opacity:0; animation: nuit-assombrir 2s ease forwards; }
@@ -301,6 +303,39 @@
   #panneau-outils-dev summary{ cursor:pointer; padding:10px 16px; color:var(--text-dim); }
   .indice-2-3{ font-size:0.85rem; color:var(--text-dim); margin-top:10px; }
 
+  /* Navigation d'écran (§5 des retours de test v6) : action principale
+     « Suivant » toujours à droite ; l'action secondaire éventuelle (passer
+     un pouvoir, revenir à la résolution précédente) à gauche, en lien texte
+     discret plutôt qu'en bouton de même poids visuel. */
+  .nav-scene{ display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
+  .nav-scene > :last-child{ margin-left:auto; }
+  button.lien-discret{ background:none; border:none; padding:6px 2px; color:var(--text-dim); font-weight:400; text-decoration:underline; text-underline-offset:3px; }
+  .ecran-card button.lien-discret{ color:var(--carte-texte-dim); }
+  button.lien-discret:hover:not(:disabled){ filter:none; color:var(--bleu-infiltres); }
+
+  /* Modale de confirmation (§4 des retours de test v6). */
+  .modale-overlay{ position:fixed; inset:0; z-index:120; background:rgba(5,7,10,0.72); display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modale-boite{ background:var(--blanc-casse); color:var(--carte-texte); border:6px solid var(--bleu-infiltres); border-radius:18px; padding:22px 24px; max-width:460px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,0.5); }
+  .modale-boite h3{ margin:0 0 8px; color:var(--bleu-infiltres); text-transform:uppercase; font-size:1.15rem; }
+  .modale-boite p{ margin:0; font-size:1rem; line-height:1.5; }
+
+  /* Jour / nuit (§1 des retours de test v6) : grande lune au trait sur la
+     zone sombre pendant toute la phase de nuit (de « La nuit tombe » au
+     réveil), soleil discret le jour. Fond plus noir la nuit. Décoratif,
+     jamais cliquable, toujours sous la carte de contenu. */
+  body{ transition: background-color 1.2s ease; }
+  body.phase-nuit{ background:#030406; }
+  #astre-phase{ position:fixed; top:150px; left:max(16px, calc(50% - 450px - 190px)); width:170px; height:170px; z-index:0; pointer-events:none; opacity:0; transition: opacity 1.2s ease; }
+  #astre-phase svg{ width:100%; height:100%; display:block; }
+  #astre-phase .astre{ opacity:0; transition: opacity 1.2s ease; }
+  body.phase-nuit #astre-phase, body.phase-jour #astre-phase{ opacity:1; }
+  body.phase-nuit #astre-phase .lune{ opacity:0.95; }
+  body.phase-jour #astre-phase .soleil{ opacity:0.35; }
+  #zone-scene, #zone-camembert-compact, #zone-bandeau-joueurs{ position:relative; z-index:1; }
+  @media (max-width: 1260px){ #astre-phase{ width:110px; height:110px; left:12px; top:auto; bottom:12px; } }
+  @media (max-width: 700px){ #astre-phase{ width:72px; height:72px; } }
+  .ecran-nuit-sombre .icone-nuit svg{ width:96px; height:96px; }
+
   /* Illustrations au trait, fond transparent (§7.3/§7.4) */
   .illustration{ display:block; max-width:220px; max-height:220px; width:auto; height:auto; margin:0 auto 14px; }
   .illustration-small{ max-width:150px; max-height:150px; }
@@ -371,6 +406,35 @@
     <button id="btn-resume">Reprendre la partie</button>
     <button class="secondary" id="btn-discard">Nouvelle partie (écraser la sauvegarde)</button>
   </div>
+</div>
+
+<div id="modale-confirmation" class="modale-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modale-confirmation-titre">
+  <div class="modale-boite">
+    <h3 id="modale-confirmation-titre">Êtes-vous sûr(e) ?</h3>
+    <p id="modale-confirmation-texte"></p>
+    <div class="nav-scene">
+      <button class="secondary" id="modale-btn-retour">Revenir en arrière</button>
+      <button id="modale-btn-confirmer">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div id="astre-phase" aria-hidden="true">
+  <svg viewBox="0 0 200 200" fill="none" stroke="#f7f3e9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <g class="astre lune">
+      <path d="M128 30 A74 74 0 1 0 170 128 A60 60 0 1 1 128 30 Z"/>
+      <path d="M72 92 a7 7 0 1 0 0.1 0" stroke-width="4"/>
+      <path d="M96 138 a10 10 0 1 0 0.1 0" stroke-width="4"/>
+      <path d="M58 124 a4 4 0 1 0 0.1 0" stroke-width="3"/>
+      <path d="M168 44 l0 14 M161 51 l14 0" stroke-width="3"/>
+      <path d="M150 168 l0 10 M145 173 l10 0" stroke-width="3"/>
+      <path d="M38 50 l0 10 M33 55 l10 0" stroke-width="3"/>
+    </g>
+    <g class="astre soleil">
+      <circle cx="100" cy="100" r="36"/>
+      <path d="M100 26 v20 M100 154 v20 M26 100 h20 M154 100 h20 M48 48 l14 14 M138 138 l14 14 M48 152 l14 -14 M138 62 l14 -14"/>
+    </g>
+  </svg>
 </div>
 
 <div id="halo-meridian"></div>
@@ -593,13 +657,30 @@ function etatInitial(){
       // l'heure. L'animation de transition existante du camembert, rejouée au
       // dégel, EST la dramatisation de la sortie du capital demandée par §D5.
       camembertGeleJusquaReveal: null,
-      // Révocation par résolutions successives (§4.3 CDC v2, plafond porté à
-      // 2 adoptions/manche par le §G1 du brief v3) : 0 à 3 noms, votés un par
-      // un dans l'ordre d'inscription. Verrouillage dès que 2 résolutions ont
-      // été ADOPTÉES cette manche (un rejet ne consomme pas le compteur).
-      resolutionsEnCours: [], // [{joueurId, prenom, statut, pour?, totalVotante?}]
+      // Révocation par vote simultané (§3 des retours de test v6, voir
+      // cloreVoteSimultane) : 0 à 3 noms retenus au débat, toutes les
+      // intentions de vote collectées avant qu'aucun effet ne s'applique,
+      // puis révocations retenues par score dans la limite du plafond de la
+      // manche (un rejet ne consomme pas le compteur).
+      resolutionsEnCours: [], // [{joueurId, prenom, statut, pour?, contre?, totalVotante?}]
       resolutionCouranteIndex: 0,
       revocationsAdopteesParManche: {},
+      // Collecte en cours : { [joueurIdVisé]: { [joueurIdVotant]: choix } } et
+      // page de saisie affichée (une résolution par page) — persistées pour
+      // que « ◀ Retour » ne perde jamais les votes déjà saisis.
+      votesAG: {},
+      votePageIndex: 0,
+      // Annonce des résultats après clôture, dans l'ordre des scores.
+      ordreAnnonceResolutions: [],
+      indexAnnonceResolution: 0,
+      // Indices de défis (§6 des retours de test v6) : rang de l'indice dans
+      // la partie — le 1er est binaire (présence), les suivants quantitatifs.
+      nbIndicesDonnes: 0,
+      indiceEnAttente: null, // {rang, type, service, texte} — généré au bilan 3/3
+      // Conséquence de défi déjà appliquée pour la manche en cours (panique
+      // immédiate) : conservée pour pouvoir l'annuler exactement si
+      // l'animateur corrige une réponse saisie par erreur (§8).
+      prelevementDefisApplique: null, // {manche, type, parJoueur:{id:millièmes}, total}
       // Progression des écrans à cascade (Manche 0, séquence de nuit) : index
       // courant dans une liste programmée, remis à zéro à chaque entrée d'écran.
       sousEtapeIndex: 0,
@@ -641,8 +722,12 @@ function ajouterJournal(type, message){
 // (qui est un outil de débogage console). À n'appeler QUE depuis un point de
 // code où l'information est déjà officiellement publique (jamais avant le
 // moment de révélation prévu par les règles), sous peine de fuite.
-function ajouterChroniquePublique(texte){
-  state.partie.chroniquePublique.push({ manche: state.partie.manche, texte });
+// `tag` (facultatif) permet de retirer précisément une annonce devenue
+// caduque — ex. le bilan des défis, si l'animateur corrige une réponse (§8).
+function ajouterChroniquePublique(texte, tag){
+  const entree = { manche: state.partie.manche, texte };
+  if (tag) entree.tag = tag;
+  state.partie.chroniquePublique.push(entree);
 }
 
 // Un clic de l'animateur déclenche souvent PLUSIEURS mutations coup sur coup
@@ -885,7 +970,7 @@ function retirerResolution(joueurId){
 // finale — remplace le double mode configurable du lot précédent) :
 // l'abstention est neutre, exclue du dénominateur. La majorité se calcule
 // sur les seuls votants actifs (pour + contre). Fonction partagée entre le
-// calcul officiel (voterResolutionCourante) et la barre de vote affichée à
+// calcul officiel (cloreVoteSimultane) et la barre de vote affichée à
 // l'écran, pour qu'ils ne divergent jamais.
 function calculerVote(votants, votesParJoueurId){
   let pour = 0, contre = 0, abstention = 0;
@@ -900,72 +985,134 @@ function calculerVote(votants, votesParJoueurId){
   return { pour, contre, abstention, totalVotante, acquise };
 }
 
-// Vote la résolution actuellement en tête de file (résolutions votées une à la
-// fois, dans l'ordre d'inscription — jamais dans le désordre).
-// votesParJoueurId : { [joueurId]: 'pour' | 'contre' | 'abstention' }
-function voterResolutionCourante(joueurId, votesParJoueurId){
+// Compare deux résolutions par score (part des voix exprimées en faveur de
+// la révocation), en produit croisé d'entiers pour éviter tout arrondi
+// flottant ; départage par voix « pour » absolues, puis par ordre
+// d'inscription. Négatif si `a` passe avant `b`.
+function comparerScoresResolutions(a, b){
+  return (b.pour * a.totalVotante - a.pour * b.totalVotante)
+    || (b.pour - a.pour)
+    || (a.ordre - b.ordre);
+}
+
+// Vote SIMULTANÉ de l'AG (§3 des retours de test v6, remplace le vote
+// résolution par résolution) : avec l'ancien mécanisme, un associé révoqué
+// à la 1re résolution perdait immédiatement son droit de vote pour les
+// suivantes de la même manche — un effet d'aubaine pour le premier votant,
+// souvent exploité par les infiltrés. Désormais :
+//   1. toutes les intentions de vote sont collectées pour toutes les
+//      résolutions AVANT qu'aucun effet ne s'applique ;
+//   2. les voix sont pondérées par les parts sociales à l'ouverture du vote
+//      (aucun mouvement de capital n'a lieu pendant la collecte) ;
+//   3. les résolutions adoptées sont classées par score, et seules les
+//      premières dans la limite du plafond de la manche sont retenues
+//      (les autres, bien qu'ayant obtenu la majorité, sont « non retenues ») ;
+//   4. les effets des révocations retenues (sortie du capital, rachat des
+//      parts) s'appliquent tous ensemble à la clôture : les parts de tous
+//      les révoqués sont rachetées d'un seul bloc, au prorata, par les
+//      associés restants — un révoqué du même tour n'en rachète aucune.
+// votesParResolution : { [joueurIdVisé]: { [joueurIdVotant]: 'pour'|'contre'|'abstention' } }
+// Retourne la liste des joueurIds révoqués, dans l'ordre des scores.
+function cloreVoteSimultane(votesParResolution){
   const manche = state.partie.manche;
   const plafond = plafondRevocationsParManche();
-  if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= plafond){
-    throw new Error(`${plafond} résolutions ont déjà été adoptées cette manche : les résolutions suivantes ne sont pas votées.`);
+  const dejaAdoptees = state.partie.revocationsAdopteesParManche[manche] || 0;
+  if (dejaAdoptees >= plafond){
+    throw new Error(`${plafond} résolutions ont déjà été adoptées cette manche : le conseil ne siège plus sur ce point.`);
   }
-  const idx = state.partie.resolutionCouranteIndex;
-  const resolution = state.partie.resolutionsEnCours[idx];
-  if (!resolution) throw new Error('Aucune résolution à voter.');
-  if (resolution.joueurId !== joueurId){
-    throw new Error("Les résolutions doivent être votées une à la fois, dans leur ordre d'inscription.");
-  }
-  const cible = getJoueur(joueurId);
-  if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide.');
+  const aVoter = state.partie.resolutionsEnCours.filter(r => r.statut === 'en_attente');
+  if (aVoter.length === 0) throw new Error('Aucune résolution à voter.');
+  aVoter.forEach(r => {
+    const cible = getJoueur(r.joueurId);
+    if (!cible || cible.statutCapital !== 'actif') throw new Error('Cible invalide : ' + r.prenom + " n'est plus un associé actif.");
+  });
 
-  const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
-  const { pour, totalVotante, acquise } = calculerVote(votants, votesParJoueurId);
+  // Base de pondération figée à l'ouverture du vote : tous les associés
+  // actifs votent sur toutes les résolutions, y compris les visés.
+  const votants = state.joueurs.filter(j => j.statutCapital === 'actif')
+    .map(j => ({ id: j.id, part: j.part }));
 
-  empilerSnapshot('Résolution — révocation de ' + cible.prenom);
+  empilerSnapshot("Vote simultané de l'AG (" + aVoter.map(r => r.prenom).join(', ') + ')');
 
-  resolution.pour = pour;
-  resolution.totalVotante = totalVotante;
-  resolution.statut = acquise ? 'adoptee' : 'rejetee';
+  const scores = aVoter.map(r => {
+    const v = calculerVote(votants, votesParResolution[r.joueurId] || {});
+    r.pour = v.pour;
+    r.contre = v.contre;
+    r.totalVotante = v.totalVotante;
+    r.statut = v.acquise ? 'adoptee' : 'rejetee';
+    return { r, pour: v.pour, totalVotante: v.totalVotante, acquise: v.acquise, ordre: state.partie.resolutionsEnCours.indexOf(r) };
+  });
+  scores.sort(comparerScoresResolutions);
 
-  if (acquise){
-    cible.revele = true;
-    const partRevoquee = cible.part;
+  const placesRestantes = plafond - dejaAdoptees;
+  const adoptees = scores.filter(x => x.acquise);
+  const retenues = adoptees.slice(0, placesRestantes);
+  adoptees.slice(placesRestantes).forEach(x => { x.r.statut = 'non_retenue'; });
+
+  // Ordre d'annonce : révocations retenues (par score), puis majorités non
+  // retenues faute de place, puis rejets — chacun par score décroissant.
+  const rangStatut = { adoptee: 0, non_retenue: 1, rejetee: 2 };
+  state.partie.ordreAnnonceResolutions = scores.slice()
+    .sort((a, b) => (rangStatut[a.r.statut] - rangStatut[b.r.statut]) || comparerScoresResolutions(a, b))
+    .map(x => x.r.joueurId);
+  state.partie.indexAnnonceResolution = 0;
+
+  // Effets groupés, appliqués une seule fois à la clôture du vote.
+  const idsRevoques = retenues.map(x => x.r.joueurId);
+  if (idsRevoques.length > 0){
+    // Le camembert reste figé sur l'image d'avant vote jusqu'à l'annonce de
+    // la dernière révocation (même principe qu'au sabotage) : sinon la
+    // disparition d'une tranche rouge trahirait la carte avant son retournement.
+    state.partie.camembertGeleJusquaReveal = {
+      origine: 'conseil',
+      joueurs: JSON.parse(JSON.stringify(state.joueurs)),
+      meridianPart: state.meridian.part
+    };
+    const revoques = idsRevoques.map(getJoueur);
+    const partTotaleRevoquee = revoques.reduce((a, j) => a + j.part, 0);
+    const beneficiaires = state.joueurs.filter(j => j.statutCapital === 'actif' && !idsRevoques.includes(j.id));
     // Révocation (bad leaver, §A1) : 100 % aux associés restants, 0 % à Meridian.
-    const beneficiaires = state.joueurs.filter(j => j.id !== cible.id && j.statutCapital === 'actif');
-    if (beneficiaires.length > 0 && partRevoquee > 0){
-      const redistribution = repartirProportionnel(partRevoquee, beneficiaires.map(j => ({ id: j.id, poids: j.part })));
+    if (beneficiaires.length > 0 && partTotaleRevoquee > 0){
+      const redistribution = repartirProportionnel(partTotaleRevoquee, beneficiaires.map(j => ({ id: j.id, poids: j.part })));
       redistribution.forEach(r => { getJoueur(r.id).part += r.part; });
+    } else if (partTotaleRevoquee > 0){
+      // Cas limite : plus aucun associé pour racheter — le solde revient à Meridian (invariant 100 %).
+      state.meridian.part += partTotaleRevoquee;
     }
-    cible.statutCapital = 'sorti';
-    cible.motifSortie = 'revoque';
-    cible.part = 0;
-    const adopteesApres = (state.partie.revocationsAdopteesParManche[manche] || 0) + 1;
-    state.partie.revocationsAdopteesParManche[manche] = adopteesApres;
-    ajouterJournal('revocation', `Résolution adoptée — ${cible.prenom} est révoqué(e) par l'AG (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes ; carte révélée : ${CARTE_LABELS[cible.carte]}). Ses parts sont intégralement redistribuées au prorata entre les associés restants.`);
-    ajouterChroniquePublique(`Résolution adoptée — ${cible.prenom} est révoqué(e) par l'Assemblée générale (carte révélée : ${CARTE_LABELS[cible.carte]}).`);
-    if (state.partie.presidentActuelId === cible.id){
-      state.partie.presidentVacant = true;
-      ajouterJournal('president_vacant', `${cible.prenom} était Président du conseil : un successeur doit être désigné.`);
-    }
-    if (adopteesApres >= plafond){
-      // Plafond d'adoptions atteint (§9 des retours de test v5) : les résolutions suivantes de la file ne sont pas votées.
-      for (let k = idx + 1; k < state.partie.resolutionsEnCours.length; k++){
-        state.partie.resolutionsEnCours[k].statut = 'non_votee';
+    revoques.forEach(cible => {
+      const res = retenues.find(x => x.r.joueurId === cible.id).r;
+      ajouterJournal('revocation', `Résolution adoptée — ${cible.prenom} est révoqué(e) par l'AG (${formatPct(res.pour)} pour, sur ${formatPct(res.totalVotante)} d'actions votantes ; part rachetée : ${formatPct(cible.part)} ; carte révélée : ${CARTE_LABELS[cible.carte]}).`);
+      ajouterChroniquePublique(`Résolution adoptée — ${cible.prenom} est révoqué(e) par l'Assemblée générale (carte révélée : ${CARTE_LABELS[cible.carte]}).`);
+      cible.revele = true;
+      cible.statutCapital = 'sorti';
+      cible.motifSortie = 'revoque';
+      cible.part = 0;
+      if (state.partie.presidentActuelId === cible.id){
+        state.partie.presidentVacant = true;
+        ajouterJournal('president_vacant', `${cible.prenom} était Président du conseil : un successeur doit être désigné.`);
       }
-      state.partie.resolutionCouranteIndex = state.partie.resolutionsEnCours.length;
-    } else {
-      state.partie.resolutionCouranteIndex += 1;
+    });
+    if (beneficiaires.length > 0){
+      ajouterJournal('revocation', `Les parts des révoqués (${formatPct(partTotaleRevoquee)}) sont rachetées ensemble, au prorata, par les ${beneficiaires.length} associés restants.`);
     }
+  }
+  state.partie.revocationsAdopteesParManche[manche] = dejaAdoptees + idsRevoques.length;
+  adoptees.slice(placesRestantes).forEach(x => {
+    ajouterJournal('resolution_non_retenue', `Résolution adoptée mais non retenue — ${x.r.prenom} reste en fonction : plafond de ${plafond} révocation(s) par manche atteint par des résolutions mieux classées.`);
+    ajouterChroniquePublique(`Majorité obtenue mais plafond atteint — ${x.r.prenom} reste en fonction.`);
+  });
+  scores.filter(x => !x.acquise).forEach(x => {
+    ajouterJournal('resolution_rejetee', `Résolution rejetée — ${x.r.prenom} reste en fonction (${formatPct(x.pour)} pour, sur ${formatPct(x.totalVotante)} d'actions votantes).`);
+    ajouterChroniquePublique(`Résolution rejetée — ${x.r.prenom} reste en fonction.`);
+  });
+  state.partie.resolutionCouranteIndex = state.partie.resolutionsEnCours.length;
+  if (idsRevoques.length > 0){
     verifierVictoireHonneteAnticipee();
     verifierPaliersMeridian(); // conservé pour le journal (§4.5)
-  } else {
-    ajouterJournal('resolution_rejetee', `Résolution rejetée — ${cible.prenom} reste en fonction (${formatPct(pour)} pour, sur ${formatPct(totalVotante)} d'actions votantes).`);
-    ajouterChroniquePublique(`Résolution rejetée — ${cible.prenom} reste en fonction.`);
-    state.partie.resolutionCouranteIndex += 1;
   }
   verifierInvariant();
   sauvegarder();
-  return acquise;
+  return idsRevoques;
 }
 
 function assignerPresident(joueurId){
@@ -988,12 +1135,15 @@ function actionPrelevement(type){
   const poids = assiette.map(j => ({ id: j.id, poids: j.part }));
   const prelevements = repartirProportionnel(montant, poids);
   let totalPreleve = 0;
+  const parJoueur = {};
   prelevements.forEach(p => {
     const j = getJoueur(p.id);
     j.part -= p.part;
+    parJoueur[p.id] = p.part;
     totalPreleve += p.part;
   });
   state.meridian.part += totalPreleve;
+  state.partie.dernierPrelevement = { manche: state.partie.manche, type, parJoueur, total: totalPreleve };
   ajouterJournal(type, `${type === 'alerte' ? 'Alerte' : 'Panique'} : ${formatPct(totalPreleve)} de capital transférés au Fonds Meridian, prélevés au prorata sur les associés non gelés.`);
   verifierPaliersMeridian(); // conservé pour le journal (§4.5)
   verifierInvariant();
@@ -1007,12 +1157,12 @@ function actionPrelevement(type){
 // 1/2 et 0/3 : transfert différé au bilan du matin (traiterConsequenceMatin).
 function bilanDefis(resultat){
   if (resultat === '3reussis'){
-    state.partie.propositionsIndices = genererPropositionsIndices();
-    ajouterJournal('indice_disponible', 'Indice disponible : 3 défis réussis. Choisir un indice à révéler.');
+    state.partie.indiceEnAttente = genererIndice();
+    ajouterJournal('indice_disponible', `Indice disponible : 3 défis réussis (indice n°${state.partie.indiceEnAttente.rang} de la partie, ${state.partie.indiceEnAttente.type}).`);
     sauvegarder();
   } else if (resultat === '2reussis'){
     ajouterJournal('statuquo', "Statu quo : l'entreprise tient bon.");
-    ajouterChroniquePublique("Statu quo : l'entreprise tient bon.");
+    ajouterChroniquePublique("Statu quo : l'entreprise tient bon.", 'defis-' + state.partie.manche);
     state.partie.consequenceDefisEnAttente = null;
     sauvegarder();
   } else if (resultat === '1reussi'){
@@ -1043,39 +1193,108 @@ function traiterConsequenceMatin(){
   return type;
 }
 
-// Indices qualitatifs par service (§5 des retours de test v5) : remplace
-// l'ancien indice de fourchette « X % à Y % du capital », devenu redondant
-// depuis que le total réel du camp adverse s'affiche déjà en continu sous
-// le camembert (§4 des retours de test v5). Les deux propositions restent
-// qualitatives — jamais de chiffre de capital.
-function genererPropositionsIndices(){
-  const parService = SERVICES.map(s => {
-    const membres = state.joueurs.filter(j => j.service === s && j.statutCapital === 'actif');
-    const infiltres = membres.filter(j => campDe(j) === 'adverse').length;
-    return { service: s, infiltres, majoritaire: membres.length > 0 && infiltres * 2 > membres.length };
+// Indices de défis (§6 des retours de test v6, remplace les 2 indices
+// proposés au choix) : UN seul indice par bilan 3/3, de précision
+// progressive au fil de la partie —
+//   - 1er indice de la partie : binaire, présence/absence sans chiffre
+//     (« Le service X compte au moins un infiltré. ») ;
+//   - indices suivants : quantitatifs (« Le service X compte N infiltré(s). »).
+// Le rang est suivi dans l'état de partie (state.partie.nbIndicesDonnes,
+// exporté avec la sauvegarde JSON).
+// Garde-fou anti-désignation : le service ciblé doit compter au moins 2
+// associés actifs non démasqués (sinon, un seul joueur « inconnu » dans le
+// service, et l'indice le désignerait nommément) ; un indice quantitatif ne
+// peut pas non plus annoncer que TOUS les non-démasqués du service sont
+// infiltrés (ce qui les désignerait tous). Jamais de chiffre de capital.
+function statsIndicesParService(){
+  return SERVICES.map(s => {
+    const inconnus = state.joueurs.filter(j => j.service === s && j.statutCapital === 'actif' && !j.revele);
+    return { service: s, inconnus: inconnus.length, infiltres: inconnus.filter(j => campDe(j) === 'adverse').length };
   });
-
-  const choixCompte = parService[Math.floor(Math.random() * parService.length)];
-  const texteCompte = `Le service ${choixCompte.service} compte ${choixCompte.infiltres} infiltré(s).`;
-
-  const servicesMajoritaires = parService.filter(s => s.majoritaire);
-  const texteMajorite = servicesMajoritaires.length > 0
-    ? `Les infiltrés sont majoritaires dans le service ${servicesMajoritaires[Math.floor(Math.random() * servicesMajoritaires.length)].service}.`
-    : "Aucun service n'est majoritairement infiltré à ce stade.";
-
-  return [
-    { type: 'service', texte: texteCompte },
-    { type: 'majorite', texte: texteMajorite }
-  ];
 }
 
-function choisirIndice(texte){
+function serviceEligiblePourIndice(stat, binaire){
+  if (stat.inconnus < 2) return false;
+  if (!binaire && stat.infiltres >= stat.inconnus) return false;
+  return true;
+}
+
+function texteIndice(stat, binaire){
+  if (stat.infiltres === 0) return `Le service ${stat.service} ne compte aucun infiltré.`;
+  if (binaire) return `Le service ${stat.service} compte au moins un infiltré.`;
+  return `Le service ${stat.service} compte ${stat.infiltres} infiltré${stat.infiltres > 1 ? 's' : ''}.`;
+}
+
+function genererIndice(){
+  const rang = (state.partie.nbIndicesDonnes || 0) + 1;
+  const binaire = rang === 1;
+  const eligibles = statsIndicesParService().filter(st => serviceEligiblePourIndice(st, binaire));
+  if (eligibles.length === 0){
+    return { rang, type: 'aucun', service: null,
+      texte: "Les trois défis sont réussis, mais aucun service ne peut plus faire l'objet d'un indice sans désigner nommément un associé." };
+  }
+  const choix = eligibles[Math.floor(Math.random() * eligibles.length)];
+  return { rang, type: binaire ? 'binaire' : 'quantitatif', service: choix.service, texte: texteIndice(choix, binaire) };
+}
+
+function revelerIndice(){
+  const indice = state.partie.indiceEnAttente;
+  if (!indice) throw new Error('Aucun indice à révéler.');
   empilerSnapshot('Indice révélé');
-  state.partie.indiceTexte = texte;
+  state.partie.indiceTexte = indice.texte;
+  state.partie.indiceEnAttente = null;
+  state.partie.consequenceDefisEnAttente = null;
+  if (indice.type !== 'aucun') state.partie.nbIndicesDonnes = indice.rang;
+  state.partie.indiceRevele = { manche: state.partie.manche, rang: indice.rang, type: indice.type, texte: indice.texte };
+  ajouterJournal('indice', `Indice n°${indice.rang} révélé (${indice.type}) : ${indice.texte}`);
+  ajouterChroniquePublique(`Indice : ${indice.texte}`, 'defis-' + state.partie.manche);
+  sauvegarder();
+}
+
+// Correction d'une réponse de défi saisie par erreur (§8 des retours de
+// test v6). Possible tant que la manche en cours n'a pas quitté la phase de
+// travail (le conseil n'a pas commencé) : défait proprement le bilan déjà
+// calculé — réponses, conséquence en attente, indice (et son rang), annonce
+// « statu quo » et, pour une panique déjà appliquée, le prélèvement exact
+// (chaque associé récupère ce qui lui avait été prélevé) — sans toucher au
+// reste de l'état de la manche. Les nouvelles réponses sont ensuite
+// saisies normalement (saisirReponseDefi), qui recalcule le bilan.
+function defisModifiables(){
+  return state.partie.phase === 'travail' && state.partie.etapeManche <= 1;
+}
+
+function annulerSaisieDefis(){
+  const manche = state.partie.manche;
+  if (!defisModifiables()) throw new Error('Le conseil a déjà commencé : les réponses de cette manche ne peuvent plus être modifiées.');
+  empilerSnapshot('Correction des réponses aux défis');
+  const prelevement = state.partie.prelevementDefisApplique;
+  if (prelevement && prelevement.manche === manche){
+    Object.keys(prelevement.parJoueur).forEach(id => {
+      const j = getJoueur(id);
+      if (j) j.part += prelevement.parJoueur[id];
+    });
+    state.meridian.part -= prelevement.total;
+    const pct = state.meridian.part / 1000;
+    Object.keys(state.partie.paliersMeridianAnnonces).forEach(seuil => {
+      if (pct < +seuil) state.partie.paliersMeridianAnnonces[seuil] = false;
+    });
+    ajouterJournal('correction_defis', `[Correction animateur] ${prelevement.type === 'panique' ? 'Panique' : 'Alerte'} annulée : ${formatPct(prelevement.total)} restitués aux associés.`);
+  }
+  state.partie.prelevementDefisApplique = null;
+  const indice = state.partie.indiceRevele;
+  if (indice && indice.manche === manche){
+    if (indice.type !== 'aucun') state.partie.nbIndicesDonnes = indice.rang - 1;
+    state.partie.indiceRevele = null;
+    state.partie.indiceTexte = null;
+  }
+  state.partie.chroniquePublique = state.partie.chroniquePublique.filter(c => c.tag !== 'defis-' + manche);
+  state.partie.indiceEnAttente = null;
   state.partie.propositionsIndices = null;
   state.partie.consequenceDefisEnAttente = null;
-  ajouterJournal('indice', `Indice révélé : ${texte}`);
-  ajouterChroniquePublique(`Indice : ${texte}`);
+  state.partie.derniereAnnonceMatin = null;
+  defisDeLaManche(manche).forEach(d => { d.reponseEquipe = null; d.reussi = null; });
+  ajouterJournal('correction_defis', `[Correction animateur] Réponses aux défis de la manche ${manche} rouvertes pour correction.`);
+  verifierInvariant();
   sauvegarder();
 }
 
@@ -1255,27 +1474,33 @@ function afficherBanniere(){
   }
 }
 
-// AFFICHAGE PUBLIC — chaque tranche montre le capital RÉEL du joueur (rien
-// n'est caché dans les montants ; voir aussi la part individuelle affichée
-// sur le bandeau des joueurs, afficherBandeauJoueurs). Décision finale (§4
-// des retours de test v5, qui remplace l'ancien masquage par couleur) : les
-// segments ne sont JAMAIS associés nommément à un joueur précis à l'écran
-// (seul le prénom + pourcentage apparaissent, jamais un rôle), donc colorer
-// les parts des infiltrés dès le début de la partie ne trahit l'identité de
-// personne. Code couleur définitif : rouge clair = infiltrés, rouge foncé =
-// Meridian, bleu = associés honnêtes.
-// Un joueur sorti (sabotage ou révocation) a cédé la totalité de ses titres :
-// il disparaît simplement du camembert, aucun état intermédiaire (§A1/§A2) —
-// pas de troisième couleur nécessaire.
+// AFFICHAGE PUBLIC — anti-fuite (§2 des retours de test v6, bug critique).
+// Avant ce correctif, une tranche par joueur actif était dessinée dans
+// l'ordre de saisie des joueurs, c'est-à-dire l'ordre du bandeau du bas :
+// en reliant la position d'une tranche rouge à la position d'un prénom
+// dans le bandeau (ou en survolant la tranche, dont l'infobulle affichait
+// le prénom), on identifiait les infiltrés avant la fin de la partie.
+// Correctif : les tranches sont regroupées par statut en TROIS blocs
+// contigus, toujours dans le même ordre — rouge foncé (Meridian), rouge
+// clair (infiltrés), bleu (associés honnêtes) — et chaque bloc est dessiné
+// d'un seul tenant, sans séparation interne : ni l'ordre, ni la taille
+// d'une tranche individuelle (qu'on pourrait rapprocher du pourcentage
+// affiché à côté d'un prénom) ne sont plus lisibles. Aucune infobulle,
+// aucun attribut DOM ne porte d'identifiant de joueur. Le code couleur
+// reste celui de la décision v5 : rouge foncé = Meridian, rouge clair =
+// infiltrés, bleu = associés honnêtes. Un joueur sorti (sabotage ou
+// révocation) a cédé ses titres : sa part quitte simplement son bloc.
+const GROUPES_CAMEMBERT = [
+  { id: 'meridian', color: 'var(--rouge-meridian)' },
+  { id: 'infiltres', color: 'var(--rouge-infiltre)' },
+  { id: 'associes', color: 'var(--bleu-joueur)' }
+];
+
 function construireSegmentsCamembert(joueurs, meridianPart){
-  const segments = joueurs
-    .filter(j => j.statutCapital === 'actif')
-    .map(j => ({
-      id: j.id, label: j.prenom, part: j.part,
-      color: campDe(j) === 'adverse' ? 'var(--rouge-infiltre)' : 'var(--bleu-joueur)'
-    }));
-  segments.push({ id: 'meridian', label: 'Meridian', part: meridianPart, color: 'var(--rouge-meridian)' });
-  return segments;
+  const actifs = joueurs.filter(j => j.statutCapital === 'actif');
+  const somme = camp => actifs.filter(j => campDe(j) === camp).reduce((a, j) => a + j.part, 0);
+  const parts = { meridian: meridianPart, infiltres: somme('adverse'), associes: somme('honnete') };
+  return GROUPES_CAMEMBERT.map(g => ({ id: g.id, part: parts[g.id], color: g.color }));
 }
 
 function dessinerCamembertImmediat(svg, segments, cx, cy, r){
@@ -1294,7 +1519,13 @@ function dessinerCamembertImmediat(svg, segments, cx, cy, r){
     const x2 = cx + r * Math.cos(end * Math.PI / 180);
     const y2 = cy + r * Math.sin(end * Math.PI / 180);
     const cls = s.id === 'meridian' ? ' class="segment-meridian"' : '';
-    paths += `<path${cls} d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" stroke="#4a5568" stroke-width="1"><title>${s.label} — ${formatPct(s.part)}</title></path>`;
+    // Bloc plein (360°) : un arc SVG dont le départ et l'arrivée coïncident
+    // n'est pas dessiné, on trace alors un disque.
+    if (sweep >= 359.999){
+      paths += `<circle${cls} cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}" stroke="#4a5568" stroke-width="1"></circle>`;
+      return;
+    }
+    paths += `<path${cls} d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${s.color}" stroke="#4a5568" stroke-width="1"></path>`;
   });
   const meridianSeg = segments.find(s => s.id === 'meridian');
   const centre = meridianSeg
@@ -1416,9 +1647,21 @@ function libelleStatut(j){
 // (société non cotée, les mouvements de titres se savent) et ne trahit
 // l'identité de personne — toute élimination révèle déjà la carte visée.
 // Réutilise le style existant du bandeau, aucun nouveau bloc.
+// Ordre alphabétique fixe (§2 des retours de test v6) : indépendant de
+// l'ordre de saisie des joueurs, pour qu'aucune corrélation entre la
+// position d'un prénom et un élément du camembert ne soit reconstructible.
+function joueursOrdreAlphabetique(joueurs){
+  return joueurs.slice().sort((a, b) => a.prenom.localeCompare(b.prenom, 'fr', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
+}
+
 function afficherBandeauJoueurs(){
   const zone = el('bandeau-joueurs');
-  zone.innerHTML = state.joueurs.map(j => {
+  // Pendant la proclamation des résultats de l'AG, le bandeau reste figé
+  // comme le camembert : un nom barré trahirait l'issue d'une résolution
+  // avant son annonce (voir cloreVoteSimultane).
+  const gele = state.partie.camembertGeleJusquaReveal;
+  const joueurs = (gele && gele.origine === 'conseil') ? gele.joueurs : state.joueurs;
+  zone.innerHTML = joueursOrdreAlphabetique(joueurs).map(j => {
     const president = state.partie.presidentActuelId === j.id ? '<span class="president-icone">👑</span>' : '';
     const sorti = j.statutCapital === 'sorti';
     const icone = sorti ? '✕ ' : '';
@@ -1454,11 +1697,13 @@ function remplirSelect(select, joueurs, includeEmpty){
    10. NAVIGATION D'ÉCRAN — MACHINE À ÉTATS (§5 CDC v2, fenêtre unique)
    ============================================================ */
 
-// Durée du défi préréglée selon la manche (§3 CDC v2) : 5 min (M1-2), 15 min (M3-4), 7 min (M5).
+// Durée du défi préréglée selon la manche (§3 CDC v2) : 5 min (M1-2), 7 min
+// (M3 à M5). Plafond de 7 minutes (§10 des retours de test v6) : les
+// 15 minutes d'origine des manches 3-4 étaient trop longues en conditions réelles.
+const DUREE_DEFI_MAX_SECONDES = 7 * 60;
 function dureeDefiSecondes(manche){
-  if (manche <= 2) return 5 * 60;
-  if (manche <= 4) return 15 * 60;
-  return 7 * 60;
+  const duree = manche <= 2 ? 5 * 60 : 7 * 60;
+  return Math.min(duree, DUREE_DEFI_MAX_SECONDES);
 }
 const DUREE_DEBAT_SECONDES = 5 * 60;
 
@@ -1716,9 +1961,16 @@ function dashboardSuivant(){
 
 function dashboardRetour(){
   if (state.partie.etapeManche <= 0) return;
+  empilerSnapshot('Tableau de bord : retour');
   state.partie.etapeManche -= 1;
   const etape = state.partie.etapeManche;
-  if (etape === 0){ allerEcran('travail-chrono'); }
+  // Retour sur la phase de travail (§8 des retours de test v6) : si les
+  // réponses aux défis ont déjà été saisies, on revient directement à
+  // l'écran de saisie, pré-rempli, pour pouvoir corriger une erreur.
+  if (etape === 0){
+    const dejaSaisis = defisDeLaManche(state.partie.manche).some(d => d.reponseEquipe !== null);
+    allerEcran(dejaSaisis ? 'travail' : 'travail-chrono');
+  }
   else if (etape === 1){ allerEcran('conseil-debat'); }
   else if (etape === 2){ allerEcran('nuit-fermeture'); }
   else if (etape === 3){ state.partie.etapeBilanMatin = 0; allerEcran('matin-sabotage'); }
@@ -1736,11 +1988,41 @@ function terminerManche(){
   state.partie.etapeManche = 0;
   state.partie.resolutionsEnCours = [];
   state.partie.resolutionCouranteIndex = 0;
+  state.partie.votesAG = {};
+  state.partie.votePageIndex = 0;
+  state.partie.ordreAnnonceResolutions = [];
+  state.partie.indexAnnonceResolution = 0;
+  state.partie.prelevementDefisApplique = null;
   ajouterJournal('nouvelle_manche', `Début de la manche ${state.partie.manche}.`);
   allerEcran('dashboard');
 }
 
 // --- Aides de rendu communes aux écrans interactifs ---
+
+// Modale de confirmation (§4 des retours de test v6) : « Revenir en
+// arrière » ferme simplement la modale (rien n'est modifié), « Confirmer »
+// exécute l'action. Le focus est placé sur « Revenir en arrière » pour
+// qu'un appui réflexe sur Entrée ne valide jamais par erreur.
+function demanderConfirmation(message, onConfirmer){
+  const overlay = el('modale-confirmation');
+  el('modale-confirmation-texte').textContent = message;
+  overlay.classList.remove('hidden');
+  const fermer = () => {
+    overlay.classList.add('hidden');
+    document.removeEventListener('keydown', surEchap, true);
+  };
+  const surEchap = (e) => { if (e.key === 'Escape'){ e.preventDefault(); fermer(); } };
+  document.addEventListener('keydown', surEchap, true);
+  el('modale-btn-retour').onclick = fermer;
+  el('modale-btn-confirmer').onclick = () => { fermer(); onConfirmer(); };
+  el('modale-btn-retour').focus();
+}
+
+// Pouvoir de nuit non utilisé (§4) : « Suivant » sans cible sélectionnée
+// demande confirmation avant de passer au rôle suivant.
+function confirmerPouvoirNonUtilise(role, onConfirmer){
+  demanderConfirmation(`${CARTE_LABELS[role]} n'a pas utilisé son pouvoir cette nuit.`, onConfirmer);
+}
 
 function carteEcran(html){
   el('zone-scene').innerHTML = `<div class="ecran-card">${html}</div>`;
@@ -1963,8 +2245,8 @@ function ecranReponsesGrille(mancheCible, onTermine){
     <div id="grille-reponses-infiltres" style="display:flex;flex-direction:column;gap:10px;max-width:420px;margin:0 auto;cursor:pointer;">
       ${defis.map(d => `<div class="service-box"><h4>${d.service}</h4><div class="carte-reveal reponse-lettre" data-lettre="${d.reponseCorrecte}">${d.reponseCorrecte}</div></div>`).join('')}
     </div>
-    <div class="small" style="margin-top:10px;">Cliquer pour cacher les réponses une fois lues.</div>
-    <div style="margin-top:16px;"><button id="btn-suivant-scene" disabled>Suivant</button></div>
+    <div class="small" style="margin-top:10px;">Cliquer sur les réponses pour les cacher une fois lues.</div>
+    <div class="nav-scene"><button id="btn-suivant-scene">Suivant</button></div>
   `);
   let cachees = false;
   el('grille-reponses-infiltres').addEventListener('click', () => {
@@ -1973,7 +2255,9 @@ function ecranReponsesGrille(mancheCible, onTermine){
       c.textContent = cachees ? '?' : c.dataset.lettre;
     });
   });
-  setTimeout(() => { const b = el('btn-suivant-scene'); if (b) b.disabled = false; }, 3000);
+  // « Suivant » explicite et actif d'emblée (§7 des retours de test v6) :
+  // cacher les réponses reste possible, mais ce n'est plus la seule action
+  // visible de l'écran.
   el('btn-suivant-scene').addEventListener('click', onTermine);
 }
 
@@ -2021,7 +2305,7 @@ function afficherM0RoleTour(ouvert){
   } else {
     ecranNeutreAvecSuivant(`Manche 0 — Reconnaissance des rôles à pouvoir`,
       `${label} se rendort.`,
-      () => { state.partie.sousEtapeIndex++; allerEcran('m0-role-ouvert'); });
+      () => { empilerSnapshot('Manche 0 : rôle suivant'); state.partie.sousEtapeIndex++; allerEcran('m0-role-ouvert'); });
   }
 }
 
@@ -2107,22 +2391,48 @@ function classeChronoGeant(secondesRestantes){
 
 // Temps 2 — Saisie (§E) : sélection seule, aucun retour juste/faux tant que
 // les 3 services ne sont pas renseignés et que « Révéler » n'a pas été cliqué.
+// Dernière saisie connue par manche (éphémère) : après un « ◀ Retour » qui
+// a défait la saisie, l'écran se ré-affiche pré-rempli avec les réponses
+// précédentes, pour ne corriger que celle qui était fausse (§8 v6).
+let derniereSaisieDefis = { manche: null, selection: {} };
+
 function afficherTravail(){
   const defis = defisDeLaManche(state.partie.manche);
   const misAPied = state.joueurs.filter(j => j.miseAPiedManche === state.partie.manche);
+  const dejaSaisis = defis.some(d => d.reponseEquipe !== null);
+  // Pré-remplissage : réponses déjà enregistrées (retour pour correction),
+  // sinon dernière saisie de cette manche défaite par « ◀ Retour ».
+  if (Object.keys(travailSelectionTemp).length === 0){
+    if (dejaSaisis){
+      defis.forEach(d => { if (d.reponseEquipe) travailSelectionTemp[d.id] = d.reponseEquipe; });
+    } else if (derniereSaisieDefis.manche === state.partie.manche){
+      Object.assign(travailSelectionTemp, derniereSaisieDefis.selection);
+    }
+  }
+  const modifiable = !dejaSaisis || defisModifiables();
   const tousSelectionnes = defis.every(d => travailSelectionTemp[d.id]);
   carteEcran(`
     <h2>Manche ${state.partie.manche} — Phase de travail</h2>
     <div class="sous-titre">RH · Commercial · Finance — chaque service relève son défi.</div>
     ${misAPied.length ? `<div class="banner info">${misAPied.map(j => j.prenom).join(', ')} : mis(e) à pied, ne participe pas au défi de son service.</div>` : ''}
+    ${dejaSaisis ? `<div class="banner info">${modifiable
+      ? 'Correction : modifiez la ou les réponses erronées puis révélez à nouveau. Le bilan de la manche sera recalculé.'
+      : 'Le conseil a déjà commencé : les réponses de cette manche ne peuvent plus être modifiées.'}</div>` : ''}
     <div id="grille-defis" style="text-align:left;"></div>
-    <button id="btn-valider-defis" ${tousSelectionnes ? '' : 'disabled'}>Révéler les résultats</button>
+    <div class="nav-scene"><button id="btn-valider-defis" ${tousSelectionnes && modifiable ? '' : 'disabled'}>${dejaSaisis ? 'Corriger et révéler à nouveau' : 'Révéler les résultats'}</button></div>
   `);
   afficherGrilleDefis();
   el('btn-valider-defis').addEventListener('click', () => {
     try {
+      const selection = Object.assign({}, travailSelectionTemp);
+      derniereSaisieDefis = { manche: state.partie.manche, selection };
       arreterChrono();
-      defis.forEach(d => { saisirReponseDefi(d.id, travailSelectionTemp[d.id]); });
+      if (defis.some(d => d.reponseEquipe !== null)){
+        annulerSaisieDefis();
+        dernierEcranSonore = null; // le bilan corrigé rejoue son annonce sonore
+      }
+      defis.forEach(d => { saisirReponseDefi(d.id, selection[d.id]); });
+      travailSelectionTemp = {};
       allerEcran('travail-revelation');
     } catch(e){ afficherErreur(e.message); }
   });
@@ -2210,7 +2520,7 @@ function afficherTravailBilan(){
     <div style="margin-top:20px;"><button id="btn-suivant-scene">Suivant</button></div>
   `);
   el('btn-suivant-scene').addEventListener('click', () => {
-    if (state.partie.propositionsIndices){ allerEcran('indice'); }
+    if (state.partie.indiceEnAttente){ allerEcran('indice'); }
     // Conséquence immédiate de la panique (§6 des retours de test v5) : sur le
     // même principe que l'indice, la conséquence s'affiche tout de suite après
     // le bilan agrégé, sans attendre le bilan du matin suivant. L'alerte (1/2
@@ -2227,6 +2537,9 @@ function afficherTravailBilan(){
 function afficherConsequenceDefiImmediate(){
   if (state.partie.consequenceDefisEnAttente){
     traiterConsequenceMatin();
+    // Mémorisé pour pouvoir restituer exactement ce prélèvement si
+    // l'animateur corrige ensuite une réponse de défi (§8 v6).
+    state.partie.prelevementDefisApplique = state.partie.dernierPrelevement || null;
     sauvegarder();
     dessinerCamembert(); // le prélèvement vient de modifier la part Meridian : refléter tout de suite
   }
@@ -2243,21 +2556,24 @@ function afficherConsequenceDefiImmediate(){
   });
 }
 
+// Un seul indice par bilan 3/3 (§6 v6), affiché directement — plus de
+// choix entre deux propositions. Bouton « Suivant » explicite (§7 v6).
 function afficherIndice(){
-  const props = state.partie.propositionsIndices || [];
+  const indice = state.partie.indiceEnAttente;
+  if (!indice){ state.partie.etapeManche = 1; allerEcran('dashboard', true); return; }
+  const libelleRang = indice.type === 'aucun' ? 'Indice' : (indice.rang === 1 ? 'Premier indice de la partie' : `Indice n°${indice.rang}`);
   carteEcran(`
-    <h2>Indice disponible</h2>
-    <div class="sous-titre">Les 3 défis de la manche sont réussis. Choisissez l'indice à révéler.</div>
-    <div id="zone-choix-indice"></div>
+    <h2>Indice</h2>
+    <div class="sous-titre">Les 3 défis de la manche sont réussis. ${libelleRang} :</div>
+    <div class="carte-reveal" style="max-width:560px;">${indice.texte}</div>
+    <div class="nav-scene"><button id="btn-suivant-scene">Suivant</button></div>
   `);
-  const zone = el('zone-choix-indice');
-  zone.innerHTML = props.map((p, i) => `<button class="secondary" data-idx="${i}" style="display:block;margin:8px auto;max-width:520px;">${p.texte}</button>`).join('');
-  zone.querySelectorAll('button').forEach(b => {
-    b.addEventListener('click', () => {
-      choisirIndice(props[+b.dataset.idx].texte);
+  el('btn-suivant-scene').addEventListener('click', () => {
+    try {
+      revelerIndice();
       state.partie.etapeManche = 1;
       allerEcran('dashboard');
-    });
+    } catch(e){ afficherErreur(e.message); }
   });
 }
 
@@ -2273,66 +2589,102 @@ function afficherConseilDebat(){
     <div class="chrono-affichage" id="chrono-affichage">${state.partie.chrono ? formatChrono(Math.round((state.partie.chrono.finAt - Date.now())/1000)) : ''}</div>
     <div class="small">${inscrits.length} / 3 noms retenus</div>
     <div class="grille-joueurs-tap" id="grille-debat"></div>
-    <button id="btn-suivant-scene">Suivant</button>
+    <div class="nav-scene"><button id="btn-suivant-scene">Suivant</button></div>
   `);
-  rendreGrilleJoueurs(el('grille-debat'), actifs, (id) => {
+  rendreGrilleJoueurs(el('grille-debat'), joueursOrdreAlphabetique(actifs), (id) => {
     try {
       if (inscrits.includes(id)) retirerResolution(id);
       else inscrireResolution(id);
       rafraichirJeu();
     } catch(e){ afficherErreur(e.message); }
   }, inscrits);
-  el('btn-suivant-scene').addEventListener('click', () => {
+  const passerAuVote = () => {
     arreterChrono();
     jouerClocheDebatFin();
+    empilerSnapshot('Fin du débat');
     if (state.partie.resolutionsEnCours.length === 0){
-      ajouterChroniquePublique("Aucune résolution n'a été adoptée. Le conseil reste inchangé.");
+      ajouterChroniquePublique("Aucune résolution n'a été soumise au vote. Le conseil reste inchangé.");
       state.partie.etapeManche = 2;
       allerEcran('dashboard');
     } else {
+      ouvrirVoteSimultane();
       allerEcran('conseil-vote');
+    }
+  };
+  el('btn-suivant-scene').addEventListener('click', () => {
+    // Confirmation si aucun nom n'a été retenu (§4 des retours de test v6).
+    if (state.partie.resolutionsEnCours.length === 0){
+      demanderConfirmation("Aucun nom n'a été sélectionné pour la révocation.", passerAuVote);
+    } else {
+      passerAuVote();
     }
   });
 }
 
-let voteResolutionTemp = {}; // { [joueurId]: 'pour'|'contre'|'abstention' }, remis à zéro à chaque résolution
-
-function afficherConseilVote(){
-  const idx = state.partie.resolutionCouranteIndex;
-  const resolution = state.partie.resolutionsEnCours[idx];
-  if (!resolution){ allerEcran('conseil-resultat', true); return; }
-  const cible = getJoueur(resolution.joueurId);
+// Ouverture du vote simultané : chaque associé actif part en abstention sur
+// chaque résolution (neutre), la saisie commence à la 1re résolution.
+function ouvrirVoteSimultane(){
   const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
-  voteResolutionTemp = {};
-  votants.forEach(j => { voteResolutionTemp[j.id] = 'abstention'; });
+  state.partie.votesAG = {};
+  state.partie.resolutionsEnCours.filter(r => r.statut === 'en_attente').forEach(r => {
+    state.partie.votesAG[r.joueurId] = Object.fromEntries(votants.map(j => [j.id, 'abstention']));
+  });
+  state.partie.votePageIndex = 0;
+  sauvegarder();
+}
+
+// Ancien brouillon de vote éphémère, remis à zéro par
+// reinitialiserEtatEcranEphemere : les votes vivent désormais dans
+// state.partie.votesAG (persistés, donc couverts par « ◀ Retour »).
+let voteResolutionTemp = {};
+
+// Vote simultané (§3 des retours de test v6) : une page par résolution pour
+// la lisibilité, mais AUCUN effet n'est appliqué avant « Clore le vote » —
+// tous les associés actifs à l'ouverture votent sur toutes les résolutions,
+// avec les parts de l'ouverture. On peut librement revenir à une
+// résolution précédente pour corriger un vote.
+function afficherConseilVote(){
+  const aVoter = state.partie.resolutionsEnCours.filter(r => r.statut === 'en_attente');
+  if (aVoter.length === 0){ allerEcran('conseil-resultat', true); return; }
+  if (!state.partie.votesAG || aVoter.some(r => !state.partie.votesAG[r.joueurId])) ouvrirVoteSimultane();
+  const page = Math.min(Math.max(0, state.partie.votePageIndex || 0), aVoter.length - 1);
+  const resolution = aVoter[page];
+  const votes = state.partie.votesAG[resolution.joueurId];
+  const votants = joueursOrdreAlphabetique(state.joueurs.filter(j => votes[j.id] !== undefined));
+  const derniere = page === aVoter.length - 1;
 
   carteEcran(`
-    <h2>Résolution n°${idx + 1} — Révocation de ${cible.prenom}</h2>
+    <h2>Résolution ${page + 1} / ${aVoter.length} — Révocation de ${resolution.prenom}</h2>
     ${imgTag('accusation', 'illustration-small')}
-    <div class="sous-titre">Chaque actionnaire vote selon son nombre de parts. Un tap fait défiler Abstention → Pour → Contre.
-      Majorité calculée sur les voix exprimées (l'abstention est neutre).</div>
+    <div class="sous-titre">Vote simultané : les votes de toutes les résolutions sont recueillis avant qu'aucune révocation ne s'applique — chacun vote sur chaque résolution avec ses parts actuelles.
+      Un tap fait défiler Abstention → Pour → Contre. Majorité calculée sur les voix exprimées (l'abstention est neutre).</div>
     <div class="grille-joueurs-tap" id="grille-vote"></div>
     <div class="barre-progression"><div class="fill" id="barre-vote-fill" style="width:0%;"></div><div class="seuil"></div></div>
     <div class="small" id="lbl-vote-pct">0 % pour, sur 50 % requis</div>
-    <button class="ok" id="btn-valider-vote-scene" style="margin-top:10px;">Voter cette résolution</button>
+    <div class="nav-scene">
+      ${page > 0 ? '<button class="lien-discret" id="btn-resolution-precedente">◀ Résolution précédente</button>' : '<span></span>'}
+      ${derniere
+        ? '<button class="ok" id="btn-clore-vote">Clore le vote et proclamer les résultats</button>'
+        : '<button id="btn-resolution-suivante">Suivant : résolution suivante</button>'}
+    </div>
   `);
 
   const grille = el('grille-vote');
   grille.innerHTML = votants.map(j =>
-    `<button type="button" class="joueur-tap vote-abstention" data-id="${j.id}">${j.prenom}${j.id === resolution.joueurId ? ' (visé)' : ''}</button>`
+    `<button type="button" class="joueur-tap vote-${votes[j.id]}" data-id="${j.id}">${j.prenom}${j.id === resolution.joueurId ? ' (visé)' : ''}</button>`
   ).join('');
 
   // Barre de vote (§C7 brief v3) : trait à 50 %, vire au vert et vibre
   // 300 ms au moment précis où la majorité est franchie.
-  let majoriteFranchie = false;
+  let majoriteFranchie = null;
   function majBarre(){
-    const { pour, totalVotante, acquise: majoriteAcquise } = calculerVote(votants, voteResolutionTemp);
+    const { pour, totalVotante, acquise: majoriteAcquise } = calculerVote(votants, votes);
     const pct = totalVotante > 0 ? Math.round((pour / totalVotante) * 100) : 0;
     const fill = el('barre-vote-fill');
     fill.style.width = Math.min(100, pct) + '%';
     fill.classList.toggle('majorite', majoriteAcquise);
     el('lbl-vote-pct').textContent = `${pct} % pour (${formatPct(pour)} sur ${formatPct(totalVotante)}), seuil 50 %`;
-    if (majoriteAcquise && !majoriteFranchie){
+    if (majoriteAcquise && majoriteFranchie === false){
       const barre = fill.closest('.barre-progression');
       barre.classList.remove('vibre'); void barre.offsetWidth; barre.classList.add('vibre');
     }
@@ -2342,37 +2694,61 @@ function afficherConseilVote(){
   grille.querySelectorAll('button.joueur-tap').forEach(b => {
     b.addEventListener('click', () => {
       const ordre = ['abstention', 'pour', 'contre'];
-      const suivant = ordre[(ordre.indexOf(voteResolutionTemp[b.dataset.id]) + 1) % ordre.length];
-      voteResolutionTemp[b.dataset.id] = suivant;
+      const suivant = ordre[(ordre.indexOf(votes[b.dataset.id]) + 1) % ordre.length];
+      votes[b.dataset.id] = suivant;
+      sauvegarder();
       b.className = 'joueur-tap vote-' + suivant;
       majBarre();
     });
   });
   majBarre();
 
-  el('btn-valider-vote-scene').addEventListener('click', () => {
-    try {
-      voterResolutionCourante(resolution.joueurId, voteResolutionTemp);
-      allerEcran('conseil-resultat');
-    } catch(e){ afficherErreur(e.message); }
-  });
+  const allerPage = (n) => {
+    empilerSnapshot('Vote — résolution ' + (n + 1));
+    state.partie.votePageIndex = n;
+    sauvegarder();
+    rafraichirJeu();
+  };
+  if (page > 0) el('btn-resolution-precedente').addEventListener('click', () => allerPage(page - 1));
+  if (!derniere){
+    el('btn-resolution-suivante').addEventListener('click', () => allerPage(page + 1));
+  } else {
+    el('btn-clore-vote').addEventListener('click', () => {
+      try {
+        cloreVoteSimultane(state.partie.votesAG);
+        allerEcran('conseil-resultat');
+      } catch(e){ afficherErreur(e.message); }
+    });
+  }
 }
 
-function derniereResolutionDecidee(){
-  const arr = state.partie.resolutionsEnCours;
-  for (let i = arr.length - 1; i >= 0; i--){
-    if (arr[i].statut === 'adoptee' || arr[i].statut === 'rejetee') return arr[i];
+function resolutionAnnoncee(){
+  const ordre = state.partie.ordreAnnonceResolutions || [];
+  const id = ordre[state.partie.indexAnnonceResolution || 0];
+  return id ? state.partie.resolutionsEnCours.find(r => r.joueurId === id) || null : null;
+}
+
+// Dégel du camembert (voir cloreVoteSimultane) une fois annoncée la sortie
+// de capital de la dernière révocation — plus aucune carte à retourner.
+function degelerCamembertSiDerniereRevocation(){
+  const ordre = state.partie.ordreAnnonceResolutions || [];
+  const restantes = ordre.slice((state.partie.indexAnnonceResolution || 0) + 1)
+    .some(id => (state.partie.resolutionsEnCours.find(r => r.joueurId === id) || {}).statut === 'adoptee');
+  if (!restantes && state.partie.camembertGeleJusquaReveal){
+    state.partie.camembertGeleJusquaReveal = null;
+    sauvegarder();
+    dessinerCamembert();
+    afficherBandeauJoueurs();
   }
-  return null;
 }
 
 function afficherConseilResultatPresidentVacant(resolution){
-  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
+  const actifs = joueursOrdreAlphabetique(state.joueurs.filter(j => j.statutCapital === 'actif'));
   carteEcran(`
     <h2>${resolution.prenom} était Président du conseil</h2>
     <div class="sous-titre">Désignez son successeur.</div>
     <select id="select-nouveau-president-scene"></select>
-    <button id="btn-suivant-scene" style="margin-left:8px;">Désigner et continuer</button>
+    <div class="nav-scene"><button id="btn-suivant-scene">Désigner et continuer</button></div>
   `);
   remplirSelect(el('select-nouveau-president-scene'), actifs, false);
   el('btn-suivant-scene').addEventListener('click', () => {
@@ -2381,28 +2757,36 @@ function afficherConseilResultatPresidentVacant(resolution){
   });
 }
 
-// Révélation de carte au clic (§C5 brief v3), même traitement qu'au Bilan
-// du matin : dos visible, silence jusqu'au clic, rotation 3D.
+// Proclamation des résultats, une résolution à la fois, dans l'ordre des
+// scores (§3 des retours de test v6). Révélation de carte au clic (§C5
+// brief v3), même traitement qu'au Bilan du matin.
 function afficherConseilResultat(){
-  const resolution = derniereResolutionDecidee();
-  if (!resolution){ state.partie.etapeManche = 2; allerEcran('dashboard', true); return; }
+  const resolution = resolutionAnnoncee();
+  if (!resolution){ terminerConseil(true); return; }
   const cible = getJoueur(resolution.joueurId);
-  const adoptee = resolution.statut === 'adoptee';
-  const titre = adoptee
-    ? `Résolution adoptée — ${resolution.prenom} est révoqué(e).`
-    : `Résolution rejetée — ${resolution.prenom} reste en fonction.`;
+  const total = (state.partie.ordreAnnonceResolutions || []).length;
+  const rang = `<div class="small">Résultat ${(state.partie.indexAnnonceResolution || 0) + 1} / ${total}</div>`;
+  const detailVote = resolution.totalVotante != null
+    ? `<div class="sous-titre">${formatPct(resolution.pour)} pour, sur ${formatPct(resolution.totalVotante)} de voix exprimées.</div>` : '';
 
-  if (!adoptee){
-    carteEcran(`<h2>${titre}</h2><button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>`);
+  if (resolution.statut !== 'adoptee'){
+    const titre = resolution.statut === 'non_retenue'
+      ? `Majorité obtenue, mais plafond atteint — ${resolution.prenom} reste en fonction.`
+      : `Résolution rejetée — ${resolution.prenom} reste en fonction.`;
+    const precision = resolution.statut === 'non_retenue'
+      ? `<div class="small">Au plus ${plafondRevocationsParManche()} révocation(s) par manche : les résolutions les mieux classées ont été retenues.</div>` : '';
+    carteEcran(`${rang}<h2>${titre}</h2>${detailVote}${precision}<div class="nav-scene"><button id="btn-suivant-scene">Suivant</button></div>`);
     el('btn-suivant-scene').addEventListener('click', avancerApresConseilResultat);
     return;
   }
 
   const idCarte = 'carte-revocation';
   carteEcran(`
-    <h2>${titre}</h2>
+    ${rang}
+    <h2>Résolution adoptée — ${resolution.prenom} est révoqué(e).</h2>
+    ${detailVote}
     ${rendreCarteFlipHTML(idCarte, resolution.prenom)}
-    <button id="btn-suivant-scene" style="margin-top:14px;display:none;">Suivant</button>
+    <div class="nav-scene"><button id="btn-suivant-scene" style="display:none;">Suivant</button></div>
   `);
   jouerSonEcranUneFois('conseil-resultat-son-' + resolution.joueurId, jouerSonResolutionAdoptee);
   activerCarteFlip(idCarte, resolution.prenom, cible.carte, (prenom, carte) => {
@@ -2417,30 +2801,41 @@ function afficherConseilResultat(){
 // Sortie du capital (§D5/§C5 brief v3) : même traitement qu'au sabotage —
 // une révocation cède aussi 100 % des titres, ça mérite le même temps fort.
 function afficherConseilResultatSortieCapital(resolution, cible){
+  degelerCamembertSiDerniereRevocation();
   carteEcran(`
     <h2>Sortie du capital</h2>
     <div class="texte-narratif" style="text-align:center;">${texteSortieCapital('revoque', resolution.prenom)}</div>
-    <button id="btn-suivant-scene" style="margin-top:14px;">Suivant</button>
+    <div class="nav-scene"><button id="btn-suivant-scene">Suivant</button></div>
   `);
   el('btn-suivant-scene').addEventListener('click', () => {
-    if (state.partie.presidentVacant) afficherConseilResultatPresidentVacant(resolution);
+    if (state.partie.presidentVacant && state.partie.presidentActuelId === cible.id) afficherConseilResultatPresidentVacant(resolution);
     else avancerApresConseilResultat();
   });
 }
 
 function avancerApresConseilResultat(){
-  const idx = state.partie.resolutionCouranteIndex;
-  const verrouillee = (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) >= plafondRevocationsParManche();
-  if (!verrouillee && state.partie.resolutionsEnCours[idx] && state.partie.resolutionsEnCours[idx].statut === 'en_attente'){
-    allerEcran('conseil-vote');
+  const total = (state.partie.ordreAnnonceResolutions || []).length;
+  if ((state.partie.indexAnnonceResolution || 0) + 1 < total){
+    empilerSnapshot('Résultat suivant');
+    state.partie.indexAnnonceResolution += 1;
+    sauvegarder();
+    rafraichirJeu();
   } else {
-    const uneAdoptee = state.partie.resolutionsEnCours.some(r => r.statut === 'adoptee');
-    if (!uneAdoptee){
-      ajouterChroniquePublique("Aucune résolution n'a été adoptée. Le conseil reste inchangé.");
-    }
-    state.partie.etapeManche = 2;
-    allerEcran('dashboard');
+    terminerConseil(false);
   }
+}
+
+function terminerConseil(autoRedirect){
+  if (state.partie.camembertGeleJusquaReveal){
+    state.partie.camembertGeleJusquaReveal = null;
+  }
+  if (!autoRedirect) empilerSnapshot('Fin du conseil');
+  const uneAdoptee = state.partie.resolutionsEnCours.some(r => r.statut === 'adoptee');
+  if (!uneAdoptee && state.partie.resolutionsEnCours.length > 0 && !autoRedirect){
+    ajouterChroniquePublique("Aucune révocation n'a été prononcée. Le conseil reste inchangé.");
+  }
+  state.partie.etapeManche = 2;
+  allerEcran('dashboard', autoRedirect);
 }
 
 // --- Étape 3 : Séquence de nuit (§5.6) ---
@@ -2465,6 +2860,10 @@ function etapesNuitDisponibles(){
 }
 
 function avancerNuit(){
+  // Instantané AVANT l'incrément (sinon « ◀ Retour » restaurerait l'écran
+  // précédent avec l'index déjà avancé, et le « Suivant » suivant sauterait
+  // une étape de la nuit).
+  empilerSnapshot('Nuit : étape suivante');
   state.partie.sousEtapeIndex++;
   const etapes = state.partie.etapesNuitSnapshot || etapesNuitDisponibles();
   const id = etapes[state.partie.sousEtapeIndex];
@@ -2477,6 +2876,9 @@ function avancerNuit(){
 // tablette/mobile, sans clavier) ou à la barre d'espace si un clavier est
 // disponible. BUG CORRIGÉ : la version précédente n'avançait qu'au clavier
 // et bloquait l'animateur sur tablette (§5 des retours de test).
+// Même lune au trait que l'indicateur de phase (#astre-phase).
+const SVG_LUNE = '<svg viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M128 30 A74 74 0 1 0 170 128 A60 60 0 1 1 128 30 Z"/><path d="M72 92 a7 7 0 1 0 0.1 0" stroke-width="4"/><path d="M96 138 a10 10 0 1 0 0.1 0" stroke-width="4"/></svg>';
+
 function afficherNuitFermeture(){
   jouerSonEcranUneFois('nuit-fermeture-' + state.partie.manche, jouerSonEntreeNuit);
   demarrerNappeNuit();
@@ -2486,7 +2888,7 @@ function afficherNuitFermeture(){
   sauvegarder();
   carteEcran(`
     <div class="ecran-nuit-sombre" id="ecran-nuit-tap">
-      <div class="icone-nuit">🌙</div>
+      <div class="icone-nuit">${SVG_LUNE}</div>
       <div class="texte-nuit">${TEXTES_NUIT_TOMBE[state.partie.manche] || 'NOVENTIS DORT'}</div>
       <div class="indice-suite">(touchez l'écran pour continuer)</div>
     </div>
@@ -2502,84 +2904,99 @@ function afficherNuitFermeture(){
 
 let selectionNuitTemp = null; // { [joueurId]: sélectionné }, remis à zéro à chaque écran de nuit
 
-function afficherNuitJuriste(){
-  // Auto-protection autorisée (§2 brief v3) : seule exclusion, la cible
-  // protégée la nuit précédente (interdit de protéger 2 nuits de suite).
-  const candidats = state.joueurs.filter(j => j.statutCapital === 'actif' && !j.protegeNuitPrecedente);
+// Écran de pouvoir de nuit commun (Juriste, DAF, DRH) — §4/§5 des retours
+// de test v6 : « Suivant » à droite (action principale), « Passer » à
+// gauche en lien texte discret quand le pouvoir est facultatif. « Suivant »
+// reste cliquable sans sélection, mais demande alors confirmation que le
+// rôle n'a pas utilisé son pouvoir. Le pouvoir s'applique toujours à la
+// cible sélectionnée au moment du clic (selectionNuitTemp), jamais à une
+// cible par défaut ou à celle d'une nuit précédente.
+function afficherEcranPouvoirNuit({ role, titre, question, candidats, passable, onValider, texteRendormir }){
   selectionNuitTemp = null;
   carteEcran(`
-    <h2>Le Juriste se réveille.</h2>
-    <div class="sous-titre">Qui protège-t-il/elle cette nuit ?</div>
-    <div class="grille-joueurs-tap" id="grille-juriste"></div>
-    <button id="btn-suivant-scene" disabled>Suivant</button>
+    <h2>${titre}</h2>
+    <div class="sous-titre">${question}</div>
+    <div class="grille-joueurs-tap" id="grille-pouvoir-nuit"></div>
+    <div class="nav-scene">
+      ${passable ? '<button class="lien-discret" id="btn-passer-pouvoir">Passer (ne pas utiliser le pouvoir)</button>' : '<span></span>'}
+      <button id="btn-suivant-scene">Suivant</button>
+    </div>
   `);
-  const rendre = () => afficherGrilleSelectionUnique(el('grille-juriste'), candidats, selectionNuitTemp, (id) => {
+  const rendre = () => afficherGrilleSelectionUnique(el('grille-pouvoir-nuit'), joueursOrdreAlphabetique(candidats), selectionNuitTemp, (id) => {
     selectionNuitTemp = id;
-    el('btn-suivant-scene').disabled = !selectionNuitTemp;
     rendre();
   });
   rendre();
+  const rendormir = () => allerEcranRendormir(texteRendormir);
+  const passer = () => {
+    empilerSnapshot(`${CARTE_LABELS[role]} : pouvoir non utilisé`);
+    ajouterJournal('pouvoir_non_utilise', `${CARTE_LABELS[role]} n'a pas utilisé son pouvoir cette nuit.`);
+    rendormir();
+  };
   el('btn-suivant-scene').addEventListener('click', () => {
-    try {
-      definirProtectionJuriste(selectionNuitTemp);
-      ecranNeutreAvecSuivant('Phase nocturne', "Le Juriste se rendort.", avancerNuit);
-    } catch(e){ afficherErreur(e.message); }
+    const cibleId = selectionNuitTemp;
+    if (!cibleId){ confirmerPouvoirNonUtilise(role, passer); return; }
+    try { onValider(cibleId, rendormir); } catch(e){ afficherErreur(e.message); }
+  });
+  if (passable) el('btn-passer-pouvoir').addEventListener('click', passer);
+}
+
+// « … se rendort » : véritable écran (et non un simple rendu sur place),
+// pour qu'un rafraîchissement de l'affichage ne ramène jamais l'écran d'un
+// pouvoir déjà exercé, et que « ◀ Retour » y revienne proprement.
+function allerEcranRendormir(texte){
+  state.partie.texteRendormir = texte;
+  allerEcran('nuit-rendormir');
+}
+
+function afficherNuitRendormir(){
+  ecranNeutreAvecSuivant('Phase nocturne', state.partie.texteRendormir || '', avancerNuit);
+}
+
+function afficherNuitJuriste(){
+  // Auto-protection autorisée (§2 brief v3) : seule exclusion, la cible
+  // protégée la nuit précédente (interdit de protéger 2 nuits de suite).
+  afficherEcranPouvoirNuit({
+    role: 'juriste',
+    titre: 'Le Juriste se réveille.',
+    question: 'Qui protège-t-il/elle cette nuit ?',
+    candidats: state.joueurs.filter(j => j.statutCapital === 'actif' && !j.protegeNuitPrecedente),
+    passable: false,
+    texteRendormir: 'Le Juriste se rendort.',
+    onValider: (cibleId, rendormir) => { definirProtectionJuriste(cibleId); rendormir(); }
   });
 }
 
 function afficherNuitDafQuestion(){
-  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
-  selectionNuitTemp = null;
-  carteEcran(`
-    <h2>Le DAF se réveille.</h2>
-    <div class="sous-titre">Sur qui exerce-t-il son droit à l'information ?</div>
-    <div class="grille-joueurs-tap" id="grille-daf"></div>
-    <button id="btn-suivant-scene" disabled>Suivant</button>
-    <button class="secondary" id="btn-passer-daf">Passer (ne pas utiliser le pouvoir)</button>
-  `);
-  const rendre = () => afficherGrilleSelectionUnique(el('grille-daf'), actifs, selectionNuitTemp, (id) => {
-    selectionNuitTemp = id;
-    el('btn-suivant-scene').disabled = !selectionNuitTemp;
-    rendre();
-  });
-  rendre();
-  el('btn-suivant-scene').addEventListener('click', () => {
-    try {
-      const res = enqueteDaf(selectionNuitTemp);
+  afficherEcranPouvoirNuit({
+    role: 'daf',
+    titre: 'Le DAF se réveille.',
+    question: "Sur qui exerce-t-il son droit à l'information ?",
+    candidats: state.joueurs.filter(j => j.statutCapital === 'actif'),
+    passable: true,
+    texteRendormir: 'Le DAF se rendort.',
+    onValider: (cibleId, rendormir) => {
+      const res = enqueteDaf(cibleId);
       carteEcran(`
         <h2>Droit à l'information</h2>
         <div class="carte-reveal">${res.prenom} est ${CARTE_LABELS[res.carte]}</div>
-        <button id="btn-fermer-daf" style="margin-top:16px;">Fermer</button>
+        <div class="nav-scene"><button id="btn-fermer-daf">Suivant</button></div>
       `);
-      el('btn-fermer-daf').addEventListener('click', () => ecranNeutreAvecSuivant('Phase nocturne', 'Le DAF se rendort.', avancerNuit));
-    } catch(e){ afficherErreur(e.message); }
+      el('btn-fermer-daf').addEventListener('click', rendormir);
+    }
   });
-  el('btn-passer-daf').addEventListener('click', () => ecranNeutreAvecSuivant('Phase nocturne', 'Le DAF se rendort.', avancerNuit));
 }
 
 function afficherNuitDrh(){
-  const actifs = state.joueurs.filter(j => j.statutCapital === 'actif');
-  selectionNuitTemp = null;
-  carteEcran(`
-    <h2>La DRH se réveille.</h2>
-    <div class="sous-titre">Qui met-elle à pied ?</div>
-    <div class="grille-joueurs-tap" id="grille-drh"></div>
-    <button id="btn-suivant-scene" disabled>Suivant</button>
-    <button class="secondary" id="btn-passer-drh">Passer (ne pas utiliser le pouvoir)</button>
-  `);
-  const rendre = () => afficherGrilleSelectionUnique(el('grille-drh'), actifs, selectionNuitTemp, (id) => {
-    selectionNuitTemp = id;
-    el('btn-suivant-scene').disabled = !selectionNuitTemp;
-    rendre();
+  afficherEcranPouvoirNuit({
+    role: 'drh',
+    titre: 'La DRH se réveille.',
+    question: 'Qui met-elle à pied ?',
+    candidats: state.joueurs.filter(j => j.statutCapital === 'actif'),
+    passable: true,
+    texteRendormir: 'La DRH se rendort.',
+    onValider: (cibleId, rendormir) => { appliquerMiseAPied(cibleId); rendormir(); }
   });
-  rendre();
-  el('btn-suivant-scene').addEventListener('click', () => {
-    try {
-      appliquerMiseAPied(selectionNuitTemp);
-      ecranNeutreAvecSuivant('Phase nocturne', 'La DRH se rendort.', avancerNuit);
-    } catch(e){ afficherErreur(e.message); }
-  });
-  el('btn-passer-drh').addEventListener('click', () => ecranNeutreAvecSuivant('Phase nocturne', 'La DRH se rendort.', avancerNuit));
 }
 
 function afficherNuitInfiltres(){
@@ -2589,22 +3006,24 @@ function afficherNuitInfiltres(){
     <h2>Les Infiltrés se réveillent.</h2>
     <div class="sous-titre">Qui sabotent-ils ?</div>
     <div class="grille-joueurs-tap" id="grille-infiltres"></div>
-    <button id="btn-suivant-scene" disabled>Suivant</button>
+    <div class="nav-scene"><button id="btn-suivant-scene" disabled>Suivant</button></div>
   `);
-  const rendre = () => afficherGrilleSelectionUnique(el('grille-infiltres'), actifs, selectionNuitTemp, (id) => {
+  const rendre = () => afficherGrilleSelectionUnique(el('grille-infiltres'), joueursOrdreAlphabetique(actifs), selectionNuitTemp, (id) => {
     selectionNuitTemp = id;
     el('btn-suivant-scene').disabled = !selectionNuitTemp;
     rendre();
   });
   rendre();
   el('btn-suivant-scene').addEventListener('click', () => {
-    const cible = getJoueur(selectionNuitTemp);
+    const cibleId = selectionNuitTemp;
+    if (!cibleId) return;
+    const cible = getJoueur(cibleId);
     const estProtege = !!(cible && cible.protegeCetteNuit);
     try {
-      actionSabotage(selectionNuitTemp, estProtege);
+      actionSabotage(cibleId, estProtege);
       afficherBandeauJoueurs(); // la sortie du capital est publique immédiatement, sans attendre le prochain écran
       dessinerCamembert();
-      ecranNeutreAvecSuivant('Phase nocturne', 'Les Infiltrés se rendorment.', avancerNuit);
+      allerEcranRendormir('Les Infiltrés se rendorment.');
     } catch(e){ afficherErreur(e.message); }
   });
 }
@@ -2847,8 +3266,26 @@ function afficherRecap(){
 
 const ECRANS_SANS_CAMEMBERT = new Set(['ouverture-regles', 'ouverture-scenario', 'm0-lettre']); // avant l'apparition animée de Meridian
 
+// Jour / nuit (§1 des retours de test v6) : la phase de nuit couvre tout
+// l'intervalle entre « La nuit tombe » et le réveil (Manche 0 comprise).
+const ECRANS_NUIT_M0 = new Set(['m0-nuit-tombe', 'm0-infiltres-ouvert', 'm0-infiltres-ferme',
+  'm0-reponses', 'm0-reponses-grille', 'm0-role-ouvert', 'm0-role-ferme']);
+const ECRANS_SANS_ASTRE = new Set(['ouverture-regles', 'ouverture-scenario', 'm0-lettre', 'fin', 'recap']);
+
+function estEcranDeNuit(id){
+  return ECRANS_NUIT_M0.has(id) || (id.startsWith('nuit-') && id !== 'nuit-reveil');
+}
+
+function mettreAJourAstre(id){
+  const nuit = !!id && estEcranDeNuit(id);
+  const jour = !!id && !nuit && !ECRANS_SANS_ASTRE.has(id);
+  document.body.classList.toggle('phase-nuit', nuit);
+  document.body.classList.toggle('phase-jour', jour);
+}
+
 function renderEcranActuel(){
   const id = state.partie.ecranActuel;
+  mettreAJourAstre(id);
   el('zone-camembert-compact').classList.toggle('hidden', ECRANS_SANS_CAMEMBERT.has(id) && indexParagrapheLettre < PARAGRAPHES_LETTRE.length - 1);
   // Filet de sécurité (§C4) : ces deux états n'ont de sens que sur leur
   // propre écran, jamais laissés « collés » après une navigation par un
@@ -2882,6 +3319,7 @@ function renderEcranActuel(){
   if (id === 'nuit-daf-question') return afficherNuitDafQuestion();
   if (id === 'nuit-drh') return afficherNuitDrh();
   if (id === 'nuit-infiltres') return afficherNuitInfiltres();
+  if (id === 'nuit-rendormir') return afficherNuitRendormir();
   if (id === 'nuit-reponses') return afficherNuitReponses();
   if (id === 'nuit-reponses-grille') return afficherNuitReponsesGrille();
   if (id === 'nuit-reveil') return afficherNuitReveil();
@@ -2926,6 +3364,14 @@ function remplirPanneauCorrections(){
    ============================================================ */
 
 let joueursSetup = []; // liste de travail avant démarrage {prenom, service, part, role}
+
+// Outils de test (§11 des retours de test v6) : absents de l'écran de
+// préparation en présentation, visibles uniquement en mode développeur,
+// en ajoutant ?dev=1 à l'adresse de la page.
+const MODE_DEV = (() => {
+  try { return new URLSearchParams(window.location.search).get('dev') === '1'; }
+  catch(e){ return false; }
+})();
 let etapePreparation = 1;
 
 // Assistant de préparation en 4 étapes, pas à pas (§1 des retours de test) :
@@ -2998,7 +3444,7 @@ function htmlPanneauPreparation(){
         </div>
       </div>
 
-      <hr style="border-color:var(--border);margin:20px 0;">
+      ${MODE_DEV ? `<hr style="border-color:var(--border);margin:20px 0;">
       <details id="panneau-outils-dev">
         <summary>Outils de test (développeur)</summary>
         <div class="row" style="margin-top:10px;">
@@ -3007,7 +3453,7 @@ function htmlPanneauPreparation(){
         </div>
         <div id="resultats-tests" style="margin-top:12px;"></div>
         <div id="resultats-partie-fictive" style="margin-top:12px;"></div>
-      </details>
+      </details>` : ''}
     </div>
   `;
 }
@@ -3092,8 +3538,10 @@ function attacherEcouteursPreparation(){
     verifierCoherenceSetup();
   });
   el('btn-demarrer').addEventListener('click', demarrerPartie);
-  el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
-  el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
+  if (MODE_DEV){
+    el('btn-run-tests').addEventListener('click', () => afficherResultatsTests(runAcceptanceTests()));
+    el('btn-run-partie-fictive').addEventListener('click', () => afficherResultatPartieFictive(simulerPartieFictive()));
+  }
 }
 
 // Montage du panneau (§2 des retours de test) : construit le DOM du panneau
@@ -3298,6 +3746,7 @@ function rafraichirJeu(){
   afficherMasque();
 
   if (enPrep){
+    mettreAJourAstre(null);
     el('zone-camembert-compact').classList.add('hidden');
     el('zone-scene').innerHTML = '<div class="ecran-card"><h2>Préparation en cours</h2><div class="sous-titre">Composez la partie ci-dessous, puis « Lancer la partie ».</div></div>';
     return;
@@ -3373,8 +3822,9 @@ function runAcceptanceTests(){
     detail: `joueurs=${[...new Set(s1.joueurs.map(j=>j.part))].join(',')} (attendu 9100), meridian=${s1.meridian.part} (attendu 9000), total=${sommeCapital(s1)}`
   });
 
-  // --- T2 : Révocation par résolutions successives — 2 noms inscrits, le
-  // premier échoue, le second est adopté (100 % redistribué, 0 % à Meridian).
+  // --- T2 : Révocation par vote simultané — 2 noms inscrits, votés en une
+  // seule collecte : le premier échoue, le second est adopté (100 %
+  // redistribué, 0 % à Meridian).
   const cibleEchec = s1.joueurs[1].id;
   const cibleAdoptee = s1.joueurs[0].id;
   inscrireResolution(cibleEchec);
@@ -3382,11 +3832,11 @@ function runAcceptanceTests(){
 
   const votesEchec = {};
   s1.joueurs.forEach(j => { votesEchec[j.id] = (j.id === cibleEchec) ? 'pour' : 'contre'; });
-  const acquiseEchec = voterResolutionCourante(cibleEchec, votesEchec);
-
   const votesAdoption = {};
   s1.joueurs.forEach(j => { votesAdoption[j.id] = (j.id === cibleAdoptee) ? 'contre' : 'pour'; });
-  const acquiseAdoption = voterResolutionCourante(cibleAdoptee, votesAdoption);
+  const revoquesT2 = cloreVoteSimultane({ [cibleEchec]: votesEchec, [cibleAdoptee]: votesAdoption });
+  const acquiseEchec = revoquesT2.includes(cibleEchec);
+  const acquiseAdoption = revoquesT2.includes(cibleAdoptee);
 
   const restants = s1.joueurs.filter(j => j.statutCapital === 'actif');
   const attendu1011 = restants.filter(j => j.part === 10111).length;
@@ -3395,7 +3845,7 @@ function runAcceptanceTests(){
     && restants.length === 9 && (attendu1011 + attendu1012) === 9 && attendu1012 === 1
     && s1.meridian.part === 9000 && sommeCapital(s1) === 100000;
   resultats.push({
-    nom: 'T2 — Révocation par résolutions successives',
+    nom: 'T2 — Révocation (vote simultané)',
     pass: t2ok,
     detail: `résolution 1 (${s1.joueurs[1].prenom}) → ${acquiseEchec?'adoptée':'rejetée'} (attendu rejetée) ; résolution 2 (${s1.joueurs[0].prenom}) → ${acquiseAdoption?'adoptée':'rejetée'} (attendu adoptée) ; ${attendu1011}×10111‰ + ${attendu1012}×10112‰ (attendu 8×10111 + 1×10112), meridian=${s1.meridian.part} (attendu 9000, révocation ne lui donne rien), total=${sommeCapital(s1)}`
   });
@@ -3444,7 +3894,7 @@ function runAcceptanceTests(){
   ], 1000);
   state = s4b;
   inscrireResolution(s4b.joueurs[0].id);
-  voterResolutionCourante(s4b.joueurs[0].id, { [s4b.joueurs[0].id]: 'abstention', [s4b.joueurs[1].id]: 'pour', [s4b.joueurs[2].id]: 'pour' });
+  cloreVoteSimultane({ [s4b.joueurs[0].id]: { [s4b.joueurs[0].id]: 'abstention', [s4b.joueurs[1].id]: 'pour', [s4b.joueurs[2].id]: 'pour' } });
   const t4bSorti = s4b.joueurs[0];
   const t4bRestants = s4b.joueurs.filter(j => j.statutCapital === 'actif');
   const t4bok = t4bSorti.statutCapital === 'sorti' && t4bSorti.motifSortie === 'revoque' && t4bSorti.part === 0
@@ -3474,7 +3924,7 @@ function runAcceptanceTests(){
   actionPrelevement('alerte');
   if (!verifierInvariant()) { t5ok = false; violations.push('invariant après alerte'); }
   inscrireResolution(s5.joueurs[5].id);
-  voterResolutionCourante(s5.joueurs[5].id, Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, j.id===s5.joueurs[5].id?'contre':'pour'])));
+  cloreVoteSimultane({ [s5.joueurs[5].id]: Object.fromEntries(s5.joueurs.filter(j=>j.statutCapital==='actif').map(j => [j.id, j.id===s5.joueurs[5].id?'contre':'pour'])) });
   if (!verifierInvariant()) { t5ok = false; violations.push('invariant après révocation'); }
   s5.meridian.part = 15500;
   verifierPaliersMeridian();
@@ -3490,43 +3940,183 @@ function runAcceptanceTests(){
   });
 
   // --- T6 : plafond de 2 adoptions par manche (§G1) — 3 noms retenus, 3
-  // résolutions adoptées à l'unanimité : la 1re et la 2e passent, la 3e est
-  // refusée par le plafond. Compteur remis à 0 à la manche suivante.
+  // résolutions adoptées à l'unanimité dans le même vote simultané : seules
+  // 2 sont retenues (ex æquo → ordre d'inscription), la 3e est « non
+  // retenue » et le joueur reste actif. Compteur remis à 0 à la manche suivante.
   const s6 = construireEtatTest(Array.from({ length: 6 }, () => ({ part: 16500 })), 1000);
   state = s6;
   const [c1, c2, c3] = s6.joueurs;
   inscrireResolution(c1.id); inscrireResolution(c2.id); inscrireResolution(c3.id);
   const tousVotent = (joueurs, cibleId, choix) => Object.fromEntries(joueurs.map(j => [j.id, j.id === cibleId ? 'abstention' : choix]));
-  const a1 = voterResolutionCourante(c1.id, tousVotent(s6.joueurs, c1.id, 'pour'));
-  const a2 = voterResolutionCourante(c2.id, tousVotent(s6.joueurs, c2.id, 'pour'));
-  let troisiemeBloquee = false;
-  try { voterResolutionCourante(c3.id, tousVotent(s6.joueurs, c3.id, 'pour')); } catch(e){ troisiemeBloquee = true; }
+  const revoquesT6 = cloreVoteSimultane({
+    [c1.id]: tousVotent(s6.joueurs, c1.id, 'pour'),
+    [c2.id]: tousVotent(s6.joueurs, c2.id, 'pour'),
+    [c3.id]: tousVotent(s6.joueurs, c3.id, 'pour')
+  });
+  const a1 = revoquesT6.includes(c1.id), a2 = revoquesT6.includes(c2.id);
+  const troisiemeBloquee = !revoquesT6.includes(c3.id) && c3.statutCapital === 'actif'
+    && state.partie.resolutionsEnCours[2].statut === 'non_retenue';
+  let voteSupplementaireRefuse = false;
+  try { cloreVoteSimultane({}); } catch(e){ voteSupplementaireRefuse = true; }
   const compteurAvant = state.partie.revocationsAdopteesParManche[state.partie.manche];
   terminerManche();
   let quatriemeRelanceOk = false;
   try { inscrireResolution(c3.id); quatriemeRelanceOk = true; } catch(e){ /* ne devrait pas être bloqué */ }
-  const t6ok = a1 && a2 && troisiemeBloquee && compteurAvant === 2 && quatriemeRelanceOk
-    && (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) === 0;
+  const t6ok = a1 && a2 && troisiemeBloquee && voteSupplementaireRefuse && compteurAvant === 2 && quatriemeRelanceOk
+    && (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) === 0
+    && sommeCapital(s6) === 100000;
   resultats.push({
     nom: 'T6 — Plafond de 2 adoptions par manche',
     pass: t6ok,
-    detail: `1re=${a1?'adoptée':'rejetée'}, 2e=${a2?'adoptée':'rejetée'} (attendu adoptées), 3e bloquée=${troisiemeBloquee} (attendu true), compteur=${compteurAvant} (attendu 2), inscription relancée manche suivante=${quatriemeRelanceOk} avec compteur remis à ${state.partie.revocationsAdopteesParManche[state.partie.manche] || 0} (attendu 0)`
+    detail: `1re=${a1?'révoquée':'non'}, 2e=${a2?'révoquée':'non'} (attendu révoquées), 3e non retenue et active=${troisiemeBloquee} (attendu true), nouveau vote refusé=${voteSupplementaireRefuse}, compteur=${compteurAvant} (attendu 2), inscription relancée manche suivante=${quatriemeRelanceOk} avec compteur remis à ${state.partie.revocationsAdopteesParManche[state.partie.manche] || 0} (attendu 0)`
   });
 
   // --- T7 : les rejets ne décrémentent pas le compteur — 2 rejetées puis 1
-  // adoptée dans la même manche, la seconde adoption reste possible.
+  // adoptée dans le même vote, la révocation adoptée reste possible.
   const s7 = construireEtatTest(Array.from({ length: 6 }, () => ({ part: 16500 })), 1000);
   state = s7;
   const [d1, d2, d3] = s7.joueurs;
   inscrireResolution(d1.id); inscrireResolution(d2.id); inscrireResolution(d3.id);
-  const r1 = voterResolutionCourante(d1.id, tousVotent(s7.joueurs, d1.id, 'contre'));
-  const r2 = voterResolutionCourante(d2.id, tousVotent(s7.joueurs, d2.id, 'contre'));
-  const r3 = voterResolutionCourante(d3.id, tousVotent(s7.joueurs, d3.id, 'pour'));
+  const revoquesT7 = cloreVoteSimultane({
+    [d1.id]: tousVotent(s7.joueurs, d1.id, 'contre'),
+    [d2.id]: tousVotent(s7.joueurs, d2.id, 'contre'),
+    [d3.id]: tousVotent(s7.joueurs, d3.id, 'pour')
+  });
+  const r1 = revoquesT7.includes(d1.id), r2 = revoquesT7.includes(d2.id), r3 = revoquesT7.includes(d3.id);
   const t7ok = !r1 && !r2 && r3 && (state.partie.revocationsAdopteesParManche[state.partie.manche] || 0) === 1;
   resultats.push({
     nom: 'T7 — Les rejets ne consomment pas le plafond',
     pass: t7ok,
-    detail: `1re=${r1?'adoptée':'rejetée'}, 2e=${r2?'adoptée':'rejetée'} (attendu rejetées), 3e=${r3?'adoptée':'rejetée'} (attendu adoptée malgré 2 tentatives précédentes), compteur=${state.partie.revocationsAdopteesParManche[state.partie.manche]} (attendu 1)`
+    detail: `1re=${r1?'adoptée':'rejetée'}, 2e=${r2?'adoptée':'rejetée'} (attendu rejetées), 3e=${r3?'adoptée':'rejetée'} (attendu adoptée), compteur=${state.partie.revocationsAdopteesParManche[state.partie.manche]} (attendu 1)`
+  });
+
+  // --- T12 : vote simultané — un associé révoqué dans le même tour garde
+  // son droit de vote sur les autres résolutions (§3 v6). A (40 %) est
+  // révoqué, mais son « contre » sur la résolution visant B compte : B est
+  // maintenu (39 % pour contre 40 %). En vote séquentiel, A aurait perdu sa
+  // voix et B aurait été révoqué.
+  const s12 = construireEtatTest([
+    { prenom: 'A', part: 40000, carte: 'infiltre' }, { prenom: 'B', part: 20000 },
+    { prenom: 'C', part: 20000 }, { prenom: 'D', part: 19000 }
+  ], 1000);
+  state = s12;
+  const [jA, jB, jC, jD] = s12.joueurs;
+  inscrireResolution(jA.id); inscrireResolution(jB.id);
+  const revoquesT12 = cloreVoteSimultane({
+    [jA.id]: { [jA.id]: 'contre', [jB.id]: 'pour', [jC.id]: 'pour', [jD.id]: 'pour' },
+    [jB.id]: { [jA.id]: 'contre', [jB.id]: 'abstention', [jC.id]: 'pour', [jD.id]: 'pour' }
+  });
+  const t12ok = revoquesT12.length === 1 && revoquesT12[0] === jA.id
+    && jA.statutCapital === 'sorti' && jB.statutCapital === 'actif'
+    && jB.part + jC.part + jD.part === 99000 && s12.meridian.part === 1000
+    && sommeCapital(s12) === 100000;
+  resultats.push({
+    nom: 'T12 — Vote simultané : aucun droit de vote perdu en cours de manche',
+    pass: t12ok,
+    detail: `révoqués=${revoquesT12.map(id => getJoueur(id).prenom).join(',') || 'aucun'} (attendu A seul), B=${jB.statutCapital} (attendu actif), parts B+C+D=${jB.part + jC.part + jD.part} (attendu 99000), meridian=${s12.meridian.part} (attendu 1000), total=${sommeCapital(s12)}`
+  });
+
+  // --- T13 : effets groupés — deux révocations du même tour : leurs parts
+  // sont rachetées ensemble par les seuls associés restants (un révoqué du
+  // même tour n'en rachète aucune).
+  const s13 = construireEtatTest([
+    { part: 30000 }, { part: 30000 }, { part: 20000 }, { part: 19000 }
+  ], 1000);
+  state = s13;
+  const [e1, e2, e3, e4] = s13.joueurs;
+  inscrireResolution(e1.id); inscrireResolution(e2.id);
+  cloreVoteSimultane({
+    [e1.id]: { [e1.id]: 'contre', [e2.id]: 'pour', [e3.id]: 'pour', [e4.id]: 'pour' },
+    [e2.id]: { [e1.id]: 'pour', [e2.id]: 'contre', [e3.id]: 'pour', [e4.id]: 'pour' }
+  });
+  // 60 000 rachetés au prorata 20:19 → 30 769,23 / 29 230,77 → plus fort reste.
+  const t13ok = e1.part === 0 && e2.part === 0 && e3.part === 50769 && e4.part === 48231
+    && s13.meridian.part === 1000 && sommeCapital(s13) === 100000;
+  resultats.push({
+    nom: 'T13 — Vote simultané : rachat groupé des parts des révoqués',
+    pass: t13ok,
+    detail: `parts C=${e3.part} (attendu 50769), D=${e4.part} (attendu 48231), révoqués=${e1.part}/${e2.part} (attendu 0/0), total=${sommeCapital(s13)}`
+  });
+
+  // --- T14 : plafond et score — 3 résolutions adoptées (60 %, 100 %, 80 %)
+  // avec un plafond de 2 : les 2 meilleurs scores sont retenus, quel que
+  // soit l'ordre d'inscription.
+  const s14 = construireEtatTest(Array.from({ length: 6 }, () => ({ part: 16500 })), 1000);
+  state = s14;
+  const [f1, f2, f3, f4, f5, f6] = s14.joueurs;
+  inscrireResolution(f1.id); inscrireResolution(f2.id); inscrireResolution(f3.id);
+  const revoquesT14 = cloreVoteSimultane({
+    [f1.id]: { [f1.id]: 'abstention', [f2.id]: 'pour', [f3.id]: 'pour', [f4.id]: 'pour', [f5.id]: 'contre', [f6.id]: 'contre' },
+    [f2.id]: { [f1.id]: 'pour', [f2.id]: 'abstention', [f3.id]: 'pour', [f4.id]: 'pour', [f5.id]: 'pour', [f6.id]: 'pour' },
+    [f3.id]: { [f1.id]: 'pour', [f2.id]: 'pour', [f3.id]: 'abstention', [f4.id]: 'pour', [f5.id]: 'pour', [f6.id]: 'contre' }
+  });
+  const t14ok = revoquesT14.length === 2 && revoquesT14[0] === f2.id && revoquesT14[1] === f3.id
+    && f1.statutCapital === 'actif' && state.partie.resolutionsEnCours[0].statut === 'non_retenue'
+    && state.partie.ordreAnnonceResolutions.join() === [f2.id, f3.id, f1.id].join()
+    && sommeCapital(s14) === 100000;
+  resultats.push({
+    nom: 'T14 — Vote simultané : révocations retenues par score',
+    pass: t14ok,
+    detail: `ordre des révocations=${revoquesT14.map(id => getJoueur(id).prenom).join(',')} (attendu ${f2.prenom},${f3.prenom}), ${f1.prenom} (60 %, inscrit en 1er)=${state.partie.resolutionsEnCours[0].statut} (attendu non_retenue), total=${sommeCapital(s14)}`
+  });
+
+  // --- T15 : indices progressifs (§6 v6) — 1er indice binaire, suivants
+  // quantitatifs ; jamais sur un service où il ne reste qu'un associé non
+  // démasqué, ni (quantitatif) sur un service entièrement infiltré.
+  const s15 = construireEtatTest([
+    { service: 'RH', part: 11000, carte: 'infiltre' }, { service: 'RH', part: 11000 }, { service: 'RH', part: 11000 },
+    { service: 'Commercial', part: 11000, carte: 'infiltre' }, { service: 'Commercial', part: 11000, carte: 'infiltre' },
+    { service: 'Finance', part: 44000 },
+    { service: 'Finance', part: 0, statutCapital: 'sorti', motifSortie: 'revoque' },
+    { service: 'Finance', part: 0, statutCapital: 'sorti', motifSortie: 'sabote' }
+  ], 1000);
+  state = s15;
+  let t15ok = true;
+  const t15notes = [];
+  for (let k = 0; k < 60; k++){
+    const ind = genererIndice();
+    if (ind.rang !== 1 || ind.type !== 'binaire' || /\d/.test(ind.texte) || /Finance/.test(ind.texte)){ t15ok = false; t15notes.push('1er : ' + ind.texte); break; }
+  }
+  bilanDefis('3reussis');
+  revelerIndice();
+  const rangApres1 = state.partie.nbIndicesDonnes;
+  for (let k = 0; k < 60; k++){
+    const ind = genererIndice();
+    if (ind.rang !== 2 || ind.type !== 'quantitatif' || !/^Le service RH compte 1 infiltré\.$/.test(ind.texte)){ t15ok = false; t15notes.push('2e : ' + ind.texte); break; }
+  }
+  t15ok = t15ok && rangApres1 === 1;
+  resultats.push({
+    nom: 'T15 — Indices progressifs et garde-fou anti-désignation',
+    pass: t15ok,
+    detail: t15ok ? '1er indice toujours binaire, jamais sur Finance (1 seul associé non démasqué) ; indices suivants quantitatifs, jamais sur Commercial (tous infiltrés) ni Finance ; rang suivi dans l\'état (1 après le 1er indice).' : ('Échecs : ' + t15notes.join(' / ') + ` ; rang=${rangApres1}`)
+  });
+
+  // --- T16 : correction d'une réponse de défi (§8 v6) — panique appliquée
+  // immédiatement, puis correction : le prélèvement est restitué à
+  // l'identique et le bilan recalculé ; impossible une fois le conseil ouvert.
+  const s16 = construireEtatTest(Array.from({ length: 9 }, (_, i) => ({ part: 9000 + i * 250 - 1000, carte: i < 3 ? 'infiltre' : 'associe', service: SERVICES[i % 3] })), 100000 - (Array.from({ length: 9 }, (_, i) => 9000 + i * 250 - 1000).reduce((a, b) => a + b, 0)), null, 1);
+  state = s16;
+  s16.partie.phase = 'travail';
+  s16.partie.etapeManche = 0;
+  const partsAvantT16 = s16.joueurs.map(j => j.part).join();
+  const meridianAvantT16 = s16.meridian.part;
+  defisDeLaManche(1).forEach(d => saisirReponseDefi(d.id, d.reponseCorrecte === 'A' ? 'B' : 'A'));
+  traiterConsequenceMatin();
+  s16.partie.prelevementDefisApplique = s16.partie.dernierPrelevement;
+  const paniqueAppliquee = s16.meridian.part === meridianAvantT16 + 8000;
+  annulerSaisieDefis();
+  const restitue = s16.joueurs.map(j => j.part).join() === partsAvantT16 && s16.meridian.part === meridianAvantT16
+    && defisDeLaManche(1).every(d => d.reponseEquipe === null) && s16.partie.consequenceDefisEnAttente === null;
+  defisDeLaManche(1).forEach(d => saisirReponseDefi(d.id, d.reponseCorrecte));
+  const indiceApresCorrection = s16.partie.indiceEnAttente && s16.partie.indiceEnAttente.rang === 1;
+  s16.partie.phase = 'conseil';
+  let bloqueEnConseil = false;
+  try { annulerSaisieDefis(); } catch(e){ bloqueEnConseil = true; }
+  const t16ok = paniqueAppliquee && restitue && !!indiceApresCorrection && bloqueEnConseil && sommeCapital(s16) === 100000;
+  resultats.push({
+    nom: 'T16 — Correction d\'une réponse de défi',
+    pass: t16ok,
+    detail: `panique appliquée=${paniqueAppliquee}, parts et Meridian restitués à l'identique=${restitue}, indice n°1 après correction 3/3=${!!indiceApresCorrection}, correction refusée une fois le conseil ouvert=${bloqueEnConseil}, total=${sommeCapital(s16)}`
   });
 
   // --- T8 : plancher — seuil de 50 % franchi au bilan du matin de la manche 2 ---
@@ -3666,37 +4256,39 @@ function simulerPartieFictive(){
       const lettre = juste ? d.reponseCorrecte : (d.reponseCorrecte === 'A' ? 'B' : 'A');
       saisirReponseDefi(d.id, lettre);
     });
-    if (state.partie.propositionsIndices){
-      choisirIndice(state.partie.propositionsIndices[0].texte);
+    if (state.partie.indiceEnAttente){
+      revelerIndice();
     }
     controle();
     log.push(`Manche ${manche} — défis répondus, conséquence en attente = ${state.partie.consequenceDefisEnAttente || 'aucune'}`);
 
-    // Étape 2 : jusqu'à 3 résolutions de révocation, votées une à une, dans l'ordre.
+    // Étape 2 : jusqu'à 3 résolutions de révocation, en un seul vote simultané.
     const actifsDebat = state.joueurs.filter(j => j.statutCapital === 'actif');
     const nbNoms = Math.min(actifsDebat.length, Math.floor(Math.random() * 4)); // 0 à 3
     const noms = [...actifsDebat].sort(() => Math.random() - 0.5).slice(0, nbNoms);
     noms.forEach(j => { try { inscrireResolution(j.id); } catch(e){ /* plafond déjà atteint */ } });
-    for (const cible of noms){
-      if ((state.partie.revocationsAdopteesParManche[manche] || 0) >= plafondRevocationsParManche()) break;
-      const idx = state.partie.resolutionCouranteIndex;
-      const resolutionCourante = state.partie.resolutionsEnCours[idx];
-      if (!resolutionCourante || resolutionCourante.joueurId !== cible.id) continue;
-      const votants = state.joueurs.filter(j => j.statutCapital === 'actif');
-      const votes = {};
+    if (state.partie.resolutionsEnCours.some(r => r.statut === 'en_attente')){
+      const votesParResolution = {};
       // Abstention modélisée (§10 des retours de test v5) : les joueurs
       // hésitent à voter ouvertement contre un pair (observation de Kenza) —
       // ~30 % d'abstention, le reste réparti pour/contre, pour que la
-      // simulation d'équilibrage soit représentative de la nouvelle règle
+      // simulation d'équilibrage soit représentative de la règle
       // (abstention neutre, exclue du dénominateur).
-      votants.forEach(j => {
-        const r = Math.random();
-        votes[j.id] = r < 0.3 ? 'abstention' : (r < 0.65 ? 'pour' : 'contre');
+      state.partie.resolutionsEnCours.forEach(r => {
+        const votes = {};
+        actifsDebat.forEach(j => {
+          const x = Math.random();
+          votes[j.id] = x < 0.3 ? 'abstention' : (x < 0.65 ? 'pour' : 'contre');
+        });
+        votesParResolution[r.joueurId] = votes;
       });
       try {
-        const acquise = voterResolutionCourante(cible.id, votes);
-        log.push(`Manche ${manche} — résolution contre ${cible.prenom} : ${acquise ? 'adoptée' : 'rejetée'}`);
-      } catch(e){ /* verrouillée entre-temps */ }
+        const revoques = cloreVoteSimultane(votesParResolution);
+        state.partie.camembertGeleJusquaReveal = null;
+        state.partie.resolutionsEnCours.forEach(r => {
+          log.push(`Manche ${manche} — résolution contre ${r.prenom} : ${revoques.includes(r.joueurId) ? 'adoptée' : r.statut === 'non_retenue' ? 'majorité mais non retenue (plafond)' : 'rejetée'}`);
+        });
+      } catch(e){ /* verrouillée */ }
       controle();
     }
 
@@ -3832,6 +4424,7 @@ function initEvenements(){
     el('zone-camembert-compact').classList.add('hidden');
     el('zone-bandeau-joueurs').classList.add('hidden');
     el('btn-modifier-config').classList.add('hidden');
+    mettreAJourAstre(null);
     montrerPanneauPreparation();
   });
 

@@ -48,6 +48,7 @@ Le règlement impose qu'aucune information secrète (camps, rôles, cibles noctu
 - Tranche **rouge** : joueur infiltré, uniquement une fois son camp révélé (sabotage ou révocation).
 - Tranche **noire** : Fonds Meridian.
 - Le camembert ne doit jamais laisser deviner un camp avant sa révélation officielle : tant qu'un joueur n'est pas révélé, sa tranche reste bleue quel que soit son camp réel.
+- *(v6 — correctif de fuite d'information, remplace les points ci-dessus pour l'affichage.)* Le camembert est dessiné en **trois blocs contigus**, toujours dans le même ordre : rouge foncé (Meridian), rouge clair (total des infiltrés), bleu (total des associés honnêtes). Chaque bloc est d'un seul tenant, sans tranche individuelle : ni la position ni la taille d'une part ne peut être rapprochée d'un prénom. Aucune infobulle ni attribut DOM ne porte l'identité d'un joueur. Le bandeau des joueurs est trié par ordre alphabétique fixe, indépendant de l'ordre de saisie.
 
 ---
 
@@ -69,7 +70,7 @@ Le règlement impose qu'aucune information secrète (camps, rôles, cibles noctu
 | Manches | Durée du défi |
 | --- | --- |
 | 1 et 2 | 5 min |
-| 3 et 4 | 15 min |
+| 3 et 4 | 7 min *(v6 : plafond de 7 min, au lieu de 15)* |
 | 5 | 7 min |
 
 Débat en AG : 5:00 fixe, toutes manches confondues.
@@ -97,7 +98,8 @@ Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme
 *(Remplace intégralement le mécanisme de la v1 : plus de « Motion » avec proposeur/second, plus de vote en CA.)*
 
 - Pendant le **débat** (5:00), l'animateur peut inscrire **jusqu'à 3 noms** à l'ordre du jour, dans l'ordre où les accusations émergent — sans exigence de soutien formalisé.
-- Chaque nom devient une **résolution** (« Révocation de [Nom] »), votée **une à la fois, dans l'ordre d'inscription**, par la grille pondérée Pour / Contre / Abstention (abstention = compte comme contre, cf. règle des 50 % des actions votantes totales).
+- Chaque nom devient une **résolution** (« Révocation de [Nom] »), votée par la grille pondérée Pour / Contre / Abstention (abstention neutre depuis la v5.0, exclue du dénominateur).
+- **Vote simultané (v6, remplace le vote une à une dans l'ordre d'inscription).** Les intentions de vote de toutes les résolutions sont recueillies avant qu'aucun effet ne s'applique (une page par résolution à l'écran, retour possible sur une page précédente). Les voix sont pondérées par les parts à l'ouverture du vote ; tous les associés actifs à l'ouverture votent sur toutes les résolutions — personne ne perd son droit de vote en cours de manche. À la clôture, les résolutions adoptées sont classées par score (part des voix exprimées « pour »), seules les premières dans la limite du plafond sont retenues (les autres sont « non retenues »), et les effets s'appliquent tous ensemble : les parts de tous les révoqués sont rachetées d'un seul bloc, au prorata, par les associés restants. Les résultats sont proclamés un par un dans l'ordre des scores ; le camembert et le bandeau restent figés jusqu'à l'annonce de la dernière révocation.
 - Dès qu'une résolution dépasse strictement 50 % des actions votantes, elle est adoptée : révocation immédiate (sortie du capital en 100 % / 0 %, cf. § Règle de sortie unique), révélation de la **carte** du révoqué, redistribution intégrale au prorata entre les joueurs actifs restants — jamais à Meridian.
 - Si une résolution échoue, on passe à la suivante. Si les 3 échouent (ou s'il y a eu moins de 3 noms), la manche se termine sans révocation.
 - **Jusqu'à 2 révocations par manche** (v3.0 : plafond porté de 1 à 2 — un rejet ne consomme pas ce plafond, seule une adoption le fait ; verrouillage dès que la 2ᵉ résolution de la manche est adoptée).
@@ -113,7 +115,8 @@ Inchangé : cible sélectionnée parmi les actifs ; si protégée, « nuit calme
 - Bilan des 3 défis : 3 réussis → **Indice**, affiché immédiatement en plein écran, avant le vote de la même manche ; 2/1 → rien ; 1/2 → **Alerte** (4 000 points, constante configurable) ; 0/3 → **Panique** (8 000 points, constante configurable).
 - Transfert vers Meridian appliqué et annoncé au Bilan du matin, avec animation du camembert : chaque joueur de l'assiette (actifs + Juriste saboté) cède part_i × montant ÷ somme(assiette), au plus fort reste.
 - **Vérification de palier** (voir §4.5) effectuée immédiatement après cette animation, avant de passer à l'étape suivante du Bilan du matin.
-- Indices proposés à l'animateur (il en choisit un) : deux formulations qualitatives par service (nombre d'infiltrés dans un service désigné, service où les infiltrés sont majoritaires) — jamais de chiffre de capital, déjà public en continu sous le camembert (v5.0).
+- ~~Indices proposés à l'animateur (il en choisit un)~~ *(v6)* : **un seul indice** par bilan 3/3, de précision progressive. Le 1er indice de la partie est binaire (« Le service X compte au moins un infiltré. ») ; les suivants sont quantitatifs (« Le service X compte N infiltré(s). »). Le rang de l'indice dans la partie est conservé dans l'état de partie (`partie.nbIndicesDonnes`, exporté avec la sauvegarde JSON). Le service ciblé compte toujours au moins 2 associés actifs non démasqués, et un indice quantitatif n'annonce jamais que tous les non-démasqués d'un service sont infiltrés — l'indice ne peut ainsi jamais désigner nommément un joueur. Jamais de chiffre de capital.
+- *(v6)* Une réponse saisie par erreur peut être corrigée via « ◀ Retour » tant que le conseil de la manche n'a pas commencé : l'écran de saisie se rouvre pré-rempli et le bilan est recalculé (panique déjà appliquée restituée à l'identique, indice et annonce retirés).
 
 ### 4.5 Paliers et vérification de la victoire
 
@@ -160,7 +163,7 @@ Camembert permanent. Bandeau Joueurs en bas (statut visuel, part individuelle pa
 - Chronomètre préréglé selon la manche (§3), déclenché automatiquement.
 - Pour chaque service, le QCM du défi de la manche s'affiche ; l'animateur tape la réponse donnée par l'équipe (aucune saisie libre).
 - Bouton « Valider les résultats » → calcul automatique (§4.4).
-- Si Indice (3/3) : rupture immédiate, écran plein écran de l'indice choisi.
+- Si Indice (3/3) : rupture immédiate, écran plein écran de l'indice (v6 : indice unique, bouton « Suivant » explicite).
 - Sinon : retour au tableau de bord.
 
 ### 5.5 Conseil & Assemblée générale
@@ -210,6 +213,8 @@ Sobre et dramatique : l'annonce (une des 3 variantes — victoire Meridian, vict
 - **Masquer** : calque plein écran neutre, disponible en permanence (voir §2.2).
 - **Corrections** : édition manuelle d'un rôle en cours de partie possible via Masquer → modification → démasquer ; changement de Président à tout moment ; bascule manuelle d'écran en cas de besoin (accès discret, non mis en avant).
 - **Modifier la configuration** (retour de test) : bouton visible uniquement en cours de partie, avec confirmation (« interrompt la partie en cours »). Remonte l'assistant de préparation (§5.1), pré-rempli depuis la partie en cours, pour un dépannage en profondeur (nombre de joueurs erroné, refonte complète des rôles…). Le panneau de préparation est démonté du DOM dès le lancement de la partie — pas un simple `display:none` — et ne peut donc pas réapparaître par un défilement ou raccourci accidentel ; ce bouton est l'unique façon d'y revenir.
+- **Confirmation (v6)** : « Suivant » au débat sans aucun nom retenu, ou sur un écran de pouvoir de nuit sans cible choisie, ouvre une modale « Êtes-vous sûr(e) ? » (« Revenir en arrière » / « Confirmer »). Sur les écrans de pouvoir, « Suivant » est à droite et « Passer » (pouvoirs facultatifs DAF, DRH) à gauche, en lien texte discret.
+- **Outils de test (v6)** : masqués en présentation, visibles uniquement en ajoutant `?dev=1` à l'adresse.
 - **Journal** : chaque événement horodaté (sabotages, votes avec détail par résolution, mouvements de capital, indices révélés). Exportable en texte pour le débriefing.
 
 ---
